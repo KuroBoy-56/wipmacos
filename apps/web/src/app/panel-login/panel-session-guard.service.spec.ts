@@ -54,6 +54,20 @@ describe('PanelSessionGuardService', () => {
         expect(navigate).toHaveBeenCalledWith(['/login']);
     });
 
+    it('keeps a session opened with typed credentials when the panel never gave this device the line', async () => {
+        guard.watch(line, false);
+        checkDevice.mockResolvedValue({ status: 'inactive' });
+        await guard.tick(line, Date.now() + 11 * 60_000);
+        expect(clear).not.toHaveBeenCalled();
+        expect(logout).not.toHaveBeenCalled();
+        // once the panel gives the line, losing it later closes the session
+        checkDevice.mockResolvedValue({ status: 'active', account: line });
+        await guard.tick(line, Date.now() + 22 * 60_000);
+        checkDevice.mockResolvedValue({ status: 'inactive' });
+        await guard.tick(line, Date.now() + 33 * 60_000);
+        expect(logout).toHaveBeenCalled();
+    });
+
     it('keeps the session while the panel does not answer or before the next check', async () => {
         guard.watch(line);
         await guard.tick(line, Date.now() + 60_000);

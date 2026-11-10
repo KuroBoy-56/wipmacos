@@ -114,8 +114,15 @@ While the app runs, `PanelSessionGuardService`
 (`apps/web/src/app/panel-login/panel-session-guard.service.ts`, started by the
 login's `enter()`) keeps the session tied to the panel: a demo ends at its exact
 `demo_expires`, and every 10 minutes `check_mac` is asked again; when the panel
-says the device has no line (deleted, expired demo) the lines are removed and the
-app goes back to `/login`. A panel that does not answer changes nothing.
+stops giving a line it gave this device before (deleted, expired demo) the lines
+are removed and the app goes back to `/login`. A panel that does not answer
+changes nothing. A session opened with typed user and password that the panel
+never gave back through `check_mac` (`watch(account, lineSeen = false)`) is not
+closed by a «no line» answer: before 1.5.23 that threw out, after 10 minutes,
+the clients their distributor had removed from Clientes (fixed in the panel too).
+The distributor guardian (`PanelTenantService.runCheck`) asks `tenant_config`
+once more before wiping the code and the session on a fatal answer, and a fatal
+code seen on progress / EPG / sports only triggers that check, never a wipe.
 
 ### Platform, fake screen and error reports
 

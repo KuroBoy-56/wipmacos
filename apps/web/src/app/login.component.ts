@@ -277,7 +277,7 @@ export class LoginComponent implements OnInit {
             check.status === 'active'
                 ? check.account
                 : { server, username: user, password: pass, isDemo: false };
-        await this.enter(account);
+        await this.enter(account, check.status === 'active');
     }
 
     /** true = entró al tema de prueba (review_login); no registra nada en el panel ni vence */
@@ -345,10 +345,11 @@ export class LoginComponent implements OnInit {
         });
     }
 
-    private async enter(account: Parameters<PanelSessionService['start']>[0]): Promise<void> {
+    /** lineSeen: the panel gave this device the line (false = only typed credentials the panel accepted). */
+    private async enter(account: Parameters<PanelSessionService['start']>[0], lineSeen = true): Promise<void> {
         try {
             await this.session.start(account);
-            this.guard.watch(account);
+            this.guard.watch(account, lineSeen);
             await this.router.navigate(['/workspace']);
         } catch {
             this.say({ key: 'MPX.LOGIN.ERR_SESSION' }, 'error');

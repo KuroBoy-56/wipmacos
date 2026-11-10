@@ -12,6 +12,11 @@ const RECHECK_MS = 10 * 60_000;
  * its exact time and a line the panel no longer gives this device (deleted,
  * expired demo) or a device put on the panel's blacklist closes the session
  * and goes back to /login. A panel that does not answer changes nothing.
+ *
+ * «No longer gives» = it gave it before (`lineSeen`). When the panel never
+ * gave this device its line (the user typed user and password and the panel
+ * accepted them), a «no line» answer does not throw the client out after 10
+ * minutes: that happened to clients their distributor had removed from its list.
  */
 @Injectable({ providedIn: 'root' })
 export class PanelSessionGuardService {
@@ -21,9 +26,12 @@ export class PanelSessionGuardService {
     private readonly router = inject(Router);
     private timer: ReturnType<typeof setInterval> | null = null;
     private lastCheck = 0;
+    private lineSeen = true;
 
-    watch(account: PanelAccount): void {
+    /** lineSeen: the panel gave this device the line (check_mac or a new demo), not only typed credentials. */
+    watch(account: PanelAccount, lineSeen = true): void {
         this.stop();
+        this.lineSeen = lineSeen;
         this.lastCheck = Date.now();
         this.timer = setInterval(() => void this.tick(account), 30_000);
     }
@@ -40,7 +48,8 @@ export class PanelSessionGuardService {
             this.lastCheck = now;
             // no line any more, or the device was put on the panel's blacklist: back to /login (which shows why)
             const status = (await this.panel.checkDevice(true)).status;
-            if (status !== 'inactive' && status !== 'blocked') return;
+            if (status === 'active') this.lineSeen = true;
+            if (status !== 'blocked' && !(status === 'inactive' && this.lineSeen)) return;
         }
         this.stop();
         await this.session.clear();

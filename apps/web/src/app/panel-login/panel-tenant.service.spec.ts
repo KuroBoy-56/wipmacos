@@ -53,6 +53,7 @@ describe('PanelTenantService (guardian)', () => {
             ],
         });
         service = TestBed.inject(PanelTenantService);
+        service.confirmDelayMs = 0;
     });
 
     afterEach(() => clearTenant());
@@ -90,6 +91,18 @@ describe('PanelTenantService (guardian)', () => {
         expect(logout).toHaveBeenCalled();
         expect(navigate).toHaveBeenCalledWith(['/login']);
         expect(service.notice()).toEqual({ key: 'MPX.DIST.ERR_TENANT_SUSPENDED' });
+    });
+
+    it('asks the panel again before wiping: one wrong rejection keeps the code and the session', async () => {
+        saveTenantCode(cache());
+        tenantConfig
+            .mockResolvedValueOnce({ status: 'tenant_error', code: 'tenant_invalid', message: { key: 'x' } })
+            .mockResolvedValueOnce({ status: 'ok', cache: cache() });
+        await expect(service.check()).resolves.toBe('ok');
+        expect(tenantConfig).toHaveBeenCalledTimes(2);
+        expect(readTenantCode()).toBe('123456');
+        expect(sessionClear).not.toHaveBeenCalled();
+        expect(logout).not.toHaveBeenCalled();
     });
 
     it('treats a past expires_at as expired without asking the panel', async () => {
