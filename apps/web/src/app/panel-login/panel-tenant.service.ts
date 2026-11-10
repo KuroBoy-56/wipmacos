@@ -50,6 +50,8 @@ export class PanelTenantService {
 
     private started = false;
     private checking: Promise<TenantGuardResult> | null = null;
+    /** Wait before confirming a rejected distributor number (tests set 0). */
+    confirmDelayMs = 3000;
 
     /** Called once at bootstrap: cached branding is already painted by PanelBrandingService. */
     start(): void {
@@ -58,7 +60,8 @@ export class PanelTenantService {
         this.branding.reload();
         globalThis.addEventListener?.(PANEL_TENANT_ERROR_EVENT, (event) => {
             const code = (event as CustomEvent).detail;
-            if (isTenantErrorCode(code) && PANEL_TENANT_FATAL.includes(code)) void this.wipe(this.messageFor(code));
+            // one rejection (progress, EPG, sports…) never wipes by itself: the guardian confirms it with tenant_config
+            if (isTenantErrorCode(code) && PANEL_TENANT_FATAL.includes(code)) void this.check();
         });
         globalThis.document?.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') void this.checkIfDue();
@@ -90,7 +93,13 @@ export class PanelTenantService {
             await this.wipe(tenantExpiredMessage(cached, currentAppLanguage()));
             return 'wiped';
         }
-        const res = await this.panel.tenantConfig(code);
+        let res = await this.panel.tenantConfig(code);
+        // a rejected number is asked once more before the code and the session are wiped (a single wrong
+        // answer of the panel used to throw the client out of the app)
+        if (res.status === 'tenant_error' && PANEL_TENANT_FATAL.includes(res.code)) {
+            await new Promise((resolve) => setTimeout(resolve, this.confirmDelayMs));
+            res = await this.panel.tenantConfig(code);
+        }
         if (res.status === 'ok') {
             if (isTenantExpired(res.cache)) {
                 await this.wipe(tenantExpiredMessage(res.cache, currentAppLanguage()));
