@@ -21,7 +21,8 @@ export default [
     ...nx.configs['flat/typescript'],
     ...nx.configs['flat/javascript'],
     {
-        ignores: ['**/dist'],
+        // apps/tauri-desktop/src-tauri is a Rust crate (cargo clippy); its target/ holds build output.
+        ignores: ['**/dist', 'apps/tauri-desktop/src-tauri/**'],
     },
     {
         files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],

@@ -47,6 +47,8 @@ The Mac build lives on the `macos` branch: `master` changes are merged into it, 
 
 This fork ships as "MPX Player" (formerly "LatMpx TV+"; the Electron data folder and the package `name` keep the old name so updates keep the session) and is tied to the operator panel: panel device login (`/login`), panel-backed progress/favorites sync, panel fallback EPG and a sports section. There is no Firebase. See `docs/architecture/panel-integration.md`.
 
+A Tauri 2 + Rust port of the desktop runtime is in progress on branch `migration/tauri-rust` (`apps/tauri-desktop`). Electron stays the production build until the cut-over criteria in `docs/MIGRATION_ROADMAP.md` are met. When adding or changing an `ElectronBridgeApi` method, note it in `docs/FEATURE_INVENTORY.md` so the Rust port can follow.
+
 **Dual Environment Support**: The application is designed to work in both Electron and as a Progressive Web App (PWA). The architecture uses a factory pattern to inject environment-specific services at runtime, ensuring the same codebase works in both contexts.
 
 ## Development Commands
@@ -227,6 +229,7 @@ This is an Nx monorepo with the following structure:
 
 - **apps/web** - Angular application (frontend, shared by Electron and PWA); panel login UI in `src/app/panel-login/` + `login.component.*`, sports section in `src/app/sports/` (agenda + Tablas/Selecciones/Equipos tabs), panel cache rebuild in `src/app/services/panel-cache-sync.service.ts`
 - **apps/electron-backend** - Electron main process
+- **apps/tauri-desktop** - Tauri 2 + Rust desktop shell (migration preview, branch `migration/tauri-rust`): loads the unchanged `apps/web` build and implements `window.electron` in Rust, exposing only migrated bridge methods (`src-tauri/src/bridge/bridge.js`); Nx targets `cargo-test`, `cargo-clippy`, `tauri-dev`, `tauri-build`. Status and plan: `docs/MIGRATION_AUDIT.md`, `docs/MIGRATION_PROGRESS.md`
 - **apps/web-backend** - HTTP backend for the self-hosted PWA (`/parse`, `/parse-xml`, `/xtream`, `/stalker` CORS proxy endpoints)
 - **apps/remote-control-web** - Mobile remote-control web app served by the Electron backend
 - **apps/web-e2e** - Playwright E2E tests against the web app

@@ -1,0 +1,36 @@
+[package]
+name = "mpx-player"
+version = "0.0.0"
+description = "MPX Player desktop (Tauri 2 + Rust)"
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[lib]
+name = "mpx_player_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Panel HTTP: rustls with the OS trust store, certificate verification always on.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
+aes-gcm = "0.10"
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
+rand = "0.8"
+hex = "0.4"
+url = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "io-util"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true

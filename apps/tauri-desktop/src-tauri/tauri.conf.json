@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "MPX Player",
+    "version": "../../../package.json",
+    "identifier": "com.fourgray.iptvnator",
+    "build": {
+        "frontendDist": "../../../dist/apps/web",
+        "devUrl": "http://localhost:4200"
+    },
+    "app": {
+        "withGlobalTauri": true,
+        "windows": [],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": ["nsis", "msi", "deb", "appimage", "rpm"],
+        "publisher": "Garevyn-Streaming",
+        "copyright": "Garevyn-Streaming",
+        "category": "Video",
+        "shortDescription": "MPX Player",
+        "longDescription": "IPTV player application.",
+        "icon": [
+            "../../web/src/assets/icons/icon-32.png",
+            "../../web/src/assets/icons/icon-128.png",
+            "../../web/src/assets/icons/favicon.256x256.png",
+            "../../web/src/assets/icons/icon-1024.png",
+            "../../web/src/assets/icons/favicon.ico"
+        ],
+        "windows": {
+            "webviewInstallMode": { "type": "downloadBootstrapper" },
+            "nsis": { "installMode": "currentUser" }
+        },
+        "linux": {
+            "deb": { "depends": [] }
+        }
+    }
+}
