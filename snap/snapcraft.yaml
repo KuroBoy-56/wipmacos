@@ -1,0 +1,92 @@
+# MPX Player for the Snap Store (Electron, strict confinement).
+#
+# The Electron app is the `linux-unpacked` build of this repository made by
+# .github/workflows/linux-build.yml (it needs the panel and TMDB key secrets), copied to
+# build/linux-unpacked before `snapcraft` runs. The Snap Store accepts snaps built in CI and
+# uploaded with `snapcraft upload`; nothing is published without the owner's approval.
+name: mpx-player
+title: MPX Player
+summary: IPTV player for MPX panel subscriptions
+description: |
+  MPX Player plays the live TV, movies and series of an MPX subscription. The device signs in
+  with the operator panel, and favorites and progress follow the account between devices.
+
+  Features: live TV with programme guide, movies and series with Continue Watching, sports
+  agenda, the built-in player plus MPV for formats the built-in player cannot decode, and
+  parental control with a PIN.
+
+  The app includes no channels or content: it plays the service the user subscribes to.
+adopt-info: mpx-player
+base: core24
+grade: stable
+confinement: strict
+license: MIT
+contact: mailto:soporte@latmpx.com
+website: https://latmpx.com
+icon: apps/web/src/assets/icons/favicon.512x512.png
+
+platforms:
+  amd64:
+
+apps:
+  mpx-player:
+    command: bin/mpx-player
+    extensions: [gnome]
+    plugs:
+      # every plug is explained in docs/LINUX_PACKAGING.md
+      - browser-support
+      - home
+      - network
+      - network-bind
+      - audio-playback
+      - screen-inhibit-control
+    environment:
+      # mpv and its libraries come from stage-packages (see the mpv-runtime part)
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/pulseaudio:$SNAP/usr/lib/x86_64-linux-gnu/blas:$SNAP/usr/lib/x86_64-linux-gnu/lapack
+
+parts:
+  mpx-player:
+    plugin: dump
+    source: build/linux-unpacked
+    organize:
+      '*': opt/mpx-player/
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -nE 's/^ *"version": "([^"]+)".*/\1/p' "$CRAFT_PROJECT_DIR/package.json" | head -n 1)"
+    prime:
+      # strict confinement replaces the SUID Chromium sandbox (the launcher passes --no-sandbox)
+      - -opt/mpx-player/chrome-sandbox
+
+  launcher:
+    plugin: dump
+    source: snap/local
+    organize:
+      mpx-player: bin/mpx-player
+
+  # Electron's own runtime libraries (the gnome extension provides GTK and its stack)
+  # and mpv for the external player window and embedded MPV (`mpv --wid`).
+  mpv-runtime:
+    plugin: nil
+    stage-packages:
+      - libnss3
+      - libnspr4
+      - libxss1
+      - libxtst6
+      - libgbm1
+      - libasound2t64
+      - libcups2t64
+      - libsecret-1-0
+      - libnotify4
+      - libxshmfence1
+      - mpv
+
+  # Drop files the core and gnome content snaps already provide (smaller snap, no duplicate libs).
+  cleanup:
+    after: [mpx-player, launcher, mpv-runtime]
+    plugin: nil
+    build-snaps: [core24, gnome-46-2404]
+    override-prime: |
+      set -eux
+      for snap in core24 gnome-46-2404; do
+        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" \;
+      done

@@ -91,3 +91,12 @@ bin/
 **/bin/
 # Panel AES key generated at build time (tools/panel/write-panel-key.mjs)
 apps/electron-backend/src/assets/panel-key.json
+
+# Linux store packaging (docs/LINUX_PACKAGING.md): CI inputs and build output
+/build/linux-unpacked/
+/flatpak/mpx-player-linux-x64.tar.gz
+/flatpak/build-dir/
+/flatpak/.flatpak-builder/
+/flatpak/repo/
+*.snap
+*.flatpak

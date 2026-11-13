@@ -811,10 +811,10 @@ export class EmbeddedMpvNativeService {
     }
 
     private getLinuxMpvMissingMessage(): string {
-        // Flatpak/Snap sandboxes cannot see a host-installed mpv, so telling
-        // the user to install it would send them down a dead end.
+        // Flatpak/Snap sandboxes cannot see a host-installed mpv (the MPX packages
+        // bundle their own), so telling the user to install it would be a dead end.
         if (process.env.FLATPAK_ID || process.env.SNAP) {
-            return 'Embedded MPV is not available in sandboxed Flatpak/Snap packages because they cannot access a system mpv executable. Use the built-in player, or install the .deb/.rpm/AppImage package to enable Embedded MPV.';
+            return 'Embedded MPV needs the mpv program bundled in this sandboxed Flatpak/Snap package, and it was not found. Use the built-in player or reinstall the package; the .deb/.rpm/AppImage packages use the system mpv instead.';
         }
 
         return 'Embedded MPV on Linux requires the mpv executable on PATH. Install the mpv package for your distribution and restart IPTVnator.';

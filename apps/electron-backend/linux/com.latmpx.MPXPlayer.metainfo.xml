@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata of MPX Player (Flathub and Linux software centres). Screenshots are still
+     missing: Flathub needs public PNG URLs before submission (docs/LINUX_PACKAGING.md). -->
+<component type="desktop-application">
+  <id>com.latmpx.MPXPlayer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>MPX Player</name>
+  <developer id="com.latmpx">
+    <name>Garevyn-Streaming</name>
+  </developer>
+  <update_contact>soporte@latmpx.com</update_contact>
+  <summary>IPTV player for MPX panel subscriptions</summary>
+  <summary xml:lang="es">Reproductor IPTV para las suscripciones del panel MPX</summary>
+  <launchable type="desktop-id">com.latmpx.MPXPlayer.desktop</launchable>
+
+  <description>
+    <p>MPX Player plays the live TV, movies and series of an MPX subscription. The device signs in with the operator panel, and favorites and progress follow the account between devices.</p>
+    <p xml:lang="es">MPX Player reproduce la TV en vivo, las películas y las series de una suscripción MPX. El equipo inicia sesión con el panel del operador, y Mi lista y el progreso siguen a la cuenta entre dispositivos.</p>
+    <p>Features:</p>
+    <p xml:lang="es">Funciones:</p>
+    <ul>
+      <li>Live TV with programme guide, movies and series with Continue Watching</li>
+      <li xml:lang="es">TV en vivo con guía de programación, películas y series con Continuar viendo</li>
+      <li>Sports agenda with the channels that broadcast each event</li>
+      <li xml:lang="es">Agenda deportiva con los canales que transmiten cada evento</li>
+      <li>Built-in player and MPV for formats the built-in player cannot decode</li>
+      <li xml:lang="es">Reproductor integrado y MPV para los formatos que el integrado no decodifica</li>
+      <li>Parental control with a PIN</li>
+      <li xml:lang="es">Control parental con PIN</li>
+    </ul>
+    <p>The app includes no channels or content: it plays the service the user subscribes to with their provider.</p>
+    <p xml:lang="es">La app no incluye canales ni contenido: reproduce el servicio que el usuario contrata con su proveedor.</p>
+  </description>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+    <category>TV</category>
+  </categories>
+
+  <keywords>
+    <keyword>IPTV</keyword>
+    <keyword>TV</keyword>
+    <keyword>Xtream</keyword>
+    <keyword>M3U</keyword>
+    <keyword>EPG</keyword>
+  </keywords>
+
+  <url type="homepage">https://latmpx.com</url>
+
+  <content_rating type="oars-1.1"/>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+
+  <releases>
+    <release version="1.5.24" date="2026-11-13"/>
+    <release version="1.5.23" date="2026-11-10"/>
+  </releases>
+</component>

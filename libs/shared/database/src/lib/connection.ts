@@ -1,7 +1,7 @@
 /**
  * Database connection and initialization for IPTVnator
  * Uses Drizzle ORM with better-sqlite3
- * Stores database file under ~/.iptvnator/databases/ by default.
+ * Stores the database under ~/.iptvnator/databases/ (Linux: XDG / Snap / Flatpak folders, see path-utils.ts).
  * E2E tests can override the root with IPTVNATOR_E2E_DATA_DIR.
  *
  * Provides two connection modes:

@@ -41,9 +41,44 @@ exec "$SCRIPT_DIR/${executableName}.bin" "\${EXEC_ARGS[@]}" "$@"
 `;
 }
 
+const WINDOWS_BINARY = /\.(exe|dll)$/i;
+
+/**
+ * Windows players and DLLs that would end up in a Linux package. `bin/` (MPV / VLC
+ * for Windows) is an extraResource for every platform, so a Linux build made from
+ * a Windows working copy would ship it; the embedded MPV native folder must hold
+ * only Linux output.
+ */
+async function findWindowsBinaries(resourcesDir) {
+    const found = [];
+    async function walk(dir) {
+        let entries;
+        try {
+            entries = await fs.readdir(dir, { withFileTypes: true });
+        } catch {
+            return; // folder not in this build
+        }
+        for (const entry of entries) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) await walk(full);
+            else if (WINDOWS_BINARY.test(entry.name)) found.push(full);
+        }
+    }
+    await walk(path.join(resourcesDir, 'bin'));
+    await walk(path.join(resourcesDir, 'app.asar.unpacked', 'electron-backend', 'native'));
+    return found;
+}
+
 async function afterPackHook(params) {
     if (params.electronPlatformName !== 'linux') {
         return;
+    }
+
+    const windowsBinaries = await findWindowsBinaries(path.join(params.appOutDir, 'resources'));
+    if (windowsBinaries.length > 0) {
+        throw new Error(
+            `Linux package contains Windows binaries (remove bin/ from the working copy): ${windowsBinaries.join(', ')}`
+        );
     }
 
     log('applying Linux launcher sandbox fix');
@@ -70,3 +105,4 @@ async function afterPackHook(params) {
 
 module.exports = afterPackHook;
 module.exports.createLoaderScript = createLoaderScript;
+module.exports.findWindowsBinaries = findWindowsBinaries;

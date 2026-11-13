@@ -1,0 +1,166 @@
+# MPX Player for Flathub (Electron, freedesktop 26.08 + Electron2.BaseApp).
+#
+# The Electron app itself is the `linux-unpacked` build of this repository, made by
+# .github/workflows/linux-build.yml (it needs the panel key and TMDB key secrets, which
+# Flathub's public builders cannot have). CI packs it as mpx-player-linux-x64.tar.gz next to
+# this file. For the Flathub submission the same archive is referenced by URL + sha256
+# (docs/LINUX_PACKAGING.md). mpv and its libraries are built here from pinned sources.
+app-id: com.latmpx.MPXPlayer
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '26.08'
+command: mpx-player
+separate-locales: false
+finish-args:
+  # Electron IPC and network (panel, provider streams, remote control on port 8765)
+  - --share=ipc
+  - --share=network
+  # The app forces --ozone-platform=x11: embedded MPV draws into an X11 child window
+  - --socket=x11
+  - --socket=pulseaudio
+  # GPU for the WebView and mpv
+  - --device=dri
+  # Downloads and MPV recordings default to the XDG Downloads folder
+  - --filesystem=xdg-download
+  # Keep the screen awake while a video plays (Electron powerSaveBlocker)
+  - --talk-name=org.freedesktop.ScreenSaver
+  # Downloads › "Mostrar en carpeta" (shell.showItemInFolder)
+  - --talk-name=org.freedesktop.FileManager1
+modules:
+  - name: luajit
+    no-autogen: true
+    make-args:
+      - PREFIX=/app
+    make-install-args:
+      - PREFIX=/app
+    cleanup:
+      - /bin
+      - /include
+      - /lib/pkgconfig
+      - /share/luajit-2.1
+      - /share/man
+      - '*.a'
+    sources:
+      - type: git
+        url: https://github.com/LuaJIT/LuaJIT.git
+        # v2.1 rolling branch, pinned
+        commit: 63c8f1a9b479ba5518cf6a170ff7729178bc3cfd
+      # LuaJIT's version is the commit time (.relver holds "$Format:%ct$" outside git)
+      - type: shell
+        commands:
+          - echo 1794386141 > .relver
+
+  - name: libass
+    config-opts:
+      - --disable-static
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - '*.la'
+    sources:
+      - type: git
+        url: https://github.com/libass/libass.git
+        tag: 0.17.4
+        commit: bbb3c7f1570a4a021e52683f3fbdf74fe492ae84
+
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      # meson would pick lib64, which the runtime's pkg-config does not search
+      - -Dlibdir=lib
+      - -Dvulkan=enabled
+      - -Dopengl=enabled
+      - -Dshaderc=enabled
+      - -Dlcms=enabled
+      - -Ddemos=false
+      - -Dtests=false
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+    sources:
+      - type: git
+        url: https://code.videolan.org/videolan/libplacebo.git
+        tag: v7.360.1
+        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
+
+  # X11 Present extension: mpv's X11 output (embedded MPV draws into an X11 child window)
+  - name: libXpresent
+    config-opts:
+      - --disable-static
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/man
+      - '*.la'
+    sources:
+      - type: archive
+        url: https://www.x.org/releases/individual/lib/libXpresent-1.0.1.tar.xz
+        sha256: b964df9e5a066daa5e08d2dc82692c57ca27d00b8cc257e8e960c9f1cf26231b
+
+  # mpv runs as a separate program (external player window and embedded `mpv --wid`);
+  # FFmpeg comes from the runtime, with full codecs from org.freedesktop.Platform.codecs-extra.
+  - name: mpv
+    buildsystem: meson
+    config-opts:
+      - -Dlibmpv=false
+      - -Dlua=luajit
+      - -Djavascript=disabled
+      - -Dmanpage-build=disabled
+      - -Dhtml-build=disabled
+      - -Dpdf-build=disabled
+      - -Dcplugins=disabled
+      - -Dx11=enabled
+      - -Dpulse=enabled
+      - -Dvaapi=enabled
+    cleanup:
+      - /share/bash-completion
+      - /share/fish
+      - /share/zsh
+      - /share/man
+      - /share/applications
+      - /share/icons
+      - /share/metainfo
+      - /etc/mpv/encoding-profiles.conf
+    sources:
+      - type: git
+        url: https://github.com/mpv-player/mpv.git
+        tag: v0.41.0
+        commit: 41f6a645068483470267271e1d09966ca3b9f413
+
+  - name: mpx-player
+    buildsystem: simple
+    build-commands:
+      - cp -a app /app/mpx-player
+      # zypak replaces the SUID Chromium sandbox inside Flatpak
+      - rm -f /app/mpx-player/chrome-sandbox
+      - install -Dm755 mpx-player.sh /app/bin/mpx-player
+      - install -Dm644 com.latmpx.MPXPlayer.desktop /app/share/applications/com.latmpx.MPXPlayer.desktop
+      - install -Dm644 com.latmpx.MPXPlayer.metainfo.xml /app/share/metainfo/com.latmpx.MPXPlayer.metainfo.xml
+      - install -Dm644 icon-512.png /app/share/icons/hicolor/512x512/apps/com.latmpx.MPXPlayer.png
+      - install -Dm644 icon-256.png /app/share/icons/hicolor/256x256/apps/com.latmpx.MPXPlayer.png
+      - install -Dm644 icon-128.png /app/share/icons/hicolor/128x128/apps/com.latmpx.MPXPlayer.png
+    sources:
+      - type: archive
+        path: mpx-player-linux-x64.tar.gz
+        dest: app
+      - type: file
+        path: ../apps/electron-backend/linux/com.latmpx.MPXPlayer.desktop
+      - type: file
+        path: ../apps/electron-backend/linux/com.latmpx.MPXPlayer.metainfo.xml
+      - type: file
+        path: ../apps/web/src/assets/icons/favicon.512x512.png
+        dest-filename: icon-512.png
+      - type: file
+        path: ../apps/web/src/assets/icons/favicon.256x256.png
+        dest-filename: icon-256.png
+      - type: file
+        path: ../apps/web/src/assets/icons/icon-128.png
+        dest-filename: icon-128.png
+      - type: script
+        dest-filename: mpx-player.sh
+        commands:
+          # Electron writes its singleton lock and shared files under TMPDIR
+          - export TMPDIR="$XDG_RUNTIME_DIR/app/$FLATPAK_ID"
+          - exec zypak-wrapper /app/mpx-player/mpx-player.bin --ozone-platform=x11 "$@"
