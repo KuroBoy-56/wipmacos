@@ -89,6 +89,9 @@
         "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
         "icon": "apps/web/src/assets/icons"
     },
+    "deb": {
+        "recommends": ["mpv"]
+    },
     "afterPack": "./tools/packaging/electron-after-pack.cjs",
     "win": {
         "compression": "maximum",

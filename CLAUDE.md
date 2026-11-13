@@ -47,6 +47,8 @@ The Mac build lives on the `macos` branch: `master` changes are merged into it, 
 
 This fork ships as "MPX Player" (formerly "LatMpx TV+"; the Electron data folder and the package `name` keep the old name so updates keep the session) and is tied to the operator panel: panel device login (`/login`), panel-backed progress/favorites sync, panel fallback EPG and a sports section. There is no Firebase. See `docs/architecture/panel-integration.md`.
 
+The Linux build lives on the `linux` branch (from `main`, Electron kept): `master`/`main` changes are merged into it, and it adds Linux x64 packaging (`electron-builder.json` `linux`/`deb`: AppImage, deb, rpm, executable `mpx-player`), `snap/snapcraft.yaml` (Snap `mpx-player`, core24, strict), `flatpak/com.latmpx.MPXPlayer.yml` (freedesktop 26.08 + Electron2.BaseApp, mpv 0.41 built in the manifest), `.github/workflows/linux-build.yml` (only on `linux-v*` tags; builds, runs `tools/linux/smoke-test.mjs` in each package, never publishes). Linux sends the panel app id `windows` (no `linux` id on the panel yet). See `docs/LINUX_PACKAGING.md` and `docs/LINUX_MIGRATION_PROGRESS.md`.
+
 **Dual Environment Support**: The application is designed to work in both Electron and as a Progressive Web App (PWA). The architecture uses a factory pattern to inject environment-specific services at runtime, ensuring the same codebase works in both contexts.
 
 ## Development Commands
@@ -461,7 +463,7 @@ See `docs/architecture/m3u-playlist-module.md` for complete documentation.
 **Data Storage (Environment-Specific)**:
 
 - **Electron**: SQLite database via Drizzle ORM (`better-sqlite3` driver)
-    - Location: `~/.iptvnator/databases/iptvnator.db`
+    - Location: `~/.iptvnator/databases/iptvnator.db` (Linux: `$SNAP_USER_COMMON/iptvnator` in the Snap, `$XDG_DATA_HOME/iptvnator` in the Flatpak, else an existing `~/.iptvnator` or `~/.local/share/iptvnator` — `resolveDefaultDataRoot` in `libs/shared/database/src/lib/path-utils.ts`)
     - Full-featured relational database with foreign keys and indexes
     - Canonical schema and connection live in `libs/shared/database`
 - **PWA (Web)**: IndexedDB via `ngx-indexed-db`
@@ -576,7 +578,7 @@ This project uses modern Angular signal-based APIs and patterns. **ALWAYS** use 
 **Database**:
 
 - **ORM**: Drizzle ORM with `better-sqlite3` (local SQLite file)
-- **Location**: `~/.iptvnator/databases/iptvnator.db` (avoids spaces in path)
+- **Location**: `~/.iptvnator/databases/iptvnator.db` (avoids spaces in path; Linux follows XDG / Snap / Flatpak, see Data Storage)
 - **Schema** (`libs/shared/database/src/lib/schema.ts` — canonical; `apps/electron-backend/src/app/database/schema.ts` is a backwards-compat re-export shim):
     - `playlists` - Playlist metadata (M3U, Xtream, Stalker)
     - `categories` - Content categories (live, movies, series)
@@ -627,7 +629,7 @@ This project uses modern Angular signal-based APIs and patterns. **ALWAYS** use 
 **Video Players**:
 
 - Built-in HTML5 player with HLS.js or Video.js
-- External players: MPV, VLC (via IPC to Electron backend)
+- External players: MPV, VLC (via IPC to Electron backend); on Linux the Flatpak runs its bundled `/app/bin/mpv` inside the sandbox and the Snap only its `$SNAP/usr/bin/mpv` (`external-player-launch-context.ts`); VLC is not available in the Snap/Flatpak
 - Embedded MPV (experimental, macOS/Windows/Linux): renders mpv video inside the Electron window through a native addon. macOS uses the libmpv render API in an `NSOpenGLView`; Windows uses in-process libmpv with `--wid` against an app-owned child `HWND`; Linux spawns an out-of-process `mpv --wid=<x11-window>` controlled over a JSON IPC socket (X11/XWayland only, requires system `mpv` on PATH; subtitles/speed/aspect/recording are not exported there). mpv's own screensaver inhibition does not apply to any of these paths, so `EmbeddedMpvNativeService` holds an Electron `powerSaveBlocker` (`prevent-display-sleep`) whenever any session's status is `playing`, and releases it on pause, dispose, or shutdown. Service: `apps/electron-backend/src/app/services/embedded-mpv-native.service.ts`; full architecture: `docs/architecture/embedded-mpv-native.md`. The native addon is only compiled with `IPTVNATOR_BUILD_EMBEDDED_MPV=1` (`tools/embedded-mpv/build-native-addon.cjs`), which `.github/workflows/build-macos.yml` sets (LGPL runtime built per arch and cached); other builds ship without it.
 - Automatic recovery in `WebPlayerViewComponent` (`libs/ui/playback/src/lib/web-player-view/playback-recovery.ts`): a failing stream is retried once on the other scheme (http ↔ https, `stream-scheme.util.ts` in `@iptvnator/shared/interfaces`; a scheme that plays is remembered per host for the session), then a format failure (`externalFallbackRecommended`) switches that stream to embedded MPV when `EmbeddedMpvAvailabilityService` says it works (bridge + `prepareEmbeddedMpv().supported`), without changing the saved player; otherwise the diagnostic banner stays and that stream stops trying (no reload loop)
 - Mixed player mode: with MPV/VLC selected, movies and series open in MPV/VLC but live channels play inline with Video.js (`PlayerService.isEmbeddedLivePlayer`, `WebPlayerViewComponent.selectedPlayer`), unless Settings › "Canales en vivo también con MPV/VLC" (`liveExternalPlayer`) is on
