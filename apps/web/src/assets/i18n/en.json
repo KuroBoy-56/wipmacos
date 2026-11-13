@@ -1574,7 +1574,7 @@
         },
         "PARENTAL": {
             "SECTION": "Parental control",
-            "HIDE_ADULT": "Hide adult content",
+            "HIDE_ADULT": "Hide adult channels and categories",
             "PIN": "PIN",
             "UNLOCK": "Unlock",
             "LOCK": "Lock again",
@@ -1589,7 +1589,17 @@
             "WRONG_PIN": "Wrong PIN.",
             "FOUR_DIGITS": "The PIN must have 4 digits.",
             "SAVED": "PIN saved in the panel.",
-            "ERR_SAVE": "The panel did not save the PIN."
+            "ERR_SAVE": "The panel did not save the PIN.",
+            "BLOCK_CATS": "Block categories",
+            "BLOCK_NOTE": "Locked categories (and their titles) are hidden and show with the PIN. Check or uncheck each one.",
+            "SESSION": "Protected content this session",
+            "SESSION_LOCKED": "Locked",
+            "SESSION_UNLOCKED": "Unlocked",
+            "MOVIES": "Movies",
+            "SERIES": "Series",
+            "LIVE": "Live TV",
+            "CLOSE": "Close",
+            "NO_CATS": "Open Home or Live TV to load the categories."
         },
         "REVIEW": {
             "MOVIES": "Movies",

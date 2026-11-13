@@ -509,8 +509,8 @@ export function withSelection() {
                             : type === 'vod'
                               ? storeAny.vodCategories?.() || []
                               : storeAny.serialCategories?.() || [];
-                    // control parental: sin las categorías para adultos mientras esté bloqueado con el PIN
-                    return parental.visible(list, categoryName);
+                    // control parental (como Roku): sin las de adultos ni las bloqueadas mientras esté bloqueado con el PIN
+                    return parental.visible(list, categoryName, (c) => type + ':' + String((c as unknown as { category_id?: unknown; id?: unknown })?.category_id ?? (c as unknown as { id?: unknown })?.id ?? ''));
                 }),
             };
         }),

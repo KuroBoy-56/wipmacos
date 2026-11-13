@@ -1574,7 +1574,7 @@
         },
         "PARENTAL": {
             "SECTION": "Control parental",
-            "HIDE_ADULT": "Ocultar contenido para adultos",
+            "HIDE_ADULT": "Ocultar canales y categorías para adultos",
             "PIN": "PIN",
             "UNLOCK": "Desbloquear",
             "LOCK": "Bloquear otra vez",
@@ -1589,7 +1589,17 @@
             "WRONG_PIN": "PIN incorrecto.",
             "FOUR_DIGITS": "El PIN debe tener 4 números.",
             "SAVED": "PIN guardado en el panel.",
-            "ERR_SAVE": "El panel no guardó el PIN."
+            "ERR_SAVE": "El panel no guardó el PIN.",
+            "BLOCK_CATS": "Bloquear categorías",
+            "BLOCK_NOTE": "Las categorías bloqueadas se ocultan (también sus títulos) y se ven con el PIN. Marca o desmarca cada una.",
+            "SESSION": "Contenido protegido en esta sesión",
+            "SESSION_LOCKED": "Bloqueado",
+            "SESSION_UNLOCKED": "Desbloqueado",
+            "MOVIES": "Películas",
+            "SERIES": "Series",
+            "LIVE": "TV en vivo",
+            "CLOSE": "Cerrar",
+            "NO_CATS": "Abre Inicio o TV en vivo para cargar las categorías."
         },
         "REVIEW": {
             "MOVIES": "Películas",

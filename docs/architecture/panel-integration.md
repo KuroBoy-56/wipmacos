@@ -369,8 +369,14 @@ Omitir choice, settings, `cache_clear_seen`). The PWA (no bridge) only does
   panel's text (no fake screen, no Auto-Demo) and `PanelSessionGuardService` closes an open session.
 - **Parental control**: check_mac's `pin` (4 digits, 0000 by default) is saved with `saveParentalPin`. Adult categories
   (`ADULT_CATEGORY_RE`, same words as the TV and phone apps) are hidden until Settings › «Control parental» unlocks
-  them with that PIN (until the app closes or logout). Turning «Ocultar contenido para adultos» off asks for the PIN.
-  «Cambiar PIN» sends `set_pin` (`old_pin` + `pin`, encrypted answer, allowed in the main process).
+  them with that PIN (until the app closes or logout). Turning «Ocultar canales y categorías para adultos» off asks for
+  the PIN. As in Roku (1.5.24): «Bloquear categorías» (with the PIN; Movies / Series / Live TV tabs over the
+  `XtreamStore` categories) hides the checked ones and their titles (`"vod|series|live:<id>"` keys in
+  `parental_blocked_cats`, `ParentalControlService.toggleBlocked`), and «Contenido protegido en esta sesión» shows the
+  state: unlocking with the PIN shows everything (adult and blocked) until the app closes. `visible()` / `hiddenIds()`
+  take the category key (`keyOf` / `kind`) so blocked categories hide in `injectNfCatalog` and
+  `getCategoriesBySelectedType`. «Cambiar PIN» sends `set_pin` (`old_pin` + `pin`, encrypted answer, allowed in the
+  main process).
 - **Review theme** («Tema de prueba», panel Pantalla Falsa, only with Omitir, `windows` / `macos` in
   `REVIEW_THEME_APPS`): `features.review` makes the login simple; Auto-Demo (`review_login` `{demo: 1}`) or a theme
   account opens `/review` (Movies, Series, Settings with «Cerrar sesión») playing the panel's `api/player` videos in an

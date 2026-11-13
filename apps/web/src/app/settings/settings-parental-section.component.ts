@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { TranslatePipe } from '@ngx-translate/core';
+import { XtreamStore } from '@iptvnator/portal/xtream/data-access';
 import { ParentalControlService } from '@iptvnator/services';
 import { UiText } from '@iptvnator/shared/interfaces';
 import { PanelLoginService } from '../panel-login/panel-login.service';
 
 /**
- * «Control parental» en Ajustes (como Roku, Vega, Android e iOS): ocultar el contenido para adultos (apagarlo pide el
- * PIN), desbloquearlo hasta cerrar la app con el PIN y cambiar el PIN en el panel (set_pin, pide el actual). El PIN es
- * el del equipo en el panel (0000 de fábrica).
+ * «Control parental» en Ajustes (como Roku): ocultar los canales y categorías para adultos (apagarlo pide el PIN),
+ * «Contenido protegido en esta sesión» (con el PIN se ve todo hasta cerrar la app), «Bloquear categorías» (con el PIN:
+ * Películas, Series y TV en vivo, cada una se bloquea o desbloquea) y cambiar el PIN en el panel (set_pin, pide el
+ * actual). El PIN es el del equipo en el panel (0000 de fábrica).
  */
 @Component({
     selector: 'app-settings-parental-section',
@@ -26,14 +28,36 @@ import { PanelLoginService } from '../panel-login/panel-login.service';
 
             <div class="row">
                 <input type="password" inputmode="numeric" maxlength="4" name="pin" autocomplete="off" [placeholder]="'MPX.PARENTAL.PIN' | translate" [(ngModel)]="pin" />
-                @if (parental.hideAdult()) {
-                    @if (parental.unlocked()) {
-                        <button mat-stroked-button type="button" (click)="lockAgain()">{{ 'MPX.PARENTAL.LOCK' | translate }}</button>
-                    } @else {
-                        <button mat-stroked-button type="button" (click)="unlock()">{{ 'MPX.PARENTAL.UNLOCK' | translate }}</button>
-                    }
+                <button mat-stroked-button type="button" (click)="openBlocked()">{{ 'MPX.PARENTAL.BLOCK_CATS' | translate }}</button>
+            </div>
+            <div class="row">
+                <span class="state">{{ 'MPX.PARENTAL.SESSION' | translate }}: <b>{{ (parental.unlocked() ? 'MPX.PARENTAL.SESSION_UNLOCKED' : 'MPX.PARENTAL.SESSION_LOCKED') | translate }}</b></span>
+                @if (parental.unlocked()) {
+                    <button mat-stroked-button type="button" (click)="lockAgain()">{{ 'MPX.PARENTAL.LOCK' | translate }}</button>
+                } @else {
+                    <button mat-stroked-button type="button" (click)="unlock()">{{ 'MPX.PARENTAL.UNLOCK' | translate }}</button>
                 }
             </div>
+
+            @if (editing()) {
+                <div class="cats" data-test-id="parental-blocked">
+                    <h4>{{ 'MPX.PARENTAL.BLOCK_CATS' | translate }}</h4>
+                    <p class="note">{{ 'MPX.PARENTAL.BLOCK_NOTE' | translate }}</p>
+                    <div class="row">
+                        @for (k of kinds; track k.id) {
+                            <button mat-stroked-button type="button" [class.on]="kind() === k.id" (click)="kind.set(k.id)">{{ k.label | translate }}</button>
+                        }
+                        <button mat-button type="button" (click)="editing.set(false)">{{ 'MPX.PARENTAL.CLOSE' | translate }}</button>
+                    </div>
+                    <div class="list">
+                        @for (c of cats(); track c.id) {
+                            <label class="cat"><input type="checkbox" [checked]="parental.blocked().has(kind() + ':' + c.id)" (change)="parental.toggleBlocked(kind() + ':' + c.id)" /> {{ c.name }}</label>
+                        } @empty {
+                            <p class="note">{{ 'MPX.PARENTAL.NO_CATS' | translate }}</p>
+                        }
+                    </div>
+                </div>
+            }
 
             <h4>{{ 'MPX.PARENTAL.CHANGE' | translate }}</h4>
             <div class="row">
@@ -56,11 +80,36 @@ import { PanelLoginService } from '../panel-login/panel-login.service';
         .msg { margin: 10px 0 0; }
         .msg.error { color: #ff6b6b; }
         .note { margin: 10px 0 0; font-size: 13px; opacity: 0.7; }
+        .state b { font-weight: 600; }
+        .cats { margin-top: 14px; }
+        .cats button.on { border-color: var(--nf-accent, #e50914); }
+        .list { max-height: 320px; overflow-y: auto; margin-top: 10px; padding-right: 6px; }
+        .cat { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
     `,
 })
 export class SettingsParentalSectionComponent {
     protected readonly parental = inject(ParentalControlService);
     private readonly panel = inject(PanelLoginService);
+    private readonly xtream = inject(XtreamStore);
+    /** «Bloquear categorías» abierto (con el PIN) y el tipo que se ve */
+    protected readonly editing = signal(false);
+    protected readonly kind = signal<'vod' | 'series' | 'live'>('vod');
+    protected readonly kinds = [
+        { id: 'vod' as const, label: 'MPX.PARENTAL.MOVIES' },
+        { id: 'series' as const, label: 'MPX.PARENTAL.SERIES' },
+        { id: 'live' as const, label: 'MPX.PARENTAL.LIVE' },
+    ];
+    /** todas las categorías del tipo (también las ocultas) */
+    protected readonly cats = computed(() => {
+        const k = this.kind();
+        const list = (k === 'live' ? this.xtream.liveCategories() : k === 'vod' ? this.xtream.vodCategories() : this.xtream.serialCategories()) as unknown[];
+        return (list || [])
+            .map((c) => {
+                const o = (c ?? {}) as { category_id?: unknown; id?: unknown; category_name?: unknown; name?: unknown };
+                return { id: String(o.category_id ?? o.id ?? ''), name: String(o.category_name ?? o.name ?? '').trim() };
+            })
+            .filter((c) => c.id && c.name);
+    });
     protected readonly busy = signal(false);
     protected readonly message = signal<{ ok: boolean; text: UiText } | null>(null);
     pin = '';
@@ -87,6 +136,17 @@ export class SettingsParentalSectionComponent {
         const ok = this.parental.unlock(this.pin);
         this.pin = '';
         this.say(ok, ok ? 'MPX.PARENTAL.UNLOCKED' : 'MPX.PARENTAL.WRONG_PIN');
+    }
+
+    /** «Bloquear categorías» pide el PIN */
+    openBlocked(): void {
+        if (this.pin.trim() !== '' && this.parental.checkPin(this.pin)) {
+            this.pin = '';
+            this.message.set(null);
+            this.editing.set(true);
+            return;
+        }
+        this.say(false, 'MPX.PARENTAL.WRONG_PIN');
     }
 
     lockAgain(): void {
