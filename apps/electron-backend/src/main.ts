@@ -30,6 +30,7 @@ import WindowEvents from './app/events/window.events';
 import XtreamEvents from './app/events/xtream.events';
 import PanelEvents from './app/panel/panel.events';
 import { hostOf, requiresValidCertificate } from './app/util/tls-policy';
+import { preferBundledMpv } from './app/util/bundled-mpv-path';
 
 // Node requests of the main process only go to IPTV provider servers (often
 // self-signed). The panel and the public APIs go through Chromium, where the
@@ -72,14 +73,21 @@ if (electronUserDataPath) {
     app.setPath('userData', electronUserDataPath);
 }
 
+preferBundledMpv();
+
 let fixPathScheduled = false;
 
 function scheduleDeferredFixPath(): void {
     if (fixPathScheduled || process.platform === 'win32') return;
+    // Snap/Flatpak set PATH themselves (their bundled mpv); the login shell there is the base
+    // image's, and fix-path would replace that PATH with one without the package's folders
+    if (process.env['SNAP'] || process.env['FLATPAK_ID']) return;
     fixPathScheduled = true;
     setImmediate(() => {
         try {
             fixPath();
+            // fix-path rebuilds PATH from the login shell: keep the bundled mpv first
+            preferBundledMpv();
             if (isStartupTraceEnabled()) trace('startup', 'fix-path:done');
         } catch { /* best effort */ }
     });

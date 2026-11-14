@@ -1,0 +1,4 @@
+#!/bin/sh
+# MPX Player inside the Snap. Strict confinement isolates the app, so the SUID Chromium
+# sandbox is not used; Electron runs on X11 because embedded MPV draws into an X11 window.
+exec "$SNAP/opt/mpx-player/mpx-player.bin" --no-sandbox --ozone-platform=x11 "$@"

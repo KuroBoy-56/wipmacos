@@ -14,6 +14,8 @@ export type ExternalPlayerLaunchMode = 'direct' | 'flatpak-host';
 export interface PlayerPathOptions {
     platform?: NodeJS.Platform;
     isFlatpak?: boolean;
+    /** Environment to read $SNAP from (tests pass their own). */
+    env?: NodeJS.ProcessEnv;
     pathExists?: PathExists;
     readDirectory?: ReadDirectory;
 }
@@ -37,6 +39,28 @@ export function isRunningInFlatpak(
     platform: NodeJS.Platform = process.platform
 ): boolean {
     return platform === 'linux' && pathExists('/.flatpak-info');
+}
+
+/** Files inside the Flatpak's own /app tree run in the sandbox; anything else is on the host. */
+const FLATPAK_APP_PREFIX = '/app/';
+
+/** The player shipped inside the Flatpak (the MPX manifest bundles mpv), if present. */
+/**
+ * Linux player candidates. Inside a strict Snap only the player bundled in the snap
+ * ($SNAP/usr/bin) can run: /snap/bin/<player> belongs to another snap and is denied.
+ */
+function linuxPlayerCandidates(player: ExternalPlayerName, env: NodeJS.ProcessEnv): string[] {
+    const snap = env['SNAP']?.trim();
+    if (snap) return [path.posix.join(snap, 'usr', 'bin', player)];
+    return [`/usr/bin/${player}`, `/usr/local/bin/${player}`, `/snap/bin/${player}`];
+}
+
+function bundledFlatpakPlayer(
+    player: ExternalPlayerName,
+    pathExists: PathExists
+): string | null {
+    const bundled = `${FLATPAK_APP_PREFIX}bin/${player}`;
+    return pathExists(bundled) ? bundled : null;
 }
 
 export function normalizeCustomPlayerPath(
@@ -97,10 +121,11 @@ function getDefaultPlayerPath(
         isFlatpak = isRunningInFlatpak(),
         pathExists = existsSync,
         readDirectory = readdirSync,
+        env = process.env,
     } = options;
 
     if (platform === 'linux' && isFlatpak) {
-        return player;
+        return bundledFlatpakPlayer(player, pathExists) ?? player;
     }
 
     if (player === 'mpv') {
@@ -109,6 +134,7 @@ function getDefaultPlayerPath(
             isFlatpak,
             pathExists,
             readDirectory,
+            env,
         });
     }
 
@@ -117,6 +143,7 @@ function getDefaultPlayerPath(
         isFlatpak,
         pathExists,
         readDirectory,
+        env,
     });
 }
 
@@ -130,6 +157,7 @@ export function resolveExternalPlayerLaunchContext(
         isFlatpak = isRunningInFlatpak(),
         pathExists = existsSync,
         readDirectory = readdirSync,
+        env = process.env,
     } = options;
     const playerPath =
         normalizeCustomPlayerPath(customPlayerPath) ??
@@ -138,6 +166,7 @@ export function resolveExternalPlayerLaunchContext(
             isFlatpak,
             pathExists,
             readDirectory,
+            env,
         });
     const resolvedPlayerPath = resolveMacOSAppBundlePlayerPath(
         player,
@@ -145,7 +174,8 @@ export function resolveExternalPlayerLaunchContext(
         platform
     );
 
-    if (platform === 'linux' && isFlatpak) {
+    // A bundled player (/app/...) runs inside the sandbox: no flatpak-spawn, no host access needed.
+    if (platform === 'linux' && isFlatpak && !resolvedPlayerPath.startsWith(FLATPAK_APP_PREFIX)) {
         return {
             mode: 'flatpak-host',
             playerPath: resolvedPlayerPath,
@@ -208,10 +238,11 @@ export function getDefaultMpvPath(options: PlayerPathOptions = {}): string {
         platform = process.platform,
         isFlatpak = isRunningInFlatpak(),
         pathExists = existsSync,
+        env = process.env,
     } = options;
 
     if (platform === 'linux' && isFlatpak) {
-        return 'mpv';
+        return bundledFlatpakPlayer('mpv', pathExists) ?? 'mpv';
     }
 
     if (platform === 'win32') {
@@ -227,13 +258,7 @@ export function getDefaultMpvPath(options: PlayerPathOptions = {}): string {
         }
         return 'mpv';
     } else if (platform === 'linux') {
-        const linuxPaths = [
-            '/usr/bin/mpv',
-            '/usr/local/bin/mpv',
-            '/snap/bin/mpv',
-        ];
-
-        for (const mpvPath of linuxPaths) {
+        for (const mpvPath of linuxPlayerCandidates('mpv', env)) {
             if (pathExists(mpvPath)) {
                 return mpvPath;
             }
@@ -263,10 +288,11 @@ export function getDefaultVlcPath(options: PlayerPathOptions = {}): string {
         isFlatpak = isRunningInFlatpak(),
         pathExists = existsSync,
         readDirectory = readdirSync,
+        env = process.env,
     } = options;
 
     if (platform === 'linux' && isFlatpak) {
-        return 'vlc';
+        return bundledFlatpakPlayer('vlc', pathExists) ?? 'vlc';
     }
 
     if (platform === 'win32') {
@@ -288,13 +314,7 @@ export function getDefaultVlcPath(options: PlayerPathOptions = {}): string {
         }
         return 'vlc';
     } else if (platform === 'linux') {
-        const linuxPaths = [
-            '/usr/bin/vlc',
-            '/usr/local/bin/vlc',
-            '/snap/bin/vlc',
-        ];
-
-        for (const vlcPath of linuxPaths) {
+        for (const vlcPath of linuxPlayerCandidates('vlc', env)) {
             if (pathExists(vlcPath)) {
                 return vlcPath;
             }

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=MPX Player
+GenericName=IPTV Player
+GenericName[es]=Reproductor IPTV
+Comment=Live TV, movies and series of your MPX subscription
+Comment[es]=TV en vivo, películas y series de tu suscripción MPX
+Exec=mpx-player
+Icon=com.latmpx.MPXPlayer
+Terminal=false
+Categories=AudioVideo;Video;Player;TV;
+Keywords=IPTV;TV;Xtream;M3U;EPG;
+StartupWMClass=MPX Player
