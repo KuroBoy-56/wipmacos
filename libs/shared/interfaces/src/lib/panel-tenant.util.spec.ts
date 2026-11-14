@@ -17,6 +17,7 @@ import {
     tenantStorageSuffix,
     withTenantQuery,
     panelAppId,
+    PANEL_APP_ID,
 } from './panel-tenant.util';
 import { buildTenantThemeCss, deriveTenantTheme, onAccentColor } from './panel-tenant-theme.util';
 
@@ -89,9 +90,9 @@ describe('panel tenant util', () => {
 
         saveTenantCode(parseTenantConfig(CONFIG)!);
         expect(readTenantChoice()).toBe('code');
-        expect(panelTenantFields()).toEqual({ tenant: '123456', app: 'windows' });
-        expect(withTenantQuery('https://p/api/alerta.php?a=1')).toBe('https://p/api/alerta.php?a=1&t=123456&app=windows');
-        expect(withTenantQuery('https://p/api/tmdb.php')).toBe('https://p/api/tmdb.php?t=123456&app=windows');
+        expect(panelTenantFields()).toEqual({ tenant: '123456', app: PANEL_APP_ID });
+        expect(withTenantQuery('https://p/api/alerta.php?a=1')).toBe(`https://p/api/alerta.php?a=1&t=123456&app=${PANEL_APP_ID}`);
+        expect(withTenantQuery('https://p/api/tmdb.php')).toBe(`https://p/api/tmdb.php?t=123456&app=${PANEL_APP_ID}`);
         expect(tenantStorageSuffix()).toBe('@t123456');
         expect(readTenantFeatures().sports).toBe(false);
         expect(readTenantCache()?.name).toBe('Mi TV');
@@ -137,17 +138,41 @@ describe('panel tenant theme', () => {
     });
 });
 
-describe('panelAppId (app id the panel gets with a distributor)', () => {
-    const real = process.platform;
+describe('panelAppId (device type and distributor app the panel gets)', () => {
+    const g = globalThis as { process?: unknown; navigator?: unknown };
+    const realProcess = g.process;
+    const realPlatform = process.platform;
     const setPlatform = (value: string) => Object.defineProperty(process, 'platform', { value });
-    afterEach(() => setPlatform(real));
+    afterEach(() => setPlatform(realPlatform));
 
-    it('macOS sends macos; Linux sends windows (the panel has no linux id)', () => {
+    it('main process: macOS sends macos, Linux sends linux, Windows sends windows', () => {
         setPlatform('darwin');
         expect(panelAppId()).toBe('macos');
         setPlatform('linux');
-        const nav = (globalThis as { navigator?: { platform?: string; userAgent?: string } }).navigator;
-        const macUa = /Mac/i.test(String(nav?.platform || nav?.userAgent || ''));
-        expect(panelAppId()).toBe(macUa ? 'macos' : 'windows');
+        expect(panelAppId()).toBe('linux');
+        setPlatform('win32');
+        expect(panelAppId()).toBe('windows');
+    });
+
+    it('renderer (no process): reads the navigator; Android is never linux', () => {
+        const realNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+        const idFor = (platform: string, userAgent: string) => {
+            Object.defineProperty(globalThis, 'navigator', { value: { platform, userAgent }, configurable: true });
+            Object.defineProperty(globalThis, 'process', { value: undefined, configurable: true });
+            try {
+                return panelAppId();
+            } finally {
+                Object.defineProperty(globalThis, 'process', { value: realProcess, configurable: true, writable: true });
+            }
+        };
+        try {
+            expect(idFor('Linux x86_64', 'Mozilla/5.0 (X11; Linux x86_64) Electron/41')).toBe('linux');
+            expect(idFor('MacIntel', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')).toBe('macos');
+            expect(idFor('Win32', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe('windows');
+            expect(idFor('Linux armv8l', 'Mozilla/5.0 (Linux; Android 14)')).toBe('windows');
+        } finally {
+            if (realNavigator) Object.defineProperty(globalThis, 'navigator', realNavigator);
+            else delete g.navigator;
+        }
     });
 });

@@ -1,3 +1,4 @@
+import { PANEL_APP_ID } from '@iptvnator/shared/interfaces';
 import { decryptPayload, encryptPayload } from './panel-crypto';
 import { PanelFetch, panelLoginRequest } from './panel-login.service';
 
@@ -21,7 +22,7 @@ describe('panelLoginRequest', () => {
         expect(calls[0].url).toMatch(/\/api\/login\.php$/);
         expect(calls[0].body.get('action')).toBe('check_mac');
         const plain = JSON.parse(decryptPayload(calls[0].body.get('data') ?? '', masterKey) ?? '{}');
-        expect(plain).toEqual({ mac_address: 'AA:BB:CC:DD:EE:FF:00:11', enc: 1, platform: 'windows', cc: 0, ts: expect.any(Number) });
+        expect(plain).toEqual({ mac_address: 'AA:BB:CC:DD:EE:FF:00:11', enc: 1, platform: PANEL_APP_ID, cc: 0, ts: expect.any(Number) });
     });
 
     it('retries once with the panel clock when the device clock is wrong (ts_expired)', async () => {
@@ -58,7 +59,7 @@ describe('panelLoginRequest', () => {
         expect(result.ok).toBe(true);
         await panelLoginRequest('review_login', { username: 'revisor', password: 'x' }, { fetch, masterKey, deviceId: 'ID' });
         const plain = (i: number) => JSON.parse(decryptPayload(calls[i].body.get('data') ?? '', masterKey) ?? '{}');
-        expect(plain(0)).toMatchObject({ demo: 1, platform: 'windows' });
+        expect(plain(0)).toMatchObject({ demo: 1, platform: PANEL_APP_ID });
         expect(plain(1)).toMatchObject({ username: 'revisor', password: 'x' });
         expect(plain(1).demo).toBeUndefined();
     });
@@ -67,7 +68,7 @@ describe('panelLoginRequest', () => {
         const { fetch, calls } = fakeFetch(200, '{"status":"ok"}');
         await panelLoginRequest('submit_url', { username: ' u ', password: 'p', url: 'http://dns.test' }, { fetch, masterKey, deviceId: 'ID' });
         const plain = JSON.parse(decryptPayload(calls[0].body.get('data') ?? '', masterKey) ?? '{}');
-        expect(plain).toEqual({ mac_address: 'ID', username: 'u', password: 'p', url: 'http://dns.test', platform: 'windows', ts: expect.any(Number) });
+        expect(plain).toEqual({ mac_address: 'ID', username: 'u', password: 'p', url: 'http://dns.test', platform: PANEL_APP_ID, ts: expect.any(Number) });
     });
 
     it('sends the app language inside the encrypted payload of every action', async () => {
@@ -115,7 +116,7 @@ describe('panelLoginRequest with a distributor', () => {
         const { fetch, calls } = fakeFetch(200, '{"exists":false}');
         await panelLoginRequest('check_mac', { tenant: '123456' }, { fetch, masterKey, deviceId: 'ID' });
         const plain = JSON.parse(decryptPayload(calls[0].body.get('data') ?? '', masterKey) ?? '{}');
-        expect(plain).toEqual({ mac_address: 'ID', tenant: '123456', app: 'windows', enc: 1, platform: 'windows', cc: 0, ts: expect.any(Number) });
+        expect(plain).toEqual({ mac_address: 'ID', tenant: '123456', app: PANEL_APP_ID, enc: 1, platform: PANEL_APP_ID, cc: 0, ts: expect.any(Number) });
     });
 
     it('sends {code, app, device} for tenant_config and decrypts the answer', async () => {
@@ -125,7 +126,7 @@ describe('panelLoginRequest with a distributor', () => {
 
         expect(calls[0].body.get('action')).toBe('tenant_config');
         const plain = JSON.parse(decryptPayload(calls[0].body.get('data') ?? '', masterKey) ?? '{}');
-        expect(plain).toEqual({ code: '123456', app: 'windows', device: 'DEV', ts: expect.any(Number) });
+        expect(plain).toEqual({ code: '123456', app: PANEL_APP_ID, device: 'DEV', ts: expect.any(Number) });
         expect(result).toEqual({ ok: true, status: 200, data: config });
     });
 
@@ -161,7 +162,7 @@ describe('panelLoginRequest with a distributor', () => {
         const result = await panelLoginRequest('auto_demo', { reseller: ' rv7k2m ' }, { fetch, masterKey, deviceId: 'ID' });
         expect(result.data).toEqual({ status: 'ok', username: 'd', password: 'x' });
         const plain = JSON.parse(decryptPayload(calls[0].body.get('data') ?? '', masterKey) ?? '{}');
-        expect(plain).toEqual({ mac_address: 'ID', reseller: 'RV7K2M', enc: 1, platform: 'windows', ts: expect.any(Number) });
+        expect(plain).toEqual({ mac_address: 'ID', reseller: 'RV7K2M', enc: 1, platform: PANEL_APP_ID, ts: expect.any(Number) });
     });
 
     it('never sends a digits-only password as a reseller code', async () => {
