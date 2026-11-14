@@ -35,4 +35,26 @@ describe('ParentalControlService (control parental con el PIN del panel)', () =>
         expect(isAdultName('Playboy TV')).toBe(true);
         expect(isAdultName('Documentales')).toBe(false);
     });
+
+    it('bloquear categorías (como Roku): se ocultan con sus títulos aunque los adultos estén visibles, y el desbloqueo de la sesión las muestra', () => {
+        const p = new ParentalControlService();
+        const cats = [{ id: '1', name: 'Acción' }, { id: '2', name: 'Infantil' }, { id: '3', name: 'XXX' }];
+        p.toggleBlocked('vod:2');
+        expect(p.visible(cats, (c) => c.name, (c) => 'vod:' + c.id).map((c) => c.id)).toEqual(['1']);
+        expect([...p.hiddenIds(cats, (c) => c.name, (c) => c.id, 'vod')]).toEqual(['2', '3']);
+        // la misma id en otro tipo no está bloqueada
+        expect(p.visible(cats, (c) => c.name, (c) => 'series:' + c.id).map((c) => c.id)).toEqual(['1', '2']);
+        // adultos visibles: la bloqueada sigue oculta
+        expect(p.setHideAdult(false, '0000')).toBe(true);
+        expect(p.visible(cats, (c) => c.name, (c) => 'vod:' + c.id).map((c) => c.id)).toEqual(['1', '3']);
+        // contenido protegido desbloqueado en esta sesión: todo
+        expect(p.unlock('0000')).toBe(true);
+        expect(p.visible(cats, (c) => c.name, (c) => 'vod:' + c.id)).toHaveLength(3);
+        // se guarda en el equipo
+        expect(new ParentalControlService().blocked().has('vod:2')).toBe(true);
+        p.toggleBlocked('vod:2');
+        expect(new ParentalControlService().blocked().has('vod:2')).toBe(false);
+        expect(p.checkPin('0000')).toBe(true);
+        expect(p.checkPin('1111')).toBe(false);
+    });
 });

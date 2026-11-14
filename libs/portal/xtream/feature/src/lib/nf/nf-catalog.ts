@@ -50,20 +50,20 @@ export function injectNfCatalog(
         toCategories(store.serialCategories() as unknown[])
     );
     const movieCategories = computed(() =>
-        parental.visible(allMovieCategories(), (c) => c.name)
+        parental.visible(allMovieCategories(), (c) => c.name, (c) => 'vod:' + c.id)
     );
     const seriesCategories = computed(() =>
-        parental.visible(allSeriesCategories(), (c) => c.name)
+        parental.visible(allSeriesCategories(), (c) => c.name, (c) => 'series:' + c.id)
     );
-    const withoutHidden = (items: NfItem[], cats: NfCategory[]): NfItem[] => {
-        const hidden = parental.hiddenIds(cats, (c) => c.name, (c) => c.id);
+    const withoutHidden = (items: NfItem[], cats: NfCategory[], kind: 'vod' | 'series'): NfItem[] => {
+        const hidden = parental.hiddenIds(cats, (c) => c.name, (c) => c.id, kind);
         return hidden.size ? items.filter((i) => !hidden.has(i.categoryId)) : items;
     };
     const movies = computed(() =>
-        withoutHidden(toNfItems(store.vodStreams() as unknown[], 'movie'), allMovieCategories())
+        withoutHidden(toNfItems(store.vodStreams() as unknown[], 'movie'), allMovieCategories(), 'vod')
     );
     const series = computed(() =>
-        withoutHidden(toNfItems(store.serialStreams() as unknown[], 'series'), allSeriesCategories())
+        withoutHidden(toNfItems(store.serialStreams() as unknown[], 'series'), allSeriesCategories(), 'series')
     );
     const ready = computed(() => movies().length > 0 || series().length > 0);
 

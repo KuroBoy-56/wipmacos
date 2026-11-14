@@ -47,6 +47,26 @@ export function readHideAdult(): boolean {
     }
 }
 
+/** «Bloquear categorías» (como Roku): claves "tipo:id" (vod, series, live) de las categorías bloqueadas. */
+const BLOCKED_KEY = 'parental_blocked_cats';
+
+export function readBlockedCats(): string[] {
+    try {
+        const v = JSON.parse(localStorage.getItem(BLOCKED_KEY) || '[]');
+        return Array.isArray(v) ? v.map(String) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function saveBlockedCats(keys: readonly string[]): void {
+    try {
+        localStorage.setItem(BLOCKED_KEY, JSON.stringify([...keys]));
+    } catch {
+        /* storage blocked */
+    }
+}
+
 export function saveHideAdult(hide: boolean): void {
     try {
         localStorage.setItem(HIDE_KEY, hide ? '1' : '0');

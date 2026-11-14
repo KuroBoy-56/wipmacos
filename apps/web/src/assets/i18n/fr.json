@@ -1574,7 +1574,7 @@
         },
         "PARENTAL": {
             "SECTION": "Contrôle parental",
-            "HIDE_ADULT": "Masquer le contenu pour adultes",
+            "HIDE_ADULT": "Masquer les chaînes et catégories pour adultes",
             "PIN": "PIN",
             "UNLOCK": "Déverrouiller",
             "LOCK": "Verrouiller à nouveau",
@@ -1589,7 +1589,17 @@
             "WRONG_PIN": "PIN incorrect.",
             "FOUR_DIGITS": "Le PIN doit avoir 4 chiffres.",
             "SAVED": "PIN enregistré dans le panneau.",
-            "ERR_SAVE": "Le panneau n'a pas enregistré le PIN."
+            "ERR_SAVE": "Le panneau n'a pas enregistré le PIN.",
+            "BLOCK_CATS": "Bloquer des catégories",
+            "BLOCK_NOTE": "Les catégories verrouillées (et leurs titres) sont masquées et s'affichent avec le code PIN. Cochez ou décochez chacune.",
+            "SESSION": "Contenu protégé pour cette session",
+            "SESSION_LOCKED": "Verrouillé",
+            "SESSION_UNLOCKED": "Déverrouillé",
+            "MOVIES": "Films",
+            "SERIES": "Séries",
+            "LIVE": "TV en direct",
+            "CLOSE": "Fermer",
+            "NO_CATS": "Ouvrez Accueil ou TV en direct pour charger les catégories."
         },
         "REVIEW": {
             "MOVIES": "Films",

@@ -103,10 +103,15 @@ pnpm run package:app
 # or
 nx run electron-backend:package
 
-# Create installers/executables
+# Create installers/executables (EXE / NSIS on Windows, output dist/executables)
 pnpm run make:app
 # or
 nx run electron-backend:make
+
+# Microsoft Store package (AppX x64, Windows only, output dist/store; needs the Partner Center
+# identity in APPX_IDENTITY_NAME / APPX_PUBLISHER / APPX_PUBLISHER_DISPLAY_NAME / APPX_APPLICATION_ID)
+pnpm run make:store
+# runs tools/packaging/make-store.mjs -> nx run electron-backend:make-store (see docs/MICROSOFT-STORE.md)
 ```
 
 ### Electron CDP Debugging
@@ -685,7 +690,7 @@ This project uses modern Angular signal-based APIs and patterns. **ALWAYS** use 
 - Sports: `api/sports.php` agenda plus the **Tablas / Selecciones / Equipos** tabs when the panel offers them (`tables.on`, `fixtures.on`, `fixtures.nat`): `api/sports_tables.php` standings with region/division/league chips and the team card from `api/sports_team.php` (`SportsTablesComponent`), `api/sports_fixtures.php` 21-day fixtures for the team/country search (last 5 kept) and the national teams list (`SportsFixturesState`, `sports-extra.util.ts`); requests in `libs/services/src/lib/panel-sync/panel-sports.api.ts`; events may carry `tv` (broadcast channels): the card shows them and **Ver canales** opens a menu; `findSportsChannelForEvent` tries the broadcast channels by name (`channelKey`/`findChannelByName`, no quality/country tags) and then `findSportsChannel` (panel `match` rules on teams / event name); hours and Today/Tomorrow use the panel time zone (`tz` of `sports.php`, `sportsZone`/`sportsDayKey` in `apps/web/src/app/sports/sports-schedule.util.ts`), not the computer's; the agenda search (`matchesSportsQuery`) looks at teams, event, league, sport and broadcast channels, accent-insensitive, every word
 - Blacklist: `login.php` answers 403 `{"code":"device_blocked"}` (check_mac / submit_url / auto_demo / set_pin) for a device on the panel's blacklist: `PanelLoginService` returns status `blocked` (`isDeviceBlocked`), the login shows the panel's text without fake screen or Auto-Demo, and `PanelSessionGuardService` closes an open session on the 10-minute re-check
 - Top 10 de la semana: `PanelWeekTopService` / `weekTop10` / `weekTop10Home` (`libs/services/src/lib/panel-sync/panel-week-top.ts`) read the panel's `api/top10.php` (TMDB weekly trending, 12 h per distributor in localStorage) and match it with the catalog by title + year ±1, the rest filled with the best rated (different each ISO week); used by `NfHomeComponent` and `NfBrowseComponent`
-- Parental control: adult categories (`ADULT_CATEGORY_RE`, `parental.util.ts` in `@iptvnator/shared/interfaces`) are hidden until unlocked with the device PIN the panel sends in `check_mac` (`pin`, 0000 by default); `ParentalControlService` (`libs/services/src/lib/parental/`) filters `injectNfCatalog` and `getCategoriesBySelectedType`; Settings › «Control parental» (`settings-parental-section.component.ts`) hides/shows, unlocks until the app closes and changes the PIN with `login.php` `set_pin`
+- Parental control: adult categories (`ADULT_CATEGORY_RE`, `parental.util.ts` in `@iptvnator/shared/interfaces`) are hidden until unlocked with the device PIN the panel sends in `check_mac` (`pin`, 0000 by default); `ParentalControlService` (`libs/services/src/lib/parental/`) filters `injectNfCatalog` and `getCategoriesBySelectedType`; Settings › «Control parental» (`settings-parental-section.component.ts`, as in Roku) hides/shows adult channels and categories, «Bloquear categorías» (with the PIN, `"vod|series|live:<id>"` keys in `parental_blocked_cats`, `ParentalControlService.toggleBlocked`), «Contenido protegido en esta sesión» (unlock with the PIN until the app closes) and changes the PIN with `login.php` `set_pin`
 - Review theme: `features.review` (Omitir only) turns the login simple (no DNS button or device code); Auto-Demo or a theme account (`review_login`) opens `/review` with Movies / Series / Settings and the panel's player videos (`ReviewThemeService`, nothing saved or registered)
 - Sports channel by the panel guide: when none of the broadcast channels is in the client's list, `SportsDataService` asks `api/sports_epg.php` (`sportsEpgChannels`, ≤600 sports channels, 10-min cache) before the team match
 - Audio/subtitle languages are never sent to the panel's `tracks.php` from Windows/macOS: MPV / VLC read the tracks themselves
@@ -694,6 +699,11 @@ This project uses modern Angular signal-based APIs and patterns. **ALWAYS** use 
 - DNS button (login and Settings, `apps/web/src/app/panel-login/secure-dns-picker.component.ts`, a `mat-menu` that never gets cut by the window and works with arrows/Enter/Esc, as in the other apps): «Automático» (default) or a fixed DNS-over-HTTPS provider; no server picker. Automático works in the Electron main process — system resolver first, then DNS-over-HTTPS (Cloudflare, then Google) on DNS-type failures of panel login and main-process line requests, remembered across starts (`smart-dns.service.ts`); the login picks the line's server from `fetch_dns` by probing the credentials (`line-server.util.ts`); does not cover external MPV/VLC. Streams that fail are retried once on the other scheme (http ↔ https) in the inline players and embedded MPV; the working scheme is remembered per host until the panel session changes (see "Provider DNS scheme" in `panel-integration.md`)
 - Theme: dark only (no theme picker; `SettingsService.changeTheme` always applies `dark-theme`) with the web player palette and `#e50914` accent (`apps/web/src/m3-theme.scss`); a distributor palette repaints the `--nf-*` and app tokens at runtime
 - Netflix UI (same design as the web player and TV app): the workspace shell shows a top bar (`workspace-nf-header`: Inicio, Series, Películas, TV en vivo, Deportes, Explorar, search → `explore?q=`, clock, profile menu with "Idioma de la app") instead of the rail/toolbar; the context sidebar only appears for live TV, settings and sources. Pages: `NfHomeComponent` (billboard, platform tiles, Continuar viendo / Mi lista from the panel, Top 10, platform and genre rows), `NfBrowseComponent` (Películas/Series), `NfExploreComponent` (grid; on `?platform=` pages the name filter is a top-right magnifier, `NfTitleSearchComponent`; the last billboard backdrop stays faded behind its header, `NfHeroService.lastBackdrop`), `NfLibraryPageComponent` (`continue-watching` / `my-list`: "Ver todo" of the panel rows). Panel lists are newest first by `ts` (`panelNewestFirst`). Global `.nf-*` styles live in `apps/web/src/_netflix.scss`; platform/genre keyword tables in `nf/nf-filters.ts` mirror the web player's `includes/core.php`
+
+**Touch screens and pens (Windows)**:
+
+- `apps/web/src/app/touch/input-modality.ts` (installed in `main.ts`) sets `<html data-input="mouse|touch|pen">` from Pointer Events (last input; no event is replaced or duplicated)
+- `apps/web/src/_touch.scss` only adapts interaction: hides the hover-only row arrows and shows «Ver todo» with touch (rows swipe and snap), ~44 px hit areas around small controls without changing their look, wider resize handle (`touch-action: none` only there, never global), `touch-action: manipulation` on links/buttons/cards; search inputs carry `inputmode="search"` + `enterkeyhint="search"` for the Windows touch keyboard. Limits of the native MPV / VLC windows are in `docs/MICROSOFT-STORE.md`
 
 **Internationalization**:
 
@@ -770,6 +780,12 @@ pnpm nx run-many --target=test --all
 ```
 
 ### Electron Build Process
+
+Two independent Windows distributions since 1.5.22 (see `docs/MICROSOFT-STORE.md`):
+
+- **EXE** (`pnpm run make:app`): `electron-builder.json` (NSIS), unchanged.
+- **Microsoft Store** (`pnpm run make:store`): `electron-builder.store.json` is applied on top of `electron-builder.json` by `tools/packaging/prepare-store.mjs` (Nx target `electron-backend:prepare-store`; arrays replace instead of the concatenation Electron Builder's `extends` does) and written resolved to `dist/store-config/electron-builder.store.resolved.json`; `electron-backend:make-store` runs the same `nx-electron:make` executor with `makerOptionsPath: apps/electron-backend/src/app/options/maker.store.options.json` and `outputPath: dist/store`. AppX images are generated with Sharp into `apps/electron-backend/store/appx/` from `apps/web/src/assets/icons/icon-1024.png`. The identity comes only from env vars (validated in `tools/packaging/store/store-identity.mjs`, never `com.fourgray.iptvnator`); the package is unsigned (signing env vars are dropped) and `publish: null`. MPV / VLC (`bin/`) are checked before and after the build (`store-players.mjs`); inside the AppX they start with the user folder as working directory (`external-player-cwd.ts`, `process.windowsStore`). Tests: `node --test tools/packaging/store/store-packaging.test.mjs`.
+- **No built-in updater**: the inherited IPTVnator updater (GitHub releases, `electron-updater`, `APP_UPDATE_*` IPC, update panels in Settings) was removed in 1.5.22; Microsoft Store updates the Store build and the EXE will get its own updater later.
 
 The Electron backend depends on the web app being built first:
 

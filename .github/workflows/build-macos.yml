@@ -68,10 +68,16 @@ jobs:
               run: node tools/tmdb/inject-tmdb-key.mjs
 
             - name: Write panel key
-              # No-op without the secret: the login screen then reports the missing key.
+              # a build without the key cannot sign in to the panel: stop instead of shipping it
               env:
                   PANEL_MASTER_KEY: ${{ secrets.PANEL_MASTER_KEY }}
-              run: node tools/panel/write-panel-key.mjs
+              run: |
+                  if ! printf '%s' "$PANEL_MASTER_KEY" | grep -qE '^[0-9a-fA-F]{64}$'; then
+                      echo "::error::Missing or invalid repository secret PANEL_MASTER_KEY (64 hex characters): Settings > Secrets and variables > Actions."
+                      exit 1
+                  fi
+                  node tools/panel/write-panel-key.mjs
+                  test -s apps/electron-backend/src/assets/panel-key.json
 
             - name: Only this architecture
               run: |
