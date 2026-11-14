@@ -2,6 +2,33 @@
 
 Entorno de esta sesión: Ubuntu 24.04 x64 (contenedor, sin GPU, sin sesión gráfica; Xvfb para pruebas).
 
+## 0. Resultado del build de CI (14-11-2026)
+
+Run `43572679461` de `linux-build.yml` (commit `c67c478`), todo en verde, publicado como release
+**`linux-v1.5.24`** (https://github.com/KuroBoy-56/wipmacos/releases/tag/linux-v1.5.24).
+
+| Prueba (app real, Xvfb, sin contactar el panel) | linux-unpacked | AppImage | Snap (estricto) | Flatpak |
+| --- | --- | --- | --- | --- |
+| Puente `window.electron`, interfaz dibujada, título, versión 1.5.24 | OK | OK | OK | OK |
+| Id de equipo (formato del panel) | OK | OK | OK | OK |
+| SQLite escribe y lee en la carpeta de datos del paquete | OK | OK | OK | OK |
+| Clave del panel dentro del build (`NETWORK`, no `NO_MASTER_KEY`) | OK | OK | OK | OK |
+| MPV embebido disponible (`prepareEmbeddedMpv().supported`) | OK (mpv portable, mpv del sistema desinstalado) | OK | OK | OK |
+
+mpv portable reproduciendo H.264/AAC, HEVC/AC-3 y MPEG-TS en contenedores **Debian 12, Fedora 41 y Arch**: OK.
+Tests unitarios de los cambios de Linux (Jest): OK. Layout del paquete, metadatos AppStream y `.desktop`: OK.
+
+Problemas que aparecieron en CI y se corrigieron (cada uno con su causa comprobada):
+
+| Problema | Causa | Arreglo |
+| --- | --- | --- |
+| 12 tests fallaban en `player.events.spec.ts` | ya fallaban en `main` (VLC reescrito en MPX; `buildVlcEnqueueCommands`/`parseVlcRc*` ya no existen) | los tests de Linux pasaron a `external-player-launch-context.spec.ts`; el spec viejo queda como en `main` (pendiente arreglarlo allí) |
+| La prueba de arranque no veía la ventana | Angular cambia la URL de `…/index.html` a `…/login` | la prueba toma la página de la app sea cual sea la ruta |
+| Arch: dependencias sin resolver | `pacman -Sy` sin `-u` en la imagen de prueba | `pacman -Syu` |
+| Flatpak: `eu-strip` no encontrado | `elfutils` no llega con `--no-install-recommends` | instalarlo en el job |
+| Snap: MPV embebido «no encontrado» | la limpieza del Snap quitaba 21 bibliotecas de mpv (FFmpeg, PulseAudio, fontconfig…) por estar también en `gnome-46-2404`, pero la extensión de core24 no pone esas bibliotecas en `LD_LIBRARY_PATH`. Reproducido aquí con core24 + gnome-46-2404 + mesa-2404 en `bwrap` | la limpieza solo quita lo que trae core24; además `fix-path` ya no se usa dentro de Snap/Flatpak |
+
+
 ## 1. Qué se compiló y probó aquí
 
 | Prueba | Comando | Resultado |
@@ -32,8 +59,9 @@ Entorno de esta sesión: Ubuntu 24.04 x64 (contenedor, sin GPU, sin sesión grá
 
 ## 3. Artefactos
 
-En esta sesión no se generó ningún paquete publicable (solo pruebas locales, fuera del repositorio). Cuando
-se ejecute `linux-build.yml`, quedan en la página del run de GitHub Actions:
+Publicados en el release `linux-v1.5.24`: `MPX-Player-1.5.24-linux-x86_64.AppImage`, `MPX-Player-1.5.24-linux-amd64.deb`,
+`MPX-Player-1.5.24-linux-x86_64.rpm`, `mpx-player_1.5.24_amd64.snap`, `MPX-Player-1.5.24-linux-x86_64.flatpak`.
+En cada run de `linux-build.yml` quedan además en la página del run:
 
 | Artefacto | Contenido |
 | --- | --- |

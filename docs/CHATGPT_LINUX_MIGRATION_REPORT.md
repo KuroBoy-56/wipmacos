@@ -13,8 +13,8 @@ cuando algo solo está configurado, se dice. Detalles en los documentos `docs/LI
 `4130dc5f3848e7c1fa6060ec28b97bae2531a3fb` — "Windows 1.5.24: control parental como Roku…" (13-11-2026).
 
 ## 4. Commit actual de `linux`
-Código y empaquetado: `8fa0b10df172e734ad9b38ba1543feadd0bd6888`. La documentación va en el commit
-siguiente; el último está siempre en `git log -1 origin/linux`.
+Build publicado: `c67c478ae053f383d15bbb0a80f32171a8988356` (release `linux-v1.5.24`). El último commit está
+siempre en `git log -1 origin/linux`.
 
 ## 5. Electron
 `^41.7.2` (sin cambios), electron-builder `^26.0.12`.
@@ -54,12 +54,13 @@ sandbox Flatpak:** H.264+AAC, HEVC+AC-3, MPEG-TS, HLS y subtítulos SRT decodifi
 ## 11. Snap
 `snap/snapcraft.yaml`: nombre `mpx-player`, core24, estricto, extensión GNOME, plugs `browser-support`, `home`,
 `network`, `network-bind`, `audio-playback`, `screen-inhibit-control`; mpv por stage-packages; empaqueta el
-`linux-unpacked` de CI. **Estado: configurado, no compilado** (snapcraft necesita LXD; se compila en el job `snap`).
+`linux-unpacked` de CI. **Estado: compilado e instalado en CI con confinamiento estricto; la prueba de arranque pasa
+(MPV embebido disponible, SQLite, id de equipo, clave del panel).** Falta registrar el nombre y subirlo.
 
 ## 12. Flatpak
 `flatpak/com.latmpx.MPXPlayer.yml`: freedesktop 26.08 + Electron2.BaseApp, zypak, permisos mínimos (sin `home` ni
-salida del sandbox). **Estado: los módulos nativos compilan y mpv funciona dentro del sandbox; el manifiesto
-completo compila con un archivo de prueba en lugar de la app; con la app real se compila en el job `flatpak`.**
+salida del sandbox). **Estado: compilado con la app real e instalado en CI; la prueba de arranque dentro del
+sandbox pasa.**
 Linter de Flathub: quedan el dominio del app-id (latmpx.com da 404) y las capturas de pantalla.
 
 ## 13. Windows
@@ -74,9 +75,8 @@ lanzamiento de reproductores 14/14; bloqueo de binarios de Windows 3/3; mayúscu
 (dependencia de GitHub bloqueada por la red de la sesión); corren en CI.
 
 ## 15. Artefactos
-Ninguno publicable todavía. Cuando corra `linux-build.yml`, en la página del run: `mpx-player-linux-packages`
-(AppImage, deb, rpm), `mpx-player-linux-unpacked`, `mpx-player-snap` (.snap), `mpx-player-flatpak` (.flatpak),
-cada uno con su captura de la prueba de arranque.
+Release `linux-v1.5.24`: AppImage, .deb, .rpm, .snap y .flatpak (https://github.com/KuroBoy-56/wipmacos/releases/tag/linux-v1.5.24).
+macOS 1.5.24 en el release `mac-v1.5.24` (rama `macos`, `main` fusionado).
 
 ## 16. Seguridad
 Menos permisos que la configuración heredada (sin `--filesystem=home`, sin `org.freedesktop.Flatpak`), runtime

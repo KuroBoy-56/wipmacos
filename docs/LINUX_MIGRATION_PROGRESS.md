@@ -1,20 +1,20 @@
 # MPX Player en Linux — progreso
 
-Última actualización: 13-11-2026 · Rama `linux` (desde `main` `4130dc5`, 1.5.24) · Electron se mantiene.
+Última actualización: 14-11-2026 · Rama `linux` (desde `main` `4130dc5`, 1.5.24) · Electron se mantiene.
 
 | Fase | Estado |
 | --- | --- |
 | 1. Auditoría | COMPLETADO (LINUX_AUDIT) |
-| 2. Compatibilidad de Electron en Linux | IMPLEMENTADO; lógica probada con Node, app completa SIN PROBAR (necesita el build de CI) |
+| 2. Compatibilidad de Electron en Linux | COMPLETADO Y PROBADO a nivel de arranque en los 4 formatos (puente, id, SQLite, MPV embebido, clave del panel) |
 | 3. Interfaz igual que Windows | sin cambios de frontend; se verá en las capturas de la prueba de CI |
-| 4. Multimedia | mpv del Flatpak PROBADO (formatos, subtítulos, salida X11); Snap y app completa SIN PROBAR; VLC no disponible en Snap/Flatpak |
-| 5. Carpetas y permisos (XDG) | IMPLEMENTADO y probado (lógica); en paquete SIN PROBAR |
-| 6. Snap | configuración lista (`snap/`); SIN COMPILAR (necesita LXD → CI) |
-| 7. Flatpak | manifiesto listo; módulos nativos COMPILADOS Y PROBADOS aquí; con la app real SIN PROBAR |
+| 4. Multimedia | mpv PROBADO en Flatpak (formatos, subtítulos, X11), mpv portable en Debian/Fedora/Arch, MPV embebido disponible en los 4 formatos; reproducción dentro de la app con una línea real: prueba manual; VLC no se incluye (decisión) |
+| 5. Carpetas y permisos (XDG) | COMPLETADO Y PROBADO (SQLite escribe en Snap, Flatpak y nativo) |
+| 6. Snap | COMPILADO Y PROBADO en CI (instalado con confinamiento estricto); falta registrar el nombre y subirlo a la tienda |
+| 7. Flatpak | COMPILADO Y PROBADO en CI (sandbox); para Flathub faltan app-id con dominio verificable, capturas y descarga pública |
 | 8. Actualizaciones | no hay actualizador propio: las tiendas actualizan; nada que adaptar |
 | 9. Configuración de build | electron-builder Linux x64 (AppImage, deb, rpm), sin binarios de Windows |
 | 10. Automatización | `linux-build.yml`: tag `linux-v*` → compila, prueba (también el mpv portable en Fedora, Debian y Arch) y publica el release de GitHub; exige el secreto `PANEL_MASTER_KEY`. Resultados en LINUX_BUILD_REPORT |
-| 11. Pruebas | ver LINUX_BUILD_REPORT; pruebas de la app real pendientes del primer run de CI y de una prueba manual |
+| 11. Pruebas | automáticas en verde (LINUX_BUILD_REPORT §0); falta la prueba manual con una cuenta real (lista abajo) |
 | 12. Documentación | este conjunto de documentos |
 
 ## Lista de prueba manual (después del primer run de CI)
