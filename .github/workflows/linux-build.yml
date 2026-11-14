@@ -86,7 +86,7 @@ jobs:
             - name: Unit tests of the Linux changes
               run: |
                   pnpm nx test database --testPathPatterns=path-utils
-                  pnpm nx test electron-backend --testPathPatterns='(player\.events|embedded-mpv-native\.service|bundled-mpv-path)\.spec'
+                  pnpm nx test electron-backend --testPathPatterns='(external-player-launch-context|embedded-mpv-native\.service|bundled-mpv-path)\.spec'
                   node --test tools/packaging/linux-after-pack.test.mjs
 
             - name: Build frontend
