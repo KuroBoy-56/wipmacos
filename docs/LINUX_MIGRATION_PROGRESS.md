@@ -38,5 +38,4 @@ En una máquina Linux x64 con escritorio (Ubuntu 24.04 GNOME recomendado), con e
 - App-id de Flathub: `com.latmpx.MPXPlayer` (necesita latmpx.com activo) o `io.github.kuroboy_56.MPXPlayer`.
 - Nombre del Snap `mpx-player` (registrarlo).
 - Capturas de pantalla públicas para AppStream.
-- Id `linux` en el panel (hoy Linux se registra como `windows`).
 - Descarga pública del build para el manifiesto de Flathub.

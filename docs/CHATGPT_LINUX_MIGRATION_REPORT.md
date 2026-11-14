@@ -42,7 +42,6 @@ libXpresent sobre freedesktop 26.08. Ver LINUX_DEPENDENCIES.
 ## 9. Funciones pendientes
 - Ejecutar el workflow y la prueba de arranque de la app real en los tres formatos (cuando el dueño lo pida).
 - Prueba manual con una cuenta real (login, reproducción, descargas, favoritos): lista en LINUX_MIGRATION_PROGRESS.
-- Id `linux` en el panel (hoy Linux se registra como `windows`).
 
 ## 10. Multimedia
 Reproductor integrado: el de Electron, sin cambios. MPV embebido en Linux: proceso `mpv --wid` sobre una ventana

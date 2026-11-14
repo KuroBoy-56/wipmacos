@@ -40,7 +40,7 @@ Documentos relacionados: [compatibilidad](LINUX_COMPATIBILITY.md) · [dependenci
 | `/snap/bin/mpv` como candidato | mismo archivo | dentro de un Snap estricto no se puede ejecutar otro snap | en Snap solo `$SNAP/usr/bin/<player>` |
 | `reg query MachineGuid` | `panel/device-id.ts` | ya separado por plataforma | sin cambios |
 | `C:\Program Files\...`, tubería `\\.\pipe\mpv-*`, `Update.exe` (Squirrel), `process.windowsStore` | eventos de reproductores, `squirrel.events.ts`, `external-player-cwd.ts` | todo protegido por `process.platform === 'win32'` | sin cambios |
-| `panelAppId()` devuelve `windows` en todo lo que no es Mac | `libs/shared/interfaces/src/lib/panel-tenant.util.ts` | un equipo Linux aparece como `windows` en el panel | **sin cambios** hasta que el panel acepte `linux` (decisión del dueño) |
+| `panelAppId()` devuelve `windows` en todo lo que no es Mac | `libs/shared/interfaces/src/lib/panel-tenant.util.ts` | un equipo Linux aparece como `windows` en el panel | resuelto en 1.5.25: Linux manda `linux` (el panel lo acepta desde panelweb aa2cb99) |
 | Ejecutable `MPX Player` (con espacio) | `electron-builder.json` | `/usr/bin/MPX Player` en el .deb | `mpx-player` en Linux |
 | Metadatos AppStream de IPTVnator (`com.fourgray.iptvnator`, 4gray, capturas de 4gray) | `apps/electron-backend/linux/` | marca equivocada en tiendas | `com.latmpx.MPXPlayer.metainfo.xml` + `.desktop` de MPX |
 | Flatpak con `--filesystem=home` y `--talk-name=org.freedesktop.Flatpak`, runtime 24.08 (fin de soporte) | `electron-builder.json` | rechazo probable en Flathub | manifiesto propio, permisos mínimos, runtime 26.08 |
