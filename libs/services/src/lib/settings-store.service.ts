@@ -25,6 +25,7 @@ import {
     migrateLegacyLanguage,
     normalizeDashboardRailsSettings,
 } from '@iptvnator/shared/interfaces';
+import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 
 const DEFAULT_SETTINGS: Settings = {
     player: VideoPlayer.VideoJs,
@@ -56,6 +57,13 @@ const DEFAULT_SETTINGS: Settings = {
     trustedInsecureTlsHosts: [],
     tmdb: DEFAULT_TMDB_SETTINGS,
 };
+
+/** VLC solo en Windows: en macOS y Linux una selección de VLC (guardada o de una copia) pasa a MPV. */
+function withoutVlc<T extends Partial<Settings>>(settings: T, runtime: RuntimeCapabilitiesService): T {
+    return settings.player === VideoPlayer.VLC && runtime.isElectron && !runtime.isWindows
+        ? { ...settings, player: VideoPlayer.MPV }
+        : settings;
+}
 
 function readLanguageMigrated(): boolean {
     try {
@@ -122,14 +130,14 @@ export const SettingsStore = signalStore(
             () => store.epgViewMode?.() ?? 'timeline'
         ),
     })),
-    withMethods((store, storage = inject(StorageMap)) => ({
+    withMethods((store, storage = inject(StorageMap), runtime = inject(RuntimeCapabilitiesService)) => ({
         async loadSettings() {
             try {
                 const stored = await firstValueFrom(
                     storage.get(STORE_KEY.Settings)
                 );
                 if (stored) {
-                    const storedSettings = stored as Partial<Settings>;
+                    const storedSettings = withoutVlc(stored as Partial<Settings>, runtime);
                     const migrated = readLanguageMigrated();
                     const language = migrateLegacyLanguage(
                         storedSettings.language,
@@ -170,7 +178,8 @@ export const SettingsStore = signalStore(
             }
         },
 
-        async updateSettings(settings: Partial<Settings>) {
+        async updateSettings(changes: Partial<Settings>) {
+            const settings = withoutVlc(changes, runtime);
             patchState(store, {
                 ...settings,
                 settingsLoaded: true,

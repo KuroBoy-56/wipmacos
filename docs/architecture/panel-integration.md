@@ -66,10 +66,12 @@ the Android app:
      (plain JSON, same payload as the other actions: `tenant` + `app` with a
      distributor, neither with Omitir). It is asked every time the login form
      opens (`PanelLoginService.demoAvailable()`); the **Auto-Demo** button shows
-     only when `features.demo === true` (`LoginComponent.showDemo`). When the
-     panel does not answer it (offline, older panel: 400 "Invalid action") the
-     old rule applies: `tenant_config.features.demo` with a distributor, shown
-     with Omitir. A build without the master key never shows the button.
+     only when `features.demo === true` (`showsAutoDemo` in
+     `panel-login/login-demo.util.ts`). When the panel does not answer it
+     (offline, older panel: 400 "Invalid action") only a distributor's
+     `tenant_config.features.demo` can show it; with Omitir there is no button.
+     A build without the master key never shows the button. Ingresar and
+     Auto-Demo wait for this answer, so they never take the wrong path.
    - `check_mac` and `auto_demo` send `"enc": 1`: the panel answers the line
      (username + password) AES-GCM encrypted like `fetch_dns`, and the main
      process decrypts it. An older panel answers JSON and keeps working;
@@ -378,8 +380,11 @@ Omitir choice, settings, `cache_clear_seen`). The PWA (no bridge) only does
   `getCategoriesBySelectedType`. «Cambiar PIN» sends `set_pin` (`old_pin` + `pin`, encrypted answer, allowed in the
   main process).
 - **Review theme** («Tema de prueba», panel Pantalla Falsa, only with Omitir, `windows` / `macos` in
-  `REVIEW_THEME_APPS`): `features.review` makes the login simple; Auto-Demo (`review_login` `{demo: 1}`) or a theme
-  account opens `/review` (Movies, Series, Settings with «Cerrar sesión») playing the panel's `api/player` videos in an
+  `REVIEW_THEME_APPS`): `features.review` makes the login simple (no DNS button, no device code); Auto-Demo
+  (`review_login` `{demo: 1}`) or a theme account opens `/review`, and with the theme on Ingresar never falls back to
+  an IPTV line (a wrong theme account shows the panel's message). With `features.review` false the login is the real
+  one: IPTV user/password, the DNS button and Auto-Demo only with a configured demo. The switch is read from the panel
+  on every login screen, so turning the theme off in the panel needs no new build (Movies, Series, Settings with «Cerrar sesión») playing the panel's `api/player` videos in an
   HTML5 `<video>`. Nothing is registered, saved or cached.
 - **Top 10 de la semana**: `api/top10.php` (public GET, `?t=&app=` with a distributor) → `PanelWeekTopService`.
 - **Sports guide**: `api/sports_epg.php` (POST with the token) → `SportsDataService.findChannel` when no broadcast

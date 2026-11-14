@@ -16,6 +16,7 @@ import {
     tenantExpiredMessage,
     tenantStorageSuffix,
     withTenantQuery,
+    panelAppId,
 } from './panel-tenant.util';
 import { buildTenantThemeCss, deriveTenantTheme, onAccentColor } from './panel-tenant-theme.util';
 
@@ -133,5 +134,20 @@ describe('panel tenant theme', () => {
         expect(css).toContain('--nf-focus: #1E88E5;');
         expect(css).toContain('--nf-bg: #0B1220;');
         expect(css).toContain('body.dark-theme');
+    });
+});
+
+describe('panelAppId (app id the panel gets with a distributor)', () => {
+    const real = process.platform;
+    const setPlatform = (value: string) => Object.defineProperty(process, 'platform', { value });
+    afterEach(() => setPlatform(real));
+
+    it('macOS sends macos; Linux sends windows (the panel has no linux id)', () => {
+        setPlatform('darwin');
+        expect(panelAppId()).toBe('macos');
+        setPlatform('linux');
+        const nav = (globalThis as { navigator?: { platform?: string; userAgent?: string } }).navigator;
+        const macUa = /Mac/i.test(String(nav?.platform || nav?.userAgent || ''));
+        expect(panelAppId()).toBe(macUa ? 'macos' : 'windows');
     });
 });

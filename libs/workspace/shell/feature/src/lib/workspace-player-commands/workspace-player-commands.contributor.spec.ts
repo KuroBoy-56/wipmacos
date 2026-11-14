@@ -49,6 +49,7 @@ describe('WorkspacePlayerCommandsContributor', () => {
     let runtime: {
         supportsManagedExternalPlayers: boolean;
         supportsEmbeddedMpv: boolean;
+        supportsVlc: boolean;
     };
     let electronStub:
         | {
@@ -63,6 +64,7 @@ describe('WorkspacePlayerCommandsContributor', () => {
     function bootstrap(options: {
         supportsManagedExternalPlayers: boolean;
         supportsEmbeddedMpv?: boolean;
+        supportsVlc?: boolean;
         embeddedMpvSupportResult?: { supported: boolean } | null;
     }) {
         viewCommands = {
@@ -78,6 +80,7 @@ describe('WorkspacePlayerCommandsContributor', () => {
             supportsManagedExternalPlayers:
                 options.supportsManagedExternalPlayers,
             supportsEmbeddedMpv: options.supportsEmbeddedMpv ?? false,
+            supportsVlc: options.supportsVlc ?? false,
         };
 
         electronStub = runtime.supportsEmbeddedMpv
@@ -214,6 +217,18 @@ describe('WorkspacePlayerCommandsContributor', () => {
         expect(settingsStore.updateSettings).toHaveBeenCalledWith({
             player: VideoPlayer.EmbeddedMpv,
         });
+    });
+
+    it('shows VLC only where the runtime offers it (Windows)', () => {
+        const visibleVlc = () =>
+            resolveBoolean(
+                getRegistered(viewCommands).find((c) => c.id === 'switch-player-vlc')?.visible
+            );
+        bootstrap({ supportsManagedExternalPlayers: true, supportsVlc: false });
+        expect(visibleVlc()).toBe(false);
+        TestBed.resetTestingModule();
+        bootstrap({ supportsManagedExternalPlayers: true, supportsVlc: true });
+        expect(visibleVlc()).toBe(true);
     });
 
     it('marks the active player command as disabled', () => {

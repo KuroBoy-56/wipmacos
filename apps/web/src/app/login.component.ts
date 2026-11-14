@@ -13,6 +13,7 @@ import { SecureDnsPickerComponent } from './panel-login/secure-dns-picker.compon
 import { PanelTenantService } from './panel-login/panel-tenant.service';
 import { FakeScreenComponent } from './panel-login/fake-screen/fake-screen.component';
 import { PanelFakeScreen } from './panel-login/fake-screen/fake-screen.util';
+import { showsAutoDemo } from './panel-login/login-demo.util';
 import { ReviewThemeService } from './panel-login/review/review-theme.service';
 
 type MessageKind = 'error' | 'info' | 'success';
@@ -76,8 +77,16 @@ export class LoginComponent implements OnInit {
     readonly review = signal(false);
     /** equipo en la lista negra del panel: solo el aviso, sin Autodemo */
     readonly blocked = signal(false);
-    /** Botón Autodemo: lo que diga features; si no respondió, lo de antes (tenant_config / visible con Omitir) */
-    readonly showDemo = computed(() => !this.blocked() && (this.review() || (this.panelDemo() ?? this.branding.features().demo)));
+    readonly showDemo = computed(() =>
+        showsAutoDemo({
+            blocked: this.blocked(),
+            review: this.review(),
+            panelDemo: this.panelDemo(),
+            distributorDemo: this.branding.choice() === 'code' ? this.branding.features().demo : null,
+        })
+    );
+    /** respuesta de features (demo y tema de prueba): Ingresar y Autodemo la esperan para no ir por el camino equivocado */
+    private featuresReady: Promise<void> = Promise.resolve();
     readonly distBusy = signal(false);
     readonly distError = signal<UiText | null>(null);
     private deviceCheckStarted = false;
@@ -169,7 +178,7 @@ export class LoginComponent implements OnInit {
         // features: el botón Autodemo solo si el panel tiene una demo configurada
         this.panelDemo.set(null);
         this.review.set(false);
-        void this.panel.demoAvailable().then((demo) => {
+        this.featuresReady = this.panel.demoAvailable().then((demo) => {
             this.panelDemo.set(demo);
             this.review.set(this.panel.reviewOffered);
         });
@@ -257,8 +266,12 @@ export class LoginComponent implements OnInit {
         }
         this.busy.set(true);
         this.message.set(null);
-        // tema de prueba: una cuenta del tema entra al tema; cualquier otra sigue como siempre (línea IPTV)
-        if (this.review() && (await this.openReview(user, pass, false))) return;
+        await this.featuresReady;
+        // tema de prueba encendido: todo va al tema del dueño (ni línea IPTV ni registro en el panel)
+        if (this.review()) {
+            if (!(await this.openReview(user, pass, false))) this.busy.set(false);
+            return;
+        }
         const server = await this.lineServer(user, pass);
         if (!server) {
             this.busy.set(false);
@@ -290,13 +303,14 @@ export class LoginComponent implements OnInit {
             await this.router.navigate(['/review']);
             return true;
         }
-        if (demo) this.say(r.message, 'error');
+        this.say(r.message, 'error');
         return false;
     }
 
     async autoDemo(): Promise<void> {
         this.demoBusy.set(true);
         this.message.set(null);
+        await this.featuresReady;
         if (this.review()) {
             // Auto-Demo del tema de prueba: sin crear ni registrar ninguna demo
             if (!(await this.openReview('', '', true))) this.demoBusy.set(false);
