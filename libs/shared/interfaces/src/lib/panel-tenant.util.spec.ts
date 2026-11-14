@@ -5,6 +5,8 @@ import {
     clearTenant,
     forgetTenantStorage,
     isTenantExpired,
+    PANEL_APP_ID,
+    panelAppId,
     panelTenantFields,
     parseTenantConfig,
     readTenantCache,
@@ -88,7 +90,7 @@ describe('panel tenant util', () => {
 
         saveTenantCode(parseTenantConfig(CONFIG)!);
         expect(readTenantChoice()).toBe('code');
-        expect(panelTenantFields()).toEqual({ tenant: '123456', app: 'windows' });
+        expect(panelTenantFields()).toEqual({ tenant: '123456', app: PANEL_APP_ID });
         expect(withTenantQuery('https://p/api/alerta.php?a=1')).toBe('https://p/api/alerta.php?a=1&t=123456&app=windows');
         expect(withTenantQuery('https://p/api/tmdb.php')).toBe('https://p/api/tmdb.php?t=123456&app=windows');
         expect(tenantStorageSuffix()).toBe('@t123456');
@@ -110,6 +112,20 @@ describe('panel tenant util', () => {
         expect(isTenantExpired(cache, 1767243600 * 1000)).toBe(true);
         // the distributor's expiry is private: the message never carries the date
         expect(tenantExpiredMessage(cache)).toEqual({ key: 'MPX.DIST.ERR_TENANT_EXPIRED' });
+    });
+});
+
+describe('panel app id', () => {
+    it('sends linux on Linux, macos on a Mac and windows on Windows', () => {
+        const real = Object.getOwnPropertyDescriptor(process, 'platform')!;
+        try {
+            for (const [platform, id] of [['linux', 'linux'], ['darwin', 'macos'], ['win32', 'windows']]) {
+                Object.defineProperty(process, 'platform', { value: platform, configurable: true });
+                expect(panelAppId()).toBe(id);
+            }
+        } finally {
+            Object.defineProperty(process, 'platform', real);
+        }
     });
 });
 

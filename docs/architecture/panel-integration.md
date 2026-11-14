@@ -127,10 +127,11 @@ code seen on progress / EPG / sports only triggers that check, never a wipe.
 ### Platform, fake screen and error reports
 
 - **Platform.** Every `login.php` payload and the `progress.php` `auth` body
-  carry `platform`: `windows`, or `macos` on a Mac (`panelAppId()` in
-  `panel-tenant.util.ts`, read from `process.platform` / `navigator`). The
-  panel stores it in the line's "Dispositivo" column (Clientes MAC) and uses it
-  for the dashboard statistics.
+  carry `platform`: `windows`, `macos` on a Mac or `linux` on Linux (`panelAppId()` in
+  `panel-tenant.util.ts`, read from `process.platform` / `navigator`; Linux entered as `windows` until the panel got
+  its own `linux` app, schema v17, which gave it to every distributor that already had Windows). The panel stores it
+  in the line's "Dispositivo" column (Clientes MAC), uses it for the dashboard statistics and, with a distributor
+  code, checks that the distributor has that app (`app_not_linked` otherwise).
 - **Fake screen.** When `platform` is sent, an unregistered device's
   `check_mac` reply carries `fake_screen` (panel page «Pantalla Falsa»: per app,
   only new devices). `parseFakeScreen` (`apps/web/src/app/panel-login/fake-screen/`)
@@ -219,7 +220,7 @@ lines, alerts, TMDB key, sports, name, logo and colours. The panel contract
   `tenant` + `app` in the encrypted payload (`PanelLoginPayload.tenant`,
   added by the renderer from storage; also `panelDnsServers()`), the
   `progress.php` auth body adds `tenant` + `app` (the token then carries them
-  for `epg.php` / `sports.php`), `alerta.php` gets `&t=<code>&app=windows` (`macos` on a Mac)
+  for `epg.php` / `sports.php`), `alerta.php` gets `&t=<code>&app=windows` (`macos` on a Mac, `linux` on Linux)
   (`withTenantQuery`). Tokens and the panel TMDB key are stored per code
   (`tenantStorageSuffix()` = `@t<code>`) so two distributors never share one.
   The panel only ever hands a distributor its own TMDB key and its own
@@ -377,7 +378,7 @@ Omitir choice, settings, `cache_clear_seen`). The PWA (no bridge) only does
   take the category key (`keyOf` / `kind`) so blocked categories hide in `injectNfCatalog` and
   `getCategoriesBySelectedType`. «Cambiar PIN» sends `set_pin` (`old_pin` + `pin`, encrypted answer, allowed in the
   main process).
-- **Review theme** («Tema de prueba», panel Pantalla Falsa, only with Omitir, `windows` / `macos` in
+- **Review theme** («Tema de prueba», panel Pantalla Falsa, only with Omitir, `windows` / `macos` / `linux` in
   `REVIEW_THEME_APPS`): `features.review` makes the login simple; Auto-Demo (`review_login` `{demo: 1}`) or a theme
   account opens `/review` (Movies, Series, Settings with «Cerrar sesión») playing the panel's `api/player` videos in an
   HTML5 `<video>`. Nothing is registered, saved or cached.

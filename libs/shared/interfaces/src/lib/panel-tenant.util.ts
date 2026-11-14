@@ -12,15 +12,19 @@ import type { UiText } from './app-language.util';
  */
 
 /**
- * App id this build sends to the panel: 'macos' on a Mac, 'windows' everywhere else
- * (Windows and Linux desktop). Works in the Electron main process (process.platform),
- * in the renderer (navigator) and in Node builds without the DOM.
+ * App id this build sends to the panel: 'macos' on a Mac, 'linux' on Linux (its own app in the panel since the
+ * panel's schema v17; before it entered as Windows), 'windows' on Windows. Works in the Electron main process
+ * (process.platform), in the renderer (navigator) and in Node builds without the DOM.
  */
-export function panelAppId(): 'windows' | 'macos' {
+export function panelAppId(): 'windows' | 'macos' | 'linux' {
     const proc = (globalThis as { process?: { platform?: string } }).process;
     if (proc?.platform === 'darwin') return 'macos';
+    if (proc?.platform === 'linux') return 'linux';
+    if (proc?.platform === 'win32') return 'windows';
     const nav = (globalThis as { navigator?: { platform?: string; userAgent?: string } }).navigator;
-    if (nav && /Mac/i.test(String(nav.platform || nav.userAgent || ''))) return 'macos';
+    const where = String(nav?.platform || nav?.userAgent || '');
+    if (/Mac/i.test(where)) return 'macos';
+    if (/Linux/i.test(where) && !/Android/i.test(String(nav?.userAgent || ''))) return 'linux';
     return 'windows';
 }
 

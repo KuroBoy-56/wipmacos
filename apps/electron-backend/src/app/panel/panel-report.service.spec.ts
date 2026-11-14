@@ -18,7 +18,7 @@ describe('panelReportError', () => {
         const data = new URLSearchParams(init.body).get('data') ?? '';
         const body = JSON.parse(decryptPayload(data, key) ?? '{}');
         expect(body).toMatchObject({ kind: 'playback', message: 'boom 1', device: 'AA:BB:CC:DD:EE:FF', version: '1.2.3', tenant: '123456' });
-        expect(['windows', 'macos']).toContain(body.app);
+        expect(['windows', 'macos', 'linux']).toContain(body.app);
     });
 
     it('sends the app language with the report', async () => {
