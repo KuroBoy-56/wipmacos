@@ -4,6 +4,13 @@ Entorno de esta sesión: Ubuntu 24.04 x64 (contenedor, sin GPU, sin sesión grá
 
 ## 0. Resultado del build de CI (14-11-2026)
 
+**1.5.25:** run `43600666554` (commit `76ee9b7`), todo en verde, release **`linux-v1.5.25`**
+(https://github.com/KuroBoy-56/wipmacos/releases/tag/linux-v1.5.25). Además de las pruebas de abajo corrió los tests
+del login (Auto-Demo / tema de prueba), de VLC solo en Windows y del id `linux` ante el panel (login, reporte,
+progreso, distribuidor).
+
+**1.5.24:**
+
 Run `43572679461` de `linux-build.yml` (commit `c67c478`), todo en verde, publicado como release
 **`linux-v1.5.24`** (https://github.com/KuroBoy-56/wipmacos/releases/tag/linux-v1.5.24).
 
