@@ -207,7 +207,7 @@ jobs:
                     - image: debian:12
                       deps: apt-get update && apt-get install -y --no-install-recommends libx11-6 libx11-xcb1 libxcb1 libgl1 libegl1 libgbm1 libdrm2 libopengl0 libgles2 libasound2 libfontconfig1 libfreetype6 libexpat1 zlib1g libdbus-1-3 libsystemd0 libudev1 libwayland-client0 libwayland-cursor0 libwayland-egl1 libstdc++6
                     - image: archlinux:latest
-                      deps: pacman -Sy --noconfirm libx11 libxcb mesa libglvnd libdrm alsa-lib fontconfig freetype2 expat zlib dbus systemd-libs wayland gcc-libs
+                      deps: pacman -Syu --noconfirm --needed libx11 libxcb mesa libglvnd libdrm alsa-lib fontconfig freetype2 expat zlib dbus systemd-libs wayland gcc-libs
         steps:
             - uses: actions/download-artifact@v4
               with:
