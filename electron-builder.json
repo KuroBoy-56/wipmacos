@@ -86,11 +86,8 @@
                 "arch": ["x64"]
             }
         ],
-        "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+        "artifactName": "MPX-Player-${version}-linux-${arch}.${ext}",
         "icon": "apps/web/src/assets/icons"
-    },
-    "deb": {
-        "recommends": ["mpv"]
     },
     "afterPack": "./tools/packaging/electron-after-pack.cjs",
     "win": {

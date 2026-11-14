@@ -8,6 +8,7 @@
 | Ejecutable | `mpx-player` (`mpx-player.bin` = Electron, `mpx-player` = lanzador) | en Windows sigue `MPX Player.exe` |
 | Snap | `mpx-player` | **hay que registrarlo** en la Snap Store (`snapcraft register mpx-player`); si está ocupado, cambiar `name:` |
 | Flatpak / AppStream | `com.latmpx.MPXPlayer` | **pendiente de decisión:** Flathub verifica que el dueño controla `latmpx.com`, y hoy `https://latmpx.com` responde 404. Alternativa: `io.github.kuroboy_56.MPXPlayer` (verificación por la cuenta de GitHub) |
+| Archivos | `MPX-Player-<versión>-linux-<arch>.{AppImage,deb,rpm}` (+ `.snap` y `.flatpak` en el release) | |
 | Versión | la de `package.json` (1.5.24) | Snap la lee al compilar (`adopt-info`); AppStream lleva `<releases>` y hay que añadir cada versión |
 
 ## 2. Archivos
@@ -19,7 +20,8 @@
 | `snap/snapcraft.yaml`, `snap/local/mpx-player`, `snap/gui/mpx-player.desktop` | Snap (core24, estricto) |
 | `flatpak/com.latmpx.MPXPlayer.yml` | Flatpak (freedesktop 26.08, Electron2.BaseApp, mpv compilado) |
 | `apps/electron-backend/linux/com.latmpx.MPXPlayer.{metainfo.xml,desktop}` | metadatos AppStream y entrada de escritorio del Flatpak |
-| `tools/linux/smoke-test.mjs` | prueba de arranque real de cada paquete |
+| `tools/linux/bundle-mpv.sh` + `apps/electron-backend/src/app/util/bundled-mpv-path.ts` | mpv portable dentro del AppImage/.deb/.rpm (`resources/bin/mpv`, va primero en `PATH`) |
+| `tools/linux/smoke-test.mjs` | prueba de arranque real de cada paquete (puente, id de equipo, SQLite, MPV embebido, clave del panel) |
 | `.github/workflows/linux-build.yml` | compila, prueba y sube los artefactos (sin publicar) |
 
 La app Electron se compila **una vez** en CI con los secretos (`PANEL_MASTER_KEY`, `TMDB_API_KEY`), y Snap y
@@ -70,6 +72,7 @@ PANEL_MASTER_KEY=<64 hex> node tools/panel/write-panel-key.mjs
 pnpm nx build web
 # MPV embebido: ver el paso "Stage Linux embedded MPV build inputs" de linux-build.yml
 IPTVNATOR_BUILD_EMBEDDED_MPV=1 IPTVNATOR_EMBEDDED_MPV_PLATFORM=linux IPTVNATOR_EMBEDDED_MPV_ARCH=x64 pnpm run build:backend
+tools/linux/bundle-mpv.sh bin/mpv                    # mpv portable para AppImage/.deb/.rpm
 pnpm run make:app -- --publishPolicy=never          # dist/executables: AppImage, deb, rpm, linux-unpacked
 pnpm run verify:package-layout -- linux x64
 
@@ -79,7 +82,7 @@ snapcraft                                             # mpx-player_<versión>_am
 sudo snap install --dangerous mpx-player_*.snap
 
 # Flatpak
-tar -C dist/executables/linux-unpacked -czf flatpak/mpx-player-linux-x64.tar.gz .
+tar -C dist/executables/linux-unpacked --exclude=./resources/bin -czf flatpak/mpx-player-linux-x64.tar.gz .
 cd flatpak && flatpak-builder --user --install-deps-from=flathub --install --force-clean build-dir com.latmpx.MPXPlayer.yml
 flatpak run com.latmpx.MPXPlayer
 
@@ -87,7 +90,10 @@ flatpak run com.latmpx.MPXPlayer
 xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv -- flatpak run com.latmpx.MPXPlayer
 ```
 
-En CI: `git tag linux-v1.5.24-1 && git push origin linux-v1.5.24-1` arranca `linux-build.yml` (y solo eso).
+En CI: `git tag linux-v1.5.24 && git push origin linux-v1.5.24` arranca `linux-build.yml`. Necesita el secreto del
+repositorio **`PANEL_MASTER_KEY`** (64 caracteres hex; Settings › Secrets and variables › Actions): sin él el run se
+detiene al principio. Si todas las pruebas pasan, publica un **release de GitHub** con el AppImage, `.deb`, `.rpm`,
+`.snap` y `.flatpak` (las tiendas no se tocan).
 
 ## 5. Publicar (requiere autorización explícita del dueño)
 

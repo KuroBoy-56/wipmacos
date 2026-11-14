@@ -1,9 +1,11 @@
 name: Build Linux (deb, AppImage, rpm, Snap, Flatpak)
 
-# MPX Player for Linux (branch `linux`). Builds and tests the packages; it never publishes them
-# (Snap Store / Flathub uploads need the owner's approval, docs/LINUX_PACKAGING.md).
-# Started only on demand: push a tag `linux-v*` (e.g. linux-v1.5.24-1). "Run workflow" also works
+# MPX Player for Linux (branch `linux`). Builds and tests the packages and, when every test
+# passes, publishes them as a GitHub release named after the tag. It never uploads to the Snap
+# Store or Flathub (the owner does that, docs/LINUX_PACKAGING.md).
+# Started only on demand: push a tag `linux-v*` (e.g. linux-v1.5.24). "Run workflow" also works
 # once this file exists on the default branch (GitHub requirement for workflow_dispatch).
+# Needs the repository secret PANEL_MASTER_KEY (64 hex characters): without it the run stops.
 
 on:
     push:
@@ -32,6 +34,16 @@ jobs:
             IPTVNATOR_EMBEDDED_MPV_ARCH: x64
             IPTVNATOR_REQUIRE_EMBEDDED_MPV: '1'
         steps:
+            - name: Require the panel key
+              # a build without it cannot sign in to the panel: never package one
+              env:
+                  PANEL_MASTER_KEY: ${{ secrets.PANEL_MASTER_KEY }}
+              run: |
+                  if ! printf '%s' "$PANEL_MASTER_KEY" | grep -qE '^[0-9a-fA-F]{64}$'; then
+                      echo "::error::Missing or invalid repository secret PANEL_MASTER_KEY (64 hex characters): Settings > Secrets and variables > Actions."
+                      exit 1
+                  fi
+
             - uses: actions/checkout@v4
 
             - uses: pnpm/action-setup@v4
@@ -56,7 +68,6 @@ jobs:
               run: node tools/tmdb/inject-tmdb-key.mjs
 
             - name: Write panel key
-              # No-op without the secret: the login screen then reports the missing key.
               env:
                   PANEL_MASTER_KEY: ${{ secrets.PANEL_MASTER_KEY }}
               run: node tools/panel/write-panel-key.mjs
@@ -64,7 +75,7 @@ jobs:
             - name: Unit tests of the Linux changes
               run: |
                   pnpm nx test database --testPathPatterns=path-utils
-                  pnpm nx test electron-backend --testPathPatterns='(player\.events|embedded-mpv-native\.service)\.spec'
+                  pnpm nx test electron-backend --testPathPatterns='(player\.events|embedded-mpv-native\.service|bundled-mpv-path)\.spec'
                   node --test tools/packaging/linux-after-pack.test.mjs
 
             - name: Build frontend
@@ -104,8 +115,17 @@ jobs:
                       echo "::error::The Linux embedded MPV addon must not link libmpv"; exit 1
                   fi
 
+            - name: Portable mpv (AppImage, deb, rpm; the Snap and the Flatpak bring their own)
+              run: tools/linux/bundle-mpv.sh bin/mpv
+
+            - name: Panel key is in the build
+              run: test -s dist/apps/electron-backend/assets/panel-key.json
+
             - name: Package (linux-unpacked, AppImage, deb, rpm)
               run: pnpm run make:app -- --publishPolicy=never
+
+            - name: Bundled mpv is in the package
+              run: dist/executables/linux-unpacked/resources/bin/mpv/mpv --version | head -n 1
 
             - name: Verify package layout
               run: pnpm run verify:package-layout -- linux x64
@@ -118,11 +138,25 @@ jobs:
 
             - name: Smoke test (linux-unpacked)
               run: |
-                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --screenshot=smoke-linux-unpacked.png -- \
-                      dist/executables/linux-unpacked/mpx-player.bin --no-sandbox
+                  # system mpv out of the way: the bundled one must be the one that works
+                  sudo apt-get remove -y mpv
+                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                      --screenshot=smoke-linux-unpacked.png -- dist/executables/linux-unpacked/mpx-player.bin --no-sandbox
 
-            - name: Pack linux-unpacked for the Snap and the Flatpak
-              run: tar -C dist/executables/linux-unpacked -czf mpx-player-linux-x64.tar.gz .
+            - name: Smoke test (AppImage)
+              env:
+                  # runners have no FUSE 2; the AppImage itself is what users download
+                  APPIMAGE_EXTRACT_AND_RUN: '1'
+              run: |
+                  APP="$(ls dist/executables/*.AppImage | head -n 1)"
+                  chmod +x "$APP"
+                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                      --screenshot=smoke-appimage.png -- "$APP" --no-sandbox
+
+            - name: Pack linux-unpacked for the Snap and the Flatpak (without the portable mpv)
+              run: |
+                  tar -C dist/executables/linux-unpacked --exclude=./resources/bin -czf mpx-player-linux-x64.tar.gz .
+                  tar -czf portable-mpv.tar.gz bin/mpv
 
             - uses: actions/upload-artifact@v4
               with:
@@ -132,6 +166,7 @@ jobs:
                       dist/executables/*.deb
                       dist/executables/*.rpm
                       smoke-linux-unpacked.png
+                      smoke-appimage.png
                   if-no-files-found: error
 
             - uses: actions/upload-artifact@v4
@@ -139,6 +174,53 @@ jobs:
                   name: mpx-player-linux-unpacked
                   path: mpx-player-linux-x64.tar.gz
                   if-no-files-found: error
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: portable-mpv
+                  path: portable-mpv.tar.gz
+                  if-no-files-found: error
+
+    portable-mpv:
+        name: Portable mpv on other distributions (${{ matrix.image }})
+        needs: electron
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # only what a desktop already has (X11, GL, ALSA, fonts); mpv's other libraries are bundled
+                    - image: fedora:41
+                      deps: dnf install -y libX11 libxcb mesa-libGL mesa-libEGL mesa-libgbm libdrm alsa-lib fontconfig freetype expat zlib dbus-libs systemd-libs libwayland-client libwayland-cursor libwayland-egl libglvnd-opengl libglvnd-gles libstdc++
+                    - image: debian:12
+                      deps: apt-get update && apt-get install -y --no-install-recommends libx11-6 libx11-xcb1 libxcb1 libgl1 libegl1 libgbm1 libdrm2 libopengl0 libgles2 libasound2 libfontconfig1 libfreetype6 libexpat1 zlib1g libdbus-1-3 libsystemd0 libudev1 libwayland-client0 libwayland-cursor0 libwayland-egl1 libstdc++6
+                    - image: archlinux:latest
+                      deps: pacman -Sy --noconfirm libx11 libxcb mesa libglvnd libdrm alsa-lib fontconfig freetype2 expat zlib dbus systemd-libs wayland gcc-libs
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  name: portable-mpv
+
+            - name: Test clips
+              run: |
+                  sudo apt-get update && sudo apt-get install --no-install-recommends -y ffmpeg
+                  ffmpeg -loglevel error -f lavfi -i testsrc=d=2:s=640x360:r=25 -f lavfi -i sine=d=2 -c:v libx264 -c:a aac h264-aac.mp4
+                  ffmpeg -loglevel error -f lavfi -i testsrc=d=2:s=640x360:r=25 -f lavfi -i sine=d=2 -c:v libx265 -c:a ac3 hevc-ac3.mkv
+                  ffmpeg -loglevel error -f lavfi -i testsrc=d=2:s=640x360:r=25 -f lavfi -i sine=d=2 -c:v libx264 -c:a mp2 -f mpegts live.ts
+                  tar -xzf portable-mpv.tar.gz
+
+            - name: Play them with the bundled mpv
+              run: |
+                  docker run --rm -v "$PWD:/w" -w /w ${{ matrix.image }} sh -c '
+                    set -e
+                    ${{ matrix.deps }} >/dev/null
+                    for f in h264-aac.mp4 hevc-ac3.mkv live.ts; do
+                      out=$(bin/mpv/mpv --no-config --vo=null --ao=null "$f" 2>&1)
+                      echo "$out" | grep -q "^VO:" && echo "$out" | grep -q "^AO:" && echo "$out" | grep -q "End of file" \
+                        || { echo "$out"; echo "FAILED: $f"; exit 1; }
+                      echo "OK $f"
+                    done'
 
     snap:
         name: Snap (core24, strict)
@@ -163,7 +245,8 @@ jobs:
                   sudo apt-get update && sudo apt-get install --no-install-recommends -y xvfb
                   sudo snap install --dangerous "${{ steps.snapcraft.outputs.snap }}"
                   snap connections mpx-player
-                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --screenshot=smoke-snap.png -- /snap/bin/mpx-player
+                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                      --screenshot=smoke-snap.png -- /snap/bin/mpx-player
 
             - uses: actions/upload-artifact@v4
               if: always()
@@ -209,7 +292,7 @@ jobs:
 
             - name: Smoke test inside the Flatpak sandbox
               run: |
-                  xvfb-run -a dbus-run-session -- node tools/linux/smoke-test.mjs --expect-embedded-mpv \
+                  xvfb-run -a dbus-run-session -- node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
                       --screenshot=smoke-flatpak.png -- flatpak run com.latmpx.MPXPlayer
 
             - name: Flathub linter (report only)
@@ -225,3 +308,38 @@ jobs:
                   path: |
                       flatpak/mpx-player.flatpak
                       smoke-flatpak.png
+
+    release:
+        name: GitHub release
+        # only when every package built and passed its tests
+        needs: [electron, portable-mpv, snap, flatpak]
+        if: startsWith(github.ref, 'refs/tags/linux-v')
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  path: artifacts
+                  merge-multiple: true
+
+            - name: Publish
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TAG: ${{ github.ref_name }}
+              run: |
+                  # artifacts keep their folders (dist/executables/, flatpak/): collect the packages flat
+                  mkdir release
+                  find artifacts -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' -o -name '*.snap' \) -exec cp {} release/ \;
+                  cp "$(find artifacts -type f -name mpx-player.flatpak)" "release/MPX-Player-${TAG#linux-v}-linux-x86_64.flatpak"
+                  ls -la release
+                  test "$(ls release | wc -l)" -eq 5
+                  gh release create "${TAG}" release/* \
+                      --repo "${GITHUB_REPOSITORY}" \
+                      --target "${GITHUB_SHA}" \
+                      --title "MPX Player Linux ${TAG#linux-v}" \
+                      --notes "MPX Player para Linux x64, con MPV integrado.
+                  - AppImage: cualquier distribución (chmod +x y abrir; en Ubuntu 22.04+ instalar libfuse2 o usar --appimage-extract-and-run).
+                  - .deb (Ubuntu, Debian, Mint) y .rpm (Fedora, openSUSE).
+                  - .snap y .flatpak: los mismos paquetes que se envían a la Snap Store y a Flathub (instalación de prueba: snap install --dangerous / flatpak install --user)."
+

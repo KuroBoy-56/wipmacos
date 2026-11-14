@@ -2,11 +2,11 @@
 /**
  * Linux smoke test of a real MPX Player build (linux-unpacked, installed Snap or installed
  * Flatpak). Starts the app with the Chrome DevTools Protocol open, then checks from inside
- * the window that the Electron bridge, the device id, SQLite and (optionally) embedded MPV
- * work in that package's sandbox. The panel is never contacted: host resolution is mapped
+ * the window that the Electron bridge, the device id, SQLite and (optionally) embedded MPV and
+ * the compiled-in panel key work in that package's sandbox. The panel is never contacted: host resolution is mapped
  * to nothing, so CI runs do not show up as devices on the operator panel.
  *
- *   node tools/linux/smoke-test.mjs [--expect-embedded-mpv] [--screenshot=out.png] -- <command...>
+ *   node tools/linux/smoke-test.mjs [--expect-embedded-mpv] [--expect-panel-key] [--screenshot=out.png] -- <command...>
  *   e.g. -- dist/executables/linux-unpacked/mpx-player.bin --no-sandbox
  *        -- mpx-player                       (installed snap, /snap/bin on PATH)
  *        -- flatpak run com.latmpx.MPXPlayer
@@ -21,10 +21,11 @@ const sep = process.argv.indexOf('--');
 const flags = sep === -1 ? process.argv.slice(2) : process.argv.slice(2, sep);
 const command = sep === -1 ? [] : process.argv.slice(sep + 1);
 if (command.length === 0) {
-    console.error('usage: smoke-test.mjs [--expect-embedded-mpv] [--screenshot=file.png] -- <command...>');
+    console.error('usage: smoke-test.mjs [--expect-embedded-mpv] [--expect-panel-key] [--screenshot=file.png] -- <command...>');
     process.exit(2);
 }
 const expectEmbeddedMpv = flags.includes('--expect-embedded-mpv');
+const expectPanelKey = flags.includes('--expect-panel-key');
 const screenshotPath = flags.find((f) => f.startsWith('--screenshot='))?.split('=')[1];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,6 +38,8 @@ const PROBE = `(async () => {
     const value = String(Date.now());
     await e.dbSetAppState(key, value);
     const mpv = e.prepareEmbeddedMpv ? await e.prepareEmbeddedMpv() : await e.getEmbeddedMpvSupport();
+    // DNS is mapped to nothing: with the key compiled in the answer is NETWORK, without it NO_MASTER_KEY
+    const panel = await e.panelLoginRequest('features', {});
     return {
         bridge: true,
         title: document.title,
@@ -45,12 +48,13 @@ const PROBE = `(async () => {
         deviceId: await e.panelGetDeviceId(),
         sqliteRoundTrip: (await e.dbGetAppState(key)) === value,
         embeddedMpv: { supported: mpv.supported, reason: mpv.reason ?? null },
+        panelKeyCode: panel?.code ?? null,
         rendered: document.querySelector('app-root')?.childElementCount > 0,
     };
 })()`;
 
 /** Validates the probe result; returns the list of failures. */
-export function checkProbe(result, { expectEmbeddedMpv: needMpv }) {
+export function checkProbe(result, { expectEmbeddedMpv: needMpv, expectPanelKey: needKey }) {
     const failures = [];
     if (!result?.bridge) return ['window.electron (preload bridge) is missing'];
     if (result.platform !== 'linux') failures.push(`platform is ${result.platform}, expected linux`);
@@ -59,6 +63,7 @@ export function checkProbe(result, { expectEmbeddedMpv: needMpv }) {
     if (!result.rendered) failures.push('the Angular app did not render');
     if (!/MPX/.test(result.title ?? '')) failures.push(`unexpected window title: ${result.title}`);
     if (needMpv && !result.embeddedMpv?.supported) failures.push(`embedded MPV unavailable: ${result.embeddedMpv?.reason}`);
+    if (needKey && result.panelKeyCode === 'NO_MASTER_KEY') failures.push('the panel key (PANEL_MASTER_KEY) is not in this build');
     return failures;
 }
 
@@ -125,7 +130,7 @@ async function main() {
         const result = evaluated.result?.result?.value;
         if (!result) throw new Error(`probe failed: ${JSON.stringify(evaluated.result?.exceptionDetails ?? evaluated)}`);
         console.log(JSON.stringify(result, null, 2));
-        const failures = checkProbe(result, { expectEmbeddedMpv });
+        const failures = checkProbe(result, { expectEmbeddedMpv, expectPanelKey });
         if (failures.length > 0) {
             console.error(`SMOKE TEST FAILED:\n- ${failures.join('\n- ')}`);
             process.exitCode = 1;

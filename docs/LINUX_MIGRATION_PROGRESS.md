@@ -13,7 +13,7 @@
 | 7. Flatpak | manifiesto listo; módulos nativos COMPILADOS Y PROBADOS aquí; con la app real SIN PROBAR |
 | 8. Actualizaciones | no hay actualizador propio: las tiendas actualizan; nada que adaptar |
 | 9. Configuración de build | electron-builder Linux x64 (AppImage, deb, rpm), sin binarios de Windows |
-| 10. Automatización | `linux-build.yml` listo; **no ejecutado** (se arranca con un tag `linux-v*` cuando el dueño lo pida) |
+| 10. Automatización | `linux-build.yml`: tag `linux-v*` → compila, prueba (también el mpv portable en Fedora, Debian y Arch) y publica el release de GitHub; exige el secreto `PANEL_MASTER_KEY`. Resultados en LINUX_BUILD_REPORT |
 | 11. Pruebas | ver LINUX_BUILD_REPORT; pruebas de la app real pendientes del primer run de CI y de una prueba manual |
 | 12. Documentación | este conjunto de documentos |
 

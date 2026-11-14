@@ -21,7 +21,7 @@ Ubuntu 22.04+/Debian 12 y dentro de core24 (Snap) y freedesktop 26.08 (Flatpak),
 
 | Formato | Lo que trae el paquete | Lo que pone el sistema |
 | --- | --- | --- |
-| `.deb` / `.rpm` / AppImage (x64) | Electron completo (Chromium, FFmpeg propio de Electron para el reproductor integrado) | GTK 3, NSS, ALSA/PulseAudio, X11 o XWayland; **mpv** del sistema para MPV embebido/externo (recomendado en el .deb); VLC opcional |
+| `.deb` / `.rpm` / AppImage (x64) | Electron completo + **mpv portable** (`tools/linux/bundle-mpv.sh`: el mpv de Ubuntu 22.04 con sus bibliotecas, sin glibc, drivers de GPU, X11/Wayland, ALSA, fuentes ni D-Bus) | GTK 3, NSS, ALSA/PulseAudio, X11 o XWayland, Mesa/GL; FUSE 2 para el AppImage (o `--appimage-extract-and-run`); VLC opcional |
 | Snap (`mpx-player`, core24) | Electron + `mpv` y sus bibliotecas (stage-packages de Ubuntu 24.04) + bibliotecas de Electron que no da la extensión GNOME | core24 y `gnome-46-2404` (GTK, Mesa, etc.) |
 | Flatpak (`com.latmpx.MPXPlayer`) | Electron + mpv 0.41.0, libplacebo 7.360.1, libass 0.17.4, LuaJIT 2.1, libXpresent 1.0.1 (compilados en el manifiesto) | runtime `org.freedesktop.Platform//26.08` (FFmpeg 8.1), `org.electronjs.Electron2.BaseApp//26.08` (zypak), extensión `codecs-extra` (H.264, HEVC, AAC, AC-3 completos) |
 
@@ -42,7 +42,8 @@ Ubuntu 22.04+/Debian 12 y dentro de core24 (Snap) y freedesktop 26.08 (Flatpak),
 - mpv se compila **sin** `-Dgpl=false` en el Flatpak, así que el binario resultante es GPL-2.0-or-later (con
   libplacebo LGPL, libass ISC, LuaJIT MIT). Es un programa aparte que la app lanza (agregación), igual que el
   `mpv.exe` de Windows. Flathub publica el código fuente de cada módulo automáticamente.
-- En el Snap, mpv y sus bibliotecas vienen de los paquetes de Ubuntu con sus licencias; snapcraft las conserva en `usr/share/doc`.
+- En el Snap y en el mpv portable del AppImage/.deb/.rpm, mpv y sus bibliotecas son los paquetes de Ubuntu (GPL/LGPL),
+  sin modificar; el código fuente de cada uno está en los repositorios públicos de Ubuntu (oferta de código: `apt-get source`).
 - FFmpeg con códecs patentados (H.264, HEVC, AAC, AC-3): en Flathub los da `codecs-extra`, que distribuye Flathub, no esta app.
 - MIT (de IPTVnator) sigue siendo la licencia del proyecto (`LICENSE.md`).
 

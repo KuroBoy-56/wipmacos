@@ -25,7 +25,8 @@ embebido, recompilados para Electron en Linux.
 
 ## 7. Dependencias de Linux
 Compilar: `build-essential`, `libx11-dev`, `libxext-dev`, `libmpv-dev`, `mpv`, `pkg-config`, `rpm`,
-`libarchive-tools`. Ejecutar: GTK 3, NSS, PulseAudio/PipeWire, X11/XWayland; `mpv` del sistema para .deb/.rpm/AppImage.
+`libarchive-tools`. Ejecutar: GTK 3, NSS, PulseAudio/PipeWire, X11/XWayland. El AppImage, el .deb y el .rpm llevan un
+mpv portable (no hace falta instalar mpv).
 El Snap trae mpv (Ubuntu 24.04) y el Flatpak compila mpv 0.41.0 con libplacebo 7.360.1, libass 0.17.4, LuaJIT y
 libXpresent sobre freedesktop 26.08. Ver LINUX_DEPENDENCIES.
 
@@ -92,8 +93,8 @@ remoto (8765) escucha en la red sin autenticación. Ver LINUX_SECURITY_REPORT.
 ## 18. Comandos para reproducir
 ```bash
 git fetch origin && git checkout linux
-# CI completo (deb, AppImage, rpm, Snap, Flatpak + pruebas):
-git tag linux-v1.5.24-1 && git push origin linux-v1.5.24-1
+# CI completo (deb, AppImage, rpm, Snap, Flatpak + pruebas + release de GitHub); necesita el secreto PANEL_MASTER_KEY:
+git tag linux-v1.5.24 && git push origin linux-v1.5.24
 # local: ver docs/LINUX_PACKAGING.md §4
 ```
 
