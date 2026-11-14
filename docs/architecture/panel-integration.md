@@ -129,7 +129,7 @@ code seen on progress / EPG / sports only triggers that check, never a wipe.
 ### Platform, fake screen and error reports
 
 - **Platform.** Every `login.php` payload and the `progress.php` `auth` body
-  carry `platform`: `windows`, or `macos` on a Mac (`panelAppId()` in
+  carry `platform`: `windows`, `macos` on a Mac or `linux` on Linux (`panelAppId()` in
   `panel-tenant.util.ts`, read from `process.platform` / `navigator`). The
   panel stores it in the line's "Dispositivo" column (Clientes MAC) and uses it
   for the dashboard statistics.
@@ -221,7 +221,7 @@ lines, alerts, TMDB key, sports, name, logo and colours. The panel contract
   `tenant` + `app` in the encrypted payload (`PanelLoginPayload.tenant`,
   added by the renderer from storage; also `panelDnsServers()`), the
   `progress.php` auth body adds `tenant` + `app` (the token then carries them
-  for `epg.php` / `sports.php`), `alerta.php` gets `&t=<code>&app=windows` (`macos` on a Mac)
+  for `epg.php` / `sports.php`), `alerta.php` gets `&t=<code>&app=windows` (`macos` on a Mac, `linux` on Linux)
   (`withTenantQuery`). Tokens and the panel TMDB key are stored per code
   (`tenantStorageSuffix()` = `@t<code>`) so two distributors never share one.
   The panel only ever hands a distributor its own TMDB key and its own
@@ -379,8 +379,8 @@ Omitir choice, settings, `cache_clear_seen`). The PWA (no bridge) only does
   take the category key (`keyOf` / `kind`) so blocked categories hide in `injectNfCatalog` and
   `getCategoriesBySelectedType`. «Cambiar PIN» sends `set_pin` (`old_pin` + `pin`, encrypted answer, allowed in the
   main process).
-- **Review theme** («Tema de prueba», panel Pantalla Falsa, only with Omitir, `windows` / `macos` in
-  `REVIEW_THEME_APPS`): `features.review` makes the login simple (no DNS button, no device code); Auto-Demo
+- **Review theme** («Tema de prueba», panel Pantalla Falsa, only with Omitir, `windows` / `macos` /
+  `linux` in `REVIEW_THEME_APPS`): `features.review` makes the login simple (no DNS button, no device code); Auto-Demo
   (`review_login` `{demo: 1}`) or a theme account opens `/review`, and with the theme on Ingresar never falls back to
   an IPTV line (a wrong theme account shows the panel's message). With `features.review` false the login is the real
   one: IPTV user/password, the DNS button and Auto-Demo only with a configured demo. The switch is read from the panel

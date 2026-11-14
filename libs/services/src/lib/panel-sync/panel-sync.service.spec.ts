@@ -1,4 +1,4 @@
-import { clearTenant, isSessionDemo, PANEL_DEMO_BLOCKED_EVENT, PANEL_TENANT_ERROR_EVENT, blockedForDemo, saveTenantCode, setSessionDemo } from '@iptvnator/shared/interfaces';
+import { clearTenant, isSessionDemo, PANEL_APP_ID, PANEL_DEMO_BLOCKED_EVENT, PANEL_TENANT_ERROR_EVENT, blockedForDemo, saveTenantCode, setSessionDemo } from '@iptvnator/shared/interfaces';
 import { lineKey } from './panel-progress.client';
 import { PanelSyncService } from './panel-sync.service';
 
@@ -46,7 +46,7 @@ describe('PanelSyncService', () => {
         expect(tree.Movie['10'].timeline).toBe(100);
         const auth = calls.filter((c) => c.init?.method === 'POST');
         expect(auth).toHaveLength(1);
-        expect(JSON.parse(String(auth[0].init?.body))).toEqual({ action: 'auth', user: 'line1', pass: 'secret', dns: 'http://dns.test:8080', platform: 'windows' });
+        expect(JSON.parse(String(auth[0].init?.body))).toEqual({ action: 'auth', user: 'line1', pass: 'secret', dns: 'http://dns.test:8080', platform: PANEL_APP_ID });
         expect(calls[1].url).toContain('progress.php?v=2&lang=');
         // the panel answers its texts in the app language
         expect(calls[0].url).toMatch(/progress\.php\?lang=(es|en|pt|fr)$/);
@@ -69,7 +69,7 @@ describe('PanelSyncService', () => {
             await service().getAllProgress(creds);
             const auth = calls.find((c) => c.init?.method === 'POST');
             expect(JSON.parse(String(auth?.init?.body))).toEqual({
-                action: 'auth', user: 'line1', pass: 'secret', dns: 'http://dns.test:8080', tenant: '123456', app: 'windows', platform: 'windows',
+                action: 'auth', user: 'line1', pass: 'secret', dns: 'http://dns.test:8080', tenant: '123456', app: PANEL_APP_ID, platform: PANEL_APP_ID,
             });
             expect(localStorage.getItem('panel_sync_token2:line1@dns.test:8080@t123456')).toBe('tok');
             expect(localStorage.getItem('panel_sync_token2:line1@dns.test:8080')).toBe('owner-token');

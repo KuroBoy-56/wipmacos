@@ -11,16 +11,23 @@ import type { UiText } from './app-language.util';
  *   branding (name, logo, palette) comes from api/login.php tenant_config.
  */
 
+export type PanelAppId = 'windows' | 'macos' | 'linux';
+
 /**
- * App id this build sends to the panel: 'macos' on a Mac, 'windows' everywhere else
- * (Windows and Linux desktop). Works in the Electron main process (process.platform),
- * in the renderer (navigator) and in Node builds without the DOM.
+ * App id this build sends to the panel (device type in Clientes MAC, distributor apps, fake screen, demo and review
+ * theme per app): 'macos' on a Mac, 'linux' on Linux desktop, 'windows' otherwise. Works in the Electron main process
+ * (process.platform), in the renderer (navigator) and in Node builds without the DOM.
  */
-export function panelAppId(): 'windows' | 'macos' {
+export function panelAppId(): PanelAppId {
     const proc = (globalThis as { process?: { platform?: string } }).process;
     if (proc?.platform === 'darwin') return 'macos';
+    if (proc?.platform === 'linux') return 'linux';
+    if (proc?.platform === 'win32') return 'windows';
     const nav = (globalThis as { navigator?: { platform?: string; userAgent?: string } }).navigator;
-    if (nav && /Mac/i.test(String(nav.platform || nav.userAgent || ''))) return 'macos';
+    const ua = String(nav?.userAgent ?? '');
+    const platform = String(nav?.platform || ua);
+    if (/Mac/i.test(platform)) return 'macos';
+    if (/Linux/i.test(platform) && !/Android/i.test(ua)) return 'linux';
     return 'windows';
 }
 
