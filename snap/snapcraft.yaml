@@ -82,13 +82,13 @@ parts:
       - libxshmfence1
       - mpv
 
-  # Drop files the core and gnome content snaps already provide (smaller snap, no duplicate libs).
+  # Drop files core24 already provides (its libraries are always on the loader path). Not the
+  # gnome-46-2404 ones: core24's gnome extension does not put gnome-platform on LD_LIBRARY_PATH,
+  # so mpv (an Ubuntu binary) would lose FFmpeg, PulseAudio, fontconfig... and not start.
   cleanup:
     after: [mpx-player, launcher, mpv-runtime]
     plugin: nil
-    build-snaps: [core24, gnome-46-2404]
+    build-snaps: [core24]
     override-prime: |
       set -eux
-      for snap in core24 gnome-46-2404; do
-        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" \;
-      done
+      cd /snap/core24/current && find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" \;
