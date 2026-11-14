@@ -94,7 +94,7 @@ remoto (8765) escucha en la red sin autenticación. Ver LINUX_SECURITY_REPORT.
 ```bash
 git fetch origin && git checkout linux
 # CI completo (deb, AppImage, rpm, Snap, Flatpak + pruebas + release de GitHub); necesita el secreto PANEL_MASTER_KEY:
-git tag linux-v1.5.24 && git push origin linux-v1.5.24
+git commit --allow-empty -m "Linux <versión> [linux build]" && git push origin linux   # o un tag linux-v*
 # local: ver docs/LINUX_PACKAGING.md §4
 ```
 

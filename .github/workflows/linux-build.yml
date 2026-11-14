@@ -3,12 +3,15 @@ name: Build Linux (deb, AppImage, rpm, Snap, Flatpak)
 # MPX Player for Linux (branch `linux`). Builds and tests the packages and, when every test
 # passes, publishes them as a GitHub release named after the tag. It never uploads to the Snap
 # Store or Flathub (the owner does that, docs/LINUX_PACKAGING.md).
-# Started only on demand: push a tag `linux-v*` (e.g. linux-v1.5.24). "Run workflow" also works
-# once this file exists on the default branch (GitHub requirement for workflow_dispatch).
+# Started only on demand: a push to `linux` whose commit message contains [linux build], or a tag
+# `linux-v*`. The release is `linux-v<version of package.json>` (or the tag). "Run workflow" also
+# works once this file exists on the default branch (GitHub requirement for workflow_dispatch).
 # Needs the repository secret PANEL_MASTER_KEY (64 hex characters): without it the run stops.
 
 on:
     push:
+        branches:
+            - linux
         tags:
             - 'linux-v*'
     workflow_dispatch:
@@ -23,9 +26,13 @@ permissions:
 jobs:
     electron:
         name: Electron app (linux-unpacked, deb, AppImage, rpm)
+        # every other push to `linux` is ignored (the whole run is skipped)
+        if: startsWith(github.ref, 'refs/tags/linux-v') || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[linux build]')
         # glibc 2.35: the native modules also load on Ubuntu 22.04 / Debian 12 and in the
         # core24 and freedesktop runtimes used by the Snap and the Flatpak.
         runs-on: ubuntu-22.04
+        outputs:
+            version: ${{ steps.version.outputs.version }}
         timeout-minutes: 90
         env:
             # Embedded MPV on Linux: an X11 child window + a separate `mpv --wid` process.
@@ -45,6 +52,10 @@ jobs:
                   fi
 
             - uses: actions/checkout@v4
+
+            - name: Version
+              id: version
+              run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
             - uses: pnpm/action-setup@v4
 
@@ -313,7 +324,6 @@ jobs:
         name: GitHub release
         # only when every package built and passed its tests
         needs: [electron, portable-mpv, snap, flatpak]
-        if: startsWith(github.ref, 'refs/tags/linux-v')
         runs-on: ubuntu-latest
         permissions:
             contents: write
@@ -326,7 +336,7 @@ jobs:
             - name: Publish
               env:
                   GH_TOKEN: ${{ github.token }}
-                  TAG: ${{ github.ref_name }}
+                  TAG: ${{ startsWith(github.ref, 'refs/tags/linux-v') && github.ref_name || format('linux-v{0}', needs.electron.outputs.version) }}
               run: |
                   # artifacts keep their folders (dist/executables/, flatpak/): collect the packages flat
                   mkdir release

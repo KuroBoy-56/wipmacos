@@ -90,7 +90,8 @@ flatpak run com.latmpx.MPXPlayer
 xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv -- flatpak run com.latmpx.MPXPlayer
 ```
 
-En CI: `git tag linux-v1.5.24 && git push origin linux-v1.5.24` arranca `linux-build.yml`. Necesita el secreto del
+En CI: un push a `linux` con `[linux build]` en el mensaje del commit (o un tag `linux-v*`) arranca `linux-build.yml`;
+el release se llama `linux-v<versión de package.json>`. Necesita el secreto del
 repositorio **`PANEL_MASTER_KEY`** (64 caracteres hex; Settings › Secrets and variables › Actions): sin él el run se
 detiene al principio. Si todas las pruebas pasan, publica un **release de GitHub** con el AppImage, `.deb`, `.rpm`,
 `.snap` y `.flatpak` (las tiendas no se tocan).
