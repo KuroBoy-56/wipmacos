@@ -11,6 +11,7 @@ import {
     Theme,
     VideoPlayer,
 } from '@iptvnator/shared/interfaces';
+import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 import { SettingsStore } from './settings-store.service';
 
 const expectedDashboardRails = (
@@ -45,6 +46,7 @@ describe('SettingsStore dashboard rail settings', () => {
         injector = Injector.create({
             providers: [
                 SettingsStore,
+                RuntimeCapabilitiesService,
                 {
                     provide: StorageMap,
                     useValue: storage,
@@ -140,5 +142,37 @@ describe('SettingsStore dashboard rail settings', () => {
         await store.loadSettings();
 
         expect(store.language()).toBe('en');
+    });
+});
+
+describe('SettingsStore VLC outside Windows', () => {
+    afterEach(() => {
+        delete (window as unknown as { electron?: unknown }).electron;
+    });
+
+    async function loadWith(platform: string) {
+        (window as unknown as { electron?: unknown }).electron = { platform };
+        const storage = {
+            get: jest.fn(() => of({ player: VideoPlayer.VLC })),
+            set: jest.fn(() => of(undefined)),
+        };
+        const injector = Injector.create({
+            providers: [SettingsStore, RuntimeCapabilitiesService, { provide: StorageMap, useValue: storage }],
+        });
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        return store;
+    }
+
+    it('turns a saved VLC choice into MPV on macOS and Linux', async () => {
+        expect((await loadWith('linux')).getPlayer()).toBe(VideoPlayer.MPV);
+        expect((await loadWith('darwin')).getPlayer()).toBe(VideoPlayer.MPV);
+    });
+
+    it('keeps VLC on Windows and never lets Linux pick it again', async () => {
+        expect((await loadWith('win32')).getPlayer()).toBe(VideoPlayer.VLC);
+        const linux = await loadWith('linux');
+        await linux.updateSettings({ player: VideoPlayer.VLC });
+        expect(linux.getPlayer()).toBe(VideoPlayer.MPV);
     });
 });

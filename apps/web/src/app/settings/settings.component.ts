@@ -178,7 +178,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
         }
         if (this.supportsManagedExternalPlayers) {
             const externalOpts = SETTINGS_OS_PLAYER_OPTIONS.filter(opt => {
-                if (opt.id === VideoPlayer.VLC && isDemo) {
+                // VLC solo en Windows; en macOS y Linux, MPV / MPV integrado
+                if (opt.id === VideoPlayer.VLC && (isDemo || !this.runtime.supportsVlc)) {
                     return false;
                 }
                 return true;

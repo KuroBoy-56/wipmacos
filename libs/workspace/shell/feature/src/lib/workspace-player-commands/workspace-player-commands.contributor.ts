@@ -8,7 +8,7 @@ import {
 import { RuntimeCapabilitiesService, SettingsStore } from '@iptvnator/services';
 import { VideoPlayer } from '@iptvnator/shared/interfaces';
 
-type PlayerCommandRequirement = 'none' | 'managed-external' | 'embedded-mpv';
+type PlayerCommandRequirement = 'none' | 'managed-external' | 'embedded-mpv' | 'vlc';
 
 interface PlayerCommandDefinition {
     id: string;
@@ -72,7 +72,7 @@ const PLAYER_COMMAND_DEFS: readonly PlayerCommandDefinition[] = [
         icon: 'play_circle_outline',
         nameKey: 'SETTINGS.PLAYER_VLC',
         keywords: ['player', 'vlc', 'external'],
-        requires: 'managed-external',
+        requires: 'vlc',
         priority: 95,
     },
 ];
@@ -165,6 +165,8 @@ export class WorkspacePlayerCommandsContributor {
                 return this.runtime.supportsManagedExternalPlayers;
             case 'embedded-mpv':
                 return this.embeddedMpvSupported();
+            case 'vlc':
+                return this.runtime.supportsVlc;
             default:
                 return true;
         }

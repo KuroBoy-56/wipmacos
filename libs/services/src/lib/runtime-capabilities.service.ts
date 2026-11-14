@@ -232,6 +232,11 @@ export class RuntimeCapabilitiesService {
         );
     }
 
+    /** VLC solo en Windows (lleva su vlc.exe); en macOS y Linux se usa MPV / MPV integrado. */
+    get supportsVlc(): boolean {
+        return this.isWindows && this.supportsManagedExternalPlayers;
+    }
+
     get supportsExternalPlayerPathSettings(): boolean {
         return ['setMpvPlayerPath', 'setVlcPlayerPath'].every((methodName) =>
             this.hasElectronMethod(methodName)
