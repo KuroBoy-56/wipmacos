@@ -151,7 +151,7 @@ jobs:
               run: |
                   # system mpv out of the way: the bundled one must be the one that works
                   sudo apt-get remove -y mpv
-                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                  timeout 600 xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
                       --screenshot=smoke-linux-unpacked.png -- dist/executables/linux-unpacked/mpx-player.bin --no-sandbox
 
             - name: Smoke test (AppImage)
@@ -161,7 +161,7 @@ jobs:
               run: |
                   APP="$(ls dist/executables/*.AppImage | head -n 1)"
                   chmod +x "$APP"
-                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                  timeout 600 xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
                       --screenshot=smoke-appimage.png -- "$APP" --no-sandbox
 
             - name: Pack linux-unpacked for the Snap and the Flatpak (without the portable mpv)
@@ -256,7 +256,7 @@ jobs:
                   sudo apt-get update && sudo apt-get install --no-install-recommends -y xvfb
                   sudo snap install --dangerous "${{ steps.snapcraft.outputs.snap }}"
                   snap connections mpx-player
-                  xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                  timeout 600 xvfb-run -a node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
                       --screenshot=smoke-snap.png -- /snap/bin/mpx-player
 
             - uses: actions/upload-artifact@v4
@@ -283,7 +283,7 @@ jobs:
             - name: Flatpak tooling and runtimes
               run: |
                   sudo apt-get update
-                  sudo apt-get install --no-install-recommends -y flatpak flatpak-builder xvfb dbus-x11
+                  sudo apt-get install --no-install-recommends -y flatpak flatpak-builder elfutils xvfb dbus-x11
                   flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
                   flatpak install --user -y --noninteractive flathub org.flatpak.Builder
 
@@ -303,7 +303,7 @@ jobs:
 
             - name: Smoke test inside the Flatpak sandbox
               run: |
-                  xvfb-run -a dbus-run-session -- node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
+                  timeout 600 xvfb-run -a dbus-run-session -- node tools/linux/smoke-test.mjs --expect-embedded-mpv --expect-panel-key \
                       --screenshot=smoke-flatpak.png -- flatpak run com.latmpx.MPXPlayer
 
             - name: Flathub linter (report only)

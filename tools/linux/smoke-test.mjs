@@ -145,17 +145,25 @@ async function main() {
             console.log('SMOKE TEST PASSED');
         }
     } finally {
-        try {
-            process.kill(-app.pid, 'SIGTERM');
-        } catch {
-            // already gone
-        }
+        // stop the whole process group; a sandboxed app that ignores SIGTERM gets SIGKILL
+        const signal = (sig) => {
+            try {
+                process.kill(-app.pid, sig);
+            } catch {
+                // already gone
+            }
+        };
+        signal('SIGTERM');
+        if ((await Promise.race([exited, sleep(5000).then(() => 'timeout')])) === 'timeout') signal('SIGKILL');
     }
 }
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
-    main().catch((error) => {
-        console.error(`SMOKE TEST FAILED: ${error.message}`);
-        process.exit(1);
-    });
+    main()
+        .catch((error) => {
+            console.error(`SMOKE TEST FAILED: ${error.message}`);
+            process.exitCode = 1;
+        })
+        // never wait for leftover children of the app (zygotes, sandbox helpers)
+        .finally(() => process.exit(process.exitCode ?? 0));
 }
