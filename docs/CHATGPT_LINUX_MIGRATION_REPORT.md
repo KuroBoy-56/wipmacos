@@ -42,7 +42,6 @@ libXpresent sobre freedesktop 26.08. Ver LINUX_DEPENDENCIES.
 ## 9. Funciones pendientes
 - Ejecutar el workflow y la prueba de arranque de la app real en los tres formatos (cuando el dueño lo pida).
 - Prueba manual con una cuenta real (login, reproducción, descargas, favoritos): lista en LINUX_MIGRATION_PROGRESS.
-- VLC externo en Snap/Flatpak (no disponible; sí en .deb/.rpm/AppImage).
 - Id `linux` en el panel (hoy Linux se registra como `windows`).
 
 ## 10. Multimedia
@@ -86,7 +85,6 @@ remoto (8765) escucha en la red sin autenticación. Ver LINUX_SECURITY_REPORT.
 ## 17. Problemas conocidos
 - `latmpx.com` responde 404: Flathub no podrá verificar `com.latmpx.MPXPlayer` hasta que el dominio sirva la verificación.
 - Faltan capturas de pantalla públicas para AppStream.
-- VLC no está en Snap/Flatpak.
 - MPV embebido en Linux sin aceleración por hardware (`hwdec=no`, heredado).
 - El workflow heredado `build-and-make.yaml` sigue apuntando a `master` y a los nombres de IPTVnator; no se usa.
 

@@ -21,7 +21,7 @@ Ubuntu 22.04+/Debian 12 y dentro de core24 (Snap) y freedesktop 26.08 (Flatpak),
 
 | Formato | Lo que trae el paquete | Lo que pone el sistema |
 | --- | --- | --- |
-| `.deb` / `.rpm` / AppImage (x64) | Electron completo + **mpv portable** (`tools/linux/bundle-mpv.sh`: el mpv de Ubuntu 22.04 con sus bibliotecas, sin glibc, drivers de GPU, X11/Wayland, ALSA, fuentes ni D-Bus) | GTK 3, NSS, ALSA/PulseAudio, X11 o XWayland, Mesa/GL; FUSE 2 para el AppImage (o `--appimage-extract-and-run`); VLC opcional |
+| `.deb` / `.rpm` / AppImage (x64) | Electron completo + **mpv portable** (`tools/linux/bundle-mpv.sh`: el mpv de Ubuntu 22.04 con sus bibliotecas, sin glibc, drivers de GPU, X11/Wayland, ALSA, fuentes ni D-Bus) | GTK 3, NSS, ALSA/PulseAudio, X11 o XWayland, Mesa/GL; FUSE 2 para el AppImage (o `--appimage-extract-and-run`) |
 | Snap (`mpx-player`, core24) | Electron + `mpv` y sus bibliotecas (stage-packages de Ubuntu 24.04) + bibliotecas de Electron que no da la extensión GNOME | core24 y `gnome-46-2404` (GTK, Mesa, etc.) |
 | Flatpak (`com.latmpx.MPXPlayer`) | Electron + mpv 0.41.0, libplacebo 7.360.1, libass 0.17.4, LuaJIT 2.1, libXpresent 1.0.1 (compilados en el manifiesto) | runtime `org.freedesktop.Platform//26.08` (FFmpeg 8.1), `org.electronjs.Electron2.BaseApp//26.08` (zypak), extensión `codecs-extra` (H.264, HEVC, AAC, AC-3 completos) |
 
@@ -32,7 +32,7 @@ Ubuntu 22.04+/Debian 12 y dentro de core24 (Snap) y freedesktop 26.08 (Flatpak),
 | Reproductor integrado | FFmpeg de Electron | igual (no depende del sistema) |
 | MPV embebido | `libmpv-2.dll` LGPL dentro del proceso | proceso `mpv --wid=<ventana X11>` controlado por IPC JSON; el binario `mpv` es el del paquete (Snap/Flatpak) o del sistema |
 | MPV externo | `bin/mpv/mpv.exe` | el mismo `mpv` del punto anterior |
-| VLC externo | `bin/vlc/vlc.exe` | VLC del sistema (.deb/.rpm/AppImage); no disponible en Snap/Flatpak |
+| VLC externo | `bin/vlc/vlc.exe` | no se ofrece en Linux (desde 1.5.25): MPV integrado o MPV |
 | FFmpeg | en las DLL de mpv | Flatpak: el del runtime + `codecs-extra`; Snap: libavcodec de Ubuntu 24.04 (dependencia de mpv); sistema: el de la distribución |
 | Aceleración por hardware | `hwdec=auto-safe` (D3D11) | MPV externo: `hwdec` por defecto de mpv (VA-API disponible en el Flatpak, `-Dvaapi=enabled`); MPV embebido Linux usa `vo=x11`, `hwdec=no` (decisión heredada del addon) |
 | Audio | WASAPI | PulseAudio/PipeWire (Flatpak `--socket=pulseaudio`, Snap `audio-playback`) |
