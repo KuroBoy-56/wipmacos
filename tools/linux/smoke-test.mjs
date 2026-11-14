@@ -20,10 +20,6 @@ const START_TIMEOUT_MS = 120_000;
 const sep = process.argv.indexOf('--');
 const flags = sep === -1 ? process.argv.slice(2) : process.argv.slice(2, sep);
 const command = sep === -1 ? [] : process.argv.slice(sep + 1);
-if (command.length === 0) {
-    console.error('usage: smoke-test.mjs [--expect-embedded-mpv] [--expect-panel-key] [--screenshot=file.png] -- <command...>');
-    process.exit(2);
-}
 const expectEmbeddedMpv = flags.includes('--expect-embedded-mpv');
 const expectPanelKey = flags.includes('--expect-panel-key');
 const screenshotPath = flags.find((f) => f.startsWith('--screenshot='))?.split('=')[1];
@@ -67,19 +63,26 @@ export function checkProbe(result, { expectEmbeddedMpv: needMpv, expectPanelKey:
     return failures;
 }
 
+/** The app window: Angular moves the URL from .../index.html to routes like .../login, so any page counts. */
+export function pickAppPage(targets) {
+    return targets.find((t) => t.type === 'page' && /^(file|https?):/.test(t.url) && !t.url.startsWith('devtools:'));
+}
+
 async function findAppPage() {
     const deadline = Date.now() + START_TIMEOUT_MS;
+    let targets = [];
     while (Date.now() < deadline) {
         try {
-            const targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
-            const page = targets.find((t) => t.type === 'page' && /index\.html|localhost/.test(t.url));
+            targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
+            const page = pickAppPage(targets);
             if (page) return page;
         } catch {
             // DevTools endpoint not up yet
         }
         await sleep(1000);
     }
-    throw new Error(`no app window on the DevTools port within ${START_TIMEOUT_MS / 1000}s`);
+    const seen = targets.map((t) => `${t.type} ${t.url}`).join(', ') || 'none';
+    throw new Error(`no app window on the DevTools port within ${START_TIMEOUT_MS / 1000}s (targets: ${seen})`);
 }
 
 function cdp(wsUrl) {
@@ -106,6 +109,10 @@ function cdp(wsUrl) {
 }
 
 async function main() {
+    if (command.length === 0) {
+        console.error('usage: smoke-test.mjs [--expect-embedded-mpv] [--expect-panel-key] [--screenshot=file.png] -- <command...>');
+        process.exit(2);
+    }
     const args = [
         ...command.slice(1),
         `--remote-debugging-port=${PORT}`,
