@@ -89,10 +89,12 @@ jobs:
                   pnpm nx test electron-backend --testPathPatterns='(external-player-launch-context|embedded-mpv-native\.service|bundled-mpv-path|panel-login\.service|panel-report\.service)\.spec'
                   node --test tools/packaging/linux-after-pack.test.mjs
                   # login (Auto-Demo / tema de prueba) y VLC solo en Windows
-                  pnpm nx test web --testPathPatterns='(login-demo\.util|panel-tenant\.service)\.spec'
+                  pnpm nx test web --testPathPatterns='(login-demo\.util|panel-tenant\.service|sports-data\.service|sports-menu\.util)\.spec'
                   pnpm nx test shared-interfaces --testPathPatterns=panel-tenant\.util
                   pnpm nx test services --testPathPatterns=settings-store --testNamePattern='VLC outside Windows'
                   pnpm nx test services --testPathPatterns=panel-sync\.service
+                  pnpm nx test services --testPathPatterns=sports-matcher
+                  pnpm nx test portal-xtream-feature --testPathPatterns=live-stream-layout.component --testNamePattern='saved list'
                   pnpm nx test workspace-shell-feature --testPathPatterns=workspace-player-commands --testNamePattern='VLC only'
 
             - name: Build frontend
