@@ -333,9 +333,10 @@ export class LiveStreamLayoutComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            const item = allChannels.find(
-                (channel) => Number(channel?.xtream_id) === pendingId
-            );
+            const item =
+                allChannels.find(
+                    (channel) => Number(channel?.xtream_id) === pendingId
+                ) ?? this.liveAutoOpenState.fallbackItem(pendingId);
             if (!item) {
                 this.pendingAutoOpenLiveItemId.set(null);
                 return;
