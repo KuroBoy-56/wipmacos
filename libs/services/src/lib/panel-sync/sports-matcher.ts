@@ -66,6 +66,44 @@ export function sportsTeamScore(channel: string, team: string, rules: SportsMatc
     return best;
 }
 
+interface IndexedStream {
+    st: SportsLiveStream;
+    /** normalizeSportsText(name) */
+    norm: string;
+    /** channelKey(name) */
+    key: string[];
+}
+
+interface SportsIndex {
+    items: IndexedStream[];
+    /** channelKey joined without spaces -> positions in items */
+    byCompact: Map<string, number[]>;
+}
+
+// shortcut: the index lives as long as the streams array (WeakMap); a new list builds a new one
+const INDEXES = new WeakMap<readonly SportsLiveStream[], SportsIndex>();
+
+/** Normalized names and channel keys, built once per channel list (Roku: nfSportIndex). */
+function sportsIndex(streams: readonly SportsLiveStream[]): SportsIndex {
+    let idx = INDEXES.get(streams);
+    if (idx) return idx;
+    idx = { items: [], byCompact: new Map() };
+    for (const st of streams) {
+        if (!st?.stream_id) continue;
+        const name = String(st.name ?? '');
+        const key = channelKey(name);
+        const pos = idx.items.push({ st, norm: normalizeSportsText(name), key }) - 1;
+        const compact = key.join('');
+        if (compact) idx.byCompact.set(compact, [...(idx.byCompact.get(compact) ?? []), pos]);
+    }
+    INDEXES.set(streams, idx);
+    return idx;
+}
+
+function toMatch(st: SportsLiveStream, partial = false): SportsChannelMatch {
+    return { streamId: String(st.stream_id), categoryId: String(st.category_id ?? ''), name: String(st.name ?? ''), partial };
+}
+
 function mergeRules(rules?: Partial<SportsMatchRules> | null): SportsMatchRules {
     const d = DEFAULT_SPORTS_MATCH_RULES;
     return {
@@ -78,7 +116,8 @@ function mergeRules(rules?: Partial<SportsMatchRules> | null): SportsMatchRules 
 
 /**
  * Finds the user's live channel for a match with the panel's rules (the web
- * player's sp_find_channel). Falls back to the first event category.
+ * player's sp_find_channel). Falls back to the first channel of the event
+ * folders (partial), as Roku, Vega and webOS do; null without one.
  */
 export function findSportsChannel(
     event: Pick<PanelSportsEvent, 'h' | 'a' | 'lg' | 'ev'>,
@@ -108,10 +147,10 @@ export function findSportsChannel(
     const single = withTeams ? [] : sportsTokens(event.ev ?? '', rules);
     let best: { score: number; stream: SportsLiveStream } | null = null;
 
-    for (const st of streams) {
-        if (!st?.stream_id) continue;
+    let folder: SportsLiveStream | null = null;
+    for (const { st, norm: chan } of sportsIndex(streams).items) {
         const isEv = eventCats.has(String(st.category_id ?? ''));
-        const chan = normalizeSportsText(st.name);
+        if (isEv && !folder) folder = st;
         let score: number;
         if (withTeams) {
             const hs = sportsTeamScore(chan, home, rules);
@@ -132,19 +171,8 @@ export function findSportsChannel(
         if (!best || score > best.score) best = { score, stream: st };
     }
 
-    if (best) {
-        return {
-            streamId: String(best.stream.stream_id),
-            categoryId: String(best.stream.category_id ?? ''),
-            name: String(best.stream.name ?? ''),
-            partial: false,
-        };
-    }
-    const first = eventCats.entries().next();
-    if (!first.done) {
-        return { streamId: '', categoryId: first.value[0], name: first.value[1], partial: true };
-    }
-    return null;
+    if (best) return toMatch(best.stream);
+    return folder ? toMatch(folder, true) : null;
 }
 
 /* ---------- broadcast channel -> the client's channels ("ESPN 2" -> its ESPN 2 channels) ---------- */
@@ -157,13 +185,15 @@ const CHANNEL_NOISE = new Set([
     've', 'venezuela', 'uy', 'uruguay', 'py', 'paraguay', 'bo', 'bolivia', 'cr', 'pa', 'panama', 'gt', 'hn', 'sv', 'ni', 'do', 'pr',
     'latam', 'latin', 'latino', 'latina', 'lat', 'america', 'es', 'esp', 'spain', 'espana', 'uk', 'gb', 'int', 'intl', 'international',
     'br', 'bra', 'brasil', 'brazil', 'pt', 'portugal', 'ca', 'can', 'canada', 'fr', 'france', 'it', 'italy', 'de', 'germany',
-    'nl', 'netherlands', 'au', 'australia', 'nz', 'zealand', 'new', 'ie', 'ireland',
+    'nl', 'netherlands', 'au', 'australia', 'nz', 'zealand', 'new', 'ie', 'ireland', 'en', 'network', 'net',
 ]);
 
 /** Words that identify a channel; a number sticks to the word before it ("ESPN 2" -> ["espn2"]). */
 export function channelKey(name: string): string[] {
     const out: string[] = [];
-    for (const t of normalizeSportsText(name).split(' ')) {
+    for (let t of normalizeSportsText(name).split(' ')) {
+        // "M+ LaLiga" (Movistar Plus) arrives as "m laliga"
+        if (t === 'm') t = 'movistar';
         if (!t || CHANNEL_NOISE.has(t)) continue;
         if (/^\d+$/.test(t) && out.length && !/^\d+$/.test(out[out.length - 1])) out[out.length - 1] += t;
         else out.push(t);
@@ -172,28 +202,49 @@ export function channelKey(name: string): string[] {
 }
 
 /**
- * The client's channel for a broadcast channel name: same name without quality or country first,
- * then one that contains all its words. "ESPN 2" never returns "ESPN" or "ESPN 3".
+ * The client's channel for a broadcast channel name (webOS / Vega / Roku): same name without quality or country
+ * first, then one that contains all its words, last one that has them glued ("La Liga Hypermotion" =
+ * "laligahypermotion"). "ESPN 2" never returns "ESPN" or "ESPN 3".
  */
 export function findChannelByName(tvName: string, streams: readonly SportsLiveStream[]): SportsLiveStream | null {
     const q = channelKey(tvName);
     const qs = q.join(' ');
     const qc = q.join('');
     if (!q.length || qc.length < 2) return null;
-    let best: { score: number; stream: SportsLiveStream } | null = null;
-    for (const st of streams) {
-        if (!st?.stream_id) continue;
-        const k = channelKey(String(st.name ?? ''));
-        if (!k.length) continue;
-        let score: number;
-        if (k.join(' ') === qs) score = 1000 - k.length;
-        else if (k.join('') === qc) score = 900 - k.length;
-        else if (q.every((t) => k.includes(t))) score = 500 - 10 * (k.length - q.length);
-        else continue;
-        score -= String(st.name ?? '').length / 1000;
-        if (!best || score > best.score) best = { score, stream: st };
+    const idx = sportsIndex(streams);
+    const len = (it: IndexedStream) => String(it.st.name ?? '').length;
+    let best: IndexedStream | null = null;
+    let bestScore = -Infinity;
+    const consider = (it: IndexedStream, score: number) => {
+        if (!best || score > bestScore) {
+            best = it;
+            bestScore = score;
+        }
+    };
+    const exact = idx.byCompact.get(qc);
+    if (exact) {
+        for (const i of exact) {
+            const it = idx.items[i];
+            consider(it, 1000 - it.key.length * 10 - len(it) + (it.key.join(' ') === qs ? 100 : 0));
+        }
+    } else {
+        for (const it of idx.items) {
+            if (it.key.length && q.every((t) => it.key.includes(t))) consider(it, 500 - 10 * (it.key.length - q.length) - len(it));
+        }
+        if (!best && q[0].length >= 3) {
+            // glued words: each word inside the channel's key, not followed by a number
+            const want = qc.length;
+            for (const it of idx.items) {
+                const compact = it.key.join('');
+                if (!compact || !q.every((t) => {
+                    const p = compact.indexOf(t);
+                    return p >= 0 && !/\d/.test(compact.charAt(p + t.length));
+                })) continue;
+                consider(it, 300 - (compact.length - want) - len(it));
+            }
+        }
     }
-    return best ? best.stream : null;
+    return best ? (best as IndexedStream).st : null;
 }
 
 /** First broadcast channel of the match the client has, else the team / event-name match. */
@@ -205,7 +256,7 @@ export function findSportsChannelForEvent(
 ): SportsChannelMatch | null {
     for (const t of event.tv ?? []) {
         const st = findChannelByName(t.n, streams);
-        if (st) return { streamId: String(st.stream_id), categoryId: String(st.category_id ?? ''), name: String(st.name ?? ''), partial: false };
+        if (st) return toMatch(st);
     }
     return findSportsChannel(event, streams, categories, panelRules);
 }
