@@ -69,6 +69,8 @@ export interface PanelSportsAgenda {
     tables?: { on: boolean; t?: number };
     /** Teams / National teams tabs (api/sports_fixtures.php): on, version and whether national teams are chosen. */
     fixtures?: { on: boolean; t?: number; nat?: boolean };
+    /** Channels shown on each match (panel Deportes): all = the agenda's broadcast channels, iptv = only the client's. */
+    chan?: 'all' | 'iptv';
 }
 
 /** One row of a standings table (api/sports_tables.php). z: zone p/s/o/r; f: last results (W/D/L). */

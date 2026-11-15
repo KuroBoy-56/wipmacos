@@ -1202,6 +1202,24 @@ describe('LiveStreamLayoutComponent', () => {
             );
         });
 
+        it('plays a channel missing from the saved list when the caller sends its name (Deportes)', () => {
+            window.history.replaceState(
+                { openXtreamLiveItemId: 555, openXtreamLiveTitle: 'EVENTO 03: Boca vs River', openXtreamLivePoster: 'ev.png' },
+                ''
+            );
+            liveStreams.set([searchChannel]);
+            fixture.detectChanges();
+
+            triggerNavigationEnd();
+            fixture.detectChanges();
+
+            expect(xtreamStore.constructStreamUrl).toHaveBeenCalledWith({
+                xtream_id: 555,
+                title: 'EVENTO 03: Boca vs River',
+                poster_url: 'ev.png',
+            });
+        });
+
         it('re-triggers auto-open on re-navigation when component is reused', () => {
             liveStreams.set([searchChannel]);
             fixture.detectChanges();
