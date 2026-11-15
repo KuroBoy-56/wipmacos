@@ -387,8 +387,8 @@ Omitir choice, settings, `cache_clear_seen`). The PWA (no bridge) only does
   on every login screen, so turning the theme off in the panel needs no new build (Movies, Series, Settings with «Cerrar sesión») playing the panel's `api/player` videos in an
   HTML5 `<video>`. Nothing is registered, saved or cached.
 - **Top 10 de la semana**: `api/top10.php` (public GET, `?t=&app=` with a distributor) → `PanelWeekTopService`.
-- **Sports guide**: `api/sports_epg.php` (POST with the token) → `SportsDataService.findChannel` when no broadcast
-  channel is in the client's list.
+- **Sports guide**: `api/sports_epg.php` (POST with the token) → `SportsDataService.matchEvents` (`epg` of each
+  match; the best channel when none of its broadcast channels is in the client's list).
 - Windows and macOS do **not** use `api/tracks.php`: MPV / VLC read the file's audio and subtitle tracks themselves.
 
 ## Anti-replay `ts`
@@ -638,21 +638,35 @@ It applies the panel's `match` rules to the line's live streams and categories:
 The live streams and categories are fetched through `providerApiGet`, which
 uses the Electron Xtream bridge.
 
-The best channel opens in the Xtream live view, through the
-`openXtreamLiveItemId` history state. When there is no exact match, the first
-event category opens instead.
+The channel opens and plays in the Xtream live view through the
+`openXtreamLiveItemId` history state (with its name and logo); a channel newer
+than the saved list (event channels change every day) still plays, by its id
+(`LiveStreamAutoOpenStateService.fallbackItem`). When there is no exact match the
+first channel of the event folders plays (never the category list).
 
 ### Broadcast channels
 
 Events may carry `tv: [{n, c}]` (channel name and country, region first), which
-the panel takes from TheSportsDB (`includes/sports_tv.php`). The card shows
-"En TV: …" and its button becomes **Ver canales**: a menu with **Ver el evento**
-(`findSportsChannelForEvent`: the first broadcast channel the client has, then the
-teams), one row per channel (`findChannelByName`) and **Buscar por equipos**
-(`findSportsChannel`). `channelKey` drops quality and country tags and glues a
+the panel takes from TheSportsDB (`includes/sports_tv.php`). As in webOS, Vega and
+Roku, `SportsDataService.matchEvents` matches every match once when the agenda
+loads, against the client's **visible** live channels only (no adult / blocked
+categories of the parental control, no category hidden in the saved list; the
+matcher's index is built once per channel list): `tv[].ch` per broadcast channel
+(`findChannelByName`), `epg` (channels with the match in their guide,
+`api/sports_epg.php`), `teams` (`findSportsChannel`, panel `match` rules) and
+`best` = first broadcast channel the client has, else the guide's, else teams.
+The card shows that channel in green ("Buscando…" / "Sin canal" otherwise).
+`channelKey` drops quality and country tags, reads "M+" as Movistar and glues a
 number to the word before it, so "ESPN 2" finds "MX: ESPN 2 HD" and never "ESPN"
-or "ESPN 3". A channel the client lacks falls back to the team / event-name match
-with a toast. Android, Vega, Roku and the web player use the same rules.
+or "ESPN 3"; the last try matches glued names ("La Liga Hypermotion").
+
+**Ver canales** opens the webOS menu (`sports-menu.util.ts`): **Ver el evento
+(canal automático)**, each broadcast channel ("en tu lista: X" in green, or "no
+está en tu lista: se busca el evento"), the guide and team channels, **Buscar
+canales: «equipo»** and a typed search (`searchChannels`, up to 12 visible
+channels, sports / event categories first). With the panel's Deportes mode
+`chan: "iptv"` the card's "En TV" line and the menu list only the client's own
+channels. Equipos / Selecciones matches are matched when pressed.
 
 ## Netflix look
 

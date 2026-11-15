@@ -146,26 +146,33 @@
         @if (tvLine(e); as tv) {
             <div class="sp-tvline" [title]="tv">{{ tv }}</div>
         }
+        @if (tab() === 'agenda') {
+            <div class="sp-chan" [class.ok]="hasChannel(e)" [title]="chanText(e)">📺 {{ chanText(e) }}</div>
+        }
         <div class="sp-foot">
             <span class="v">{{ e.v || (st === 'soon' ? time(e) : '') }}</span>
-            <button type="button" class="sp-tv" [disabled]="busyId() === e.id" (click)="open(e)">
-                {{ (busyId() === e.id ? 'MPX.SPORTS.FINDING' : e.tv?.length ? 'MPX.SPORTS.SEE_CHANNELS' : 'MPX.NAV.LIVE_TV') | translate }}
+            <button type="button" class="sp-tv" (click)="open(e)">
+                {{ 'MPX.SPORTS.SEE_CHANNELS' | translate }}
             </button>
         </div>
-        @if (menuId() === e.id) {
-            <div class="sp-menu" role="menu">
-                <button type="button" class="primary" role="menuitem" (click)="watch(e)">
-                    <b>▶ {{ 'MPX.SPORTS.WATCH_EVENT' | translate }}</b><small>{{ 'MPX.SPORTS.WATCH_EVENT_HINT' | translate }}</small>
-                </button>
-                @for (t of e.tv; track $index) {
-                    <button type="button" role="menuitem" (click)="watch(e, { kind: 'tv', name: t.n })">
-                        <b>{{ t.n }}</b><small>{{ t.c }}</small>
-                    </button>
-                }
-                <button type="button" role="menuitem" (click)="watch(e, { kind: 'teams' })">
-                    <b>{{ 'MPX.SPORTS.BY_TEAMS' | translate }}</b><small>{{ 'MPX.SPORTS.BY_TEAMS_HINT' | translate }}</small>
-                </button>
-            </div>
+        @if (menu(); as mn) {
+            @if (mn.id === e.id) {
+                <div class="sp-menu" role="menu" [attr.aria-label]="mn.title || ('MPX.SPORTS.WHERE' | translate)">
+                    <div class="sp-menu-title">{{ mn.title || ('MPX.SPORTS.WHERE' | translate) }}</div>
+                    @if (mn.typing !== undefined) {
+                        <input #q class="sp-menu-q" type="search" inputmode="search" enterkeyhint="search" [value]="mn.typing"
+                            [attr.aria-label]="'MPX.SPORTS.TYPE_SEARCH' | translate" (keydown.enter)="findChans(e, q.value)" />
+                    }
+                    @for (o of mn.opts; track $index) {
+                        <button type="button" role="menuitem" [class.primary]="o.act.kind === 'auto'" [class.green]="o.green" (click)="run(e, o)">
+                            <b>{{ o.title }}</b>
+                            @if (o.sub) {
+                                <small>{{ o.sub }}</small>
+                            }
+                        </button>
+                    }
+                </div>
+            }
         }
     </article>
 </ng-template>

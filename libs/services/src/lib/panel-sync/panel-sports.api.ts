@@ -22,6 +22,7 @@ export async function sportsAgenda(client: PanelProgressClient, creds: SyncUserC
         tz: typeof body.tz === 'string' ? body.tz : undefined,
         tables: body.tables && typeof body.tables === 'object' ? body.tables : undefined,
         fixtures: body.fixtures && typeof body.fixtures === 'object' ? body.fixtures : undefined,
+        chan: body.chan === 'iptv' ? 'iptv' : 'all',
     };
 }
 

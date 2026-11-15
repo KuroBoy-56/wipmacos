@@ -77,15 +77,21 @@ describe('sports matcher', () => {
         expect(match?.streamId).toBe('30');
     });
 
-    it('falls back to the first event folder, or null without one', () => {
+    it('falls back to the first channel of the event folders (it plays, never the list), or null', () => {
         const event = { h: 'Boca', a: 'River', lg: '', ev: '' };
-        expect(findSportsChannel(event, [], categories, rules)).toEqual({
-            streamId: '',
+        const streams = [
+            { stream_id: 40, name: 'ESPN', category_id: 1 },
+            { stream_id: 41, name: 'EVENTO 01', category_id: 2 },
+            { stream_id: 42, name: 'EVENTO 02', category_id: 2 },
+        ];
+        expect(findSportsChannel(event, streams, categories, rules)).toEqual({
+            streamId: '41',
             categoryId: '2',
-            name: 'EVENTOS PPV',
+            name: 'EVENTO 01',
             partial: true,
         });
-        expect(findSportsChannel(event, [], [categories[0]], null)).toBeNull();
+        expect(findSportsChannel(event, [], categories, rules)).toBeNull();
+        expect(findSportsChannel(event, streams, [categories[0]], null)).toBeNull();
     });
 });
 
@@ -113,6 +119,17 @@ describe('broadcast channel search', () => {
         expect(findChannelByName('ESPN 4', streams)).toBeNull();
         expect(findChannelByName('TUDN', streams)?.stream_id).toBe(4);
         expect(findChannelByName('Sky Sports', streams)).toBeNull();
+    });
+
+    it('reads M+ as Movistar and finds glued names, like webOS', () => {
+        const list = [
+            { stream_id: 7, name: 'ES: Movistar LaLiga HD', category_id: 1 },
+            { stream_id: 8, name: 'LALIGAHYPERMOTION', category_id: 1 },
+            { stream_id: 9, name: 'LALIGAHYPERMOTION 2', category_id: 1 },
+        ];
+        expect(findChannelByName('M+ LaLiga', list)?.stream_id).toBe(7);
+        expect(findChannelByName('La Liga Hypermotion', list)?.stream_id).toBe(8);
+        expect(findChannelByName('ESPN Network', [{ stream_id: 1, name: 'ESPN HD', category_id: 1 }])?.stream_id).toBe(1);
     });
 
     it('uses the broadcast channels first, then the teams', () => {
