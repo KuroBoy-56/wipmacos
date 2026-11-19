@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { setSessionDemo } from '@iptvnator/shared/interfaces';
 import { panelProfile, reportPanelProfileGone } from '../panel-sync/panel-profile';
 import { PanelSyncService } from '../panel-sync/panel-sync.service';
@@ -38,26 +38,21 @@ describe('parseProfiles', () => {
 describe('ProfilesService', () => {
     let answer: unknown;
     let requests: { action: string | null; fields: Record<string, unknown> }[];
+    let sync: { profilesRequest: (action: string | null, fields: Record<string, unknown>) => Promise<unknown> };
 
+    // the services Jest target has no Angular testing module: a plain injection context
     function service(): ProfilesService {
-        TestBed.configureTestingModule({
-            providers: [
-                {
-                    provide: PanelSyncService,
-                    useValue: {
-                        profilesRequest: async (action: string | null, fields: Record<string, unknown>) => {
-                            requests.push({ action, fields });
-                            return answer;
-                        },
-                    },
-                },
-            ],
-        });
-        return TestBed.inject(ProfilesService);
+        sync = {
+            profilesRequest: async (action, fields) => {
+                requests.push({ action, fields });
+                return answer;
+            },
+        };
+        const injector = Injector.create({ providers: [{ provide: PanelSyncService, useValue: sync }] });
+        return runInInjectionContext(injector, () => new ProfilesService());
     }
 
     beforeEach(() => {
-        TestBed.resetTestingModule();
         localStorage.clear();
         localStorage.setItem('session_user', 'line1');
         localStorage.setItem('session_server', 'http://dns.test:8080');
@@ -83,14 +78,12 @@ describe('ProfilesService', () => {
         await one.ensure();
         expect(one.needed()).toBe(false);
 
-        TestBed.resetTestingModule();
         answer = { success: true, enabled: false };
         const off = service();
         await off.ensure();
         expect(off.needed()).toBe(false);
         expect(localStorage.getItem('pf_on|line1@dns.test:8080')).toBe('0');
 
-        TestBed.resetTestingModule();
         answer = ON;
         setSessionDemo(true);
         const demo = service();
@@ -113,7 +106,7 @@ describe('ProfilesService', () => {
     it('enters with the main profile when the panel does not answer in time', async () => {
         jest.useFakeTimers();
         const s = service();
-        TestBed.inject(PanelSyncService).profilesRequest = () => new Promise(() => undefined);
+        sync.profilesRequest = () => new Promise(() => undefined);
         const done = s.ensure();
         jest.advanceTimersByTime(PROFILES_WAIT_MS);
         await done;
