@@ -12,6 +12,7 @@ import {
 import { PanelSnapshot, SyncUserCredentials } from './panel-sync.types';
 import { rememberPanelImg } from './panel-img-flag';
 import { rememberPanelTmdbKey } from './panel-tmdb-key';
+import { panelProfile, reportPanelProfileGone } from './panel-profile';
 
 // v2: tokens carry the line's server, so progress and favorites are kept per user + DNS.
 const TOKEN_PREFIX = 'panel_sync_token2:';
@@ -44,7 +45,7 @@ export function tokenKey(creds: SyncUserCredentials): string {
 /** A panel 401/403 caused by the distributor (expired, suspended…) goes to the guardian. */
 async function reportTenantError(res: Response): Promise<void> {
     if (res.status !== 401 && res.status !== 403 && res.status !== 404) return;
-    const body = await res.clone().json().catch(() => null);
+    const body = await res.json().catch(() => null);
     const code = tenantErrorCode(body);
     if (code && PANEL_TENANT_FATAL.includes(code)) notifyTenantError(code);
 }
@@ -134,9 +135,18 @@ export class PanelProgressClient {
         return res;
     }
 
+    /** 410 profile_gone de progress.php: el perfil elegido ya no existe. */
+    private async checkProfileGone(res: Response | null, profile: string): Promise<void> {
+        if (!profile || res?.status !== 410) return;
+        const body = await res.json().catch(() => null);
+        if (body?.code === 'profile_gone') reportPanelProfileGone(profile);
+    }
+
     async getSnapshot(creds: SyncUserCredentials, force = false): Promise<PanelSnapshot | null> {
-        const user = lineKey(creds);
-        if (!user) return null;
+        // cada perfil tiene su Continuar viendo y su Mi lista: la caché es por línea y perfil
+        const profile = panelProfile();
+        const user = lineKey(creds) + (profile ? '#' + profile : '');
+        if (!lineKey(creds)) return null;
         const cached = this.snapshots.get(user);
         if (!force && cached && Date.now() - cached.at < SNAPSHOT_TTL_MS) {
             return cached.data;
@@ -145,11 +155,12 @@ export class PanelProgressClient {
         if (pending) return pending;
 
         const request = this.withToken(creds, (token) =>
-            this.fetchFn(withPanelLang(`${panelEndpoint('progress.php')}?v=2`), {
+            this.fetchFn(withPanelLang(`${panelEndpoint('progress.php')}?v=2` + (profile ? '&profile=' + encodeURIComponent(profile) : '')), {
                 headers: { Authorization: `Bearer ${token}` },
             })
         )
             .then(async (res) => {
+                await this.checkProfileGone(res, profile);
                 if (!res?.ok) return null;
                 const body = await res.json().catch(() => null);
                 rememberPanelTmdbKey(body?.tmdbKey);
@@ -170,13 +181,15 @@ export class PanelProgressClient {
 
     /** Cached snapshot without a network round-trip (may be stale or null). */
     peekSnapshot(creds: SyncUserCredentials): PanelSnapshot | null {
-        const user = lineKey(creds);
+        const profile = panelProfile();
+        const user = lineKey(creds) ? lineKey(creds) + (profile ? '#' + profile : '') : '';
         return user ? this.snapshots.get(user)?.data ?? null : null;
     }
 
     /** Applies a local change to the cached snapshot so reads stay coherent. */
     patchSnapshot(creds: SyncUserCredentials, patch: (data: PanelSnapshot) => void): void {
-        const user = lineKey(creds);
+        const profile = panelProfile();
+        const user = lineKey(creds) ? lineKey(creds) + (profile ? '#' + profile : '') : '';
         const cached = user ? this.snapshots.get(user) : undefined;
         if (cached) patch(cached.data);
     }
@@ -201,15 +214,48 @@ export class PanelProgressClient {
         }
     }
 
-    async post(creds: SyncUserCredentials, body: Record<string, unknown>): Promise<boolean> {
+    /** GET con el token a otro archivo del panel (p. ej. profiles.php). */
+    async getJson<T>(file: string, creds: SyncUserCredentials, query: Record<string, string> = {}): Promise<T | null> {
+        try {
+            const qs = new URLSearchParams(query).toString();
+            const res = await this.withToken(creds, (token) =>
+                this.fetchFn(withPanelLang(panelEndpoint(file) + (qs ? '?' + qs : '')), {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+            );
+            return (await res?.json().catch(() => null)) as T | null;
+        } catch {
+            return null;
+        }
+    }
+
+    /** POST con el token que devuelve la respuesta aunque no sea 200 (profiles.php contesta errores con su texto). */
+    async postAny<T>(file: string, creds: SyncUserCredentials, body: Record<string, unknown>): Promise<T | null> {
         try {
             const res = await this.withToken(creds, (token) =>
-                this.fetchFn(this.url, {
+                this.fetchFn(withPanelLang(panelEndpoint(file)), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ...body, token }),
                 })
             );
+            return (await res?.json().catch(() => null)) as T | null;
+        } catch {
+            return null;
+        }
+    }
+
+    async post(creds: SyncUserCredentials, body: Record<string, unknown>): Promise<boolean> {
+        try {
+            const profile = panelProfile();
+            const res = await this.withToken(creds, (token) =>
+                this.fetchFn(this.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...body, ...(profile ? { profile } : {}), token }),
+                })
+            );
+            await this.checkProfileGone(res, profile);
             return !!res?.ok;
         } catch {
             return false;

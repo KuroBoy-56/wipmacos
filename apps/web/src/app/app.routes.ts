@@ -6,6 +6,7 @@ import { WorkspaceStartupPreferencesService } from '@iptvnator/workspace/shell/u
 import { LoginComponent } from './login.component';
 import { reviewThemeGuard, ReviewThemeService } from './panel-login/review/review-theme.service';
 import { AuthGuard } from './auth.guard';
+import { profilesGateGuard } from './profiles/profiles.guard';
 
 const workspaceEntryRedirect = async () =>
     inject(WorkspaceStartupPreferencesService).resolveInitialWorkspacePath();
@@ -56,8 +57,17 @@ export const routes: Routes = [
         redirectTo: 'login',
     },
     {
+        // «¿Quién está viendo?» (perfiles del panel, solo con los perfiles encendidos por el dueño)
+        path: 'profiles',
+        canActivate: [AuthGuard],
+        loadComponent: () =>
+            import('./profiles/profiles-page.component').then((c) => c.ProfilesPageComponent),
+    },
+    {
         path: 'workspace',
         canActivate: [AuthGuard],
+        // la línea elige perfil y todavía no lo eligió: primero «¿Quién está viendo?» (profiles.guard.ts)
+        canActivateChild: [profilesGateGuard],
         data: {
             layout: 'workspace',
         },

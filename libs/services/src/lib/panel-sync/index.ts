@@ -13,3 +13,4 @@ export * from './panel-img';
 export * from './panel-img-flag';
 export * from './panel-week-top';
 export * from './sports-epg';
+export * from './panel-profile';

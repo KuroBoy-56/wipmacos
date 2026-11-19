@@ -11,10 +11,11 @@ import {
     viewChild,
 } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
+import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { PanelBrandingService, SettingsStore } from '@iptvnator/services';
+import { KidsFilterService, PanelBrandingService, ProfilesService, SettingsStore } from '@iptvnator/services';
 import {
     APP_LANGUAGE_OPTIONS,
     AppLanguageSetting,
@@ -22,7 +23,7 @@ import {
     isAppLanguage,
     isSessionDemo,
 } from '@iptvnator/shared/interfaces';
-import { map } from 'rxjs';
+import { filter, map } from 'rxjs';
 
 interface NfNavLink {
     /** translation key */
@@ -38,11 +39,12 @@ interface NfNavLink {
 @Component({
     selector: 'app-workspace-nf-header',
     standalone: true,
-    imports: [MatIcon, RouterLink, RouterLinkActive, TranslatePipe],
+    imports: [MatIcon, NgTemplateOutlet, RouterLink, RouterLinkActive, TranslatePipe],
     templateUrl: './workspace-nf-header.component.html',
     host: {
         class: 'nf-header',
         '[class.solid]': 'solid()',
+        '[class.nf-header--prof]': 'prof()',
         '(document:click)': 'closeMenu($event)',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +67,19 @@ export class WorkspaceNfHeaderComponent {
 
     /** Distributor name / logo (built-in brand with "Omitir"). */
     protected readonly branding = inject(PanelBrandingService);
+    /** Perfiles del panel (solo con los perfiles encendidos por el dueño): el avatar a la izquierda y el logo a la derecha. */
+    protected readonly profiles = inject(ProfilesService);
+    private readonly kids = inject(KidsFilterService);
+    protected readonly prof = computed(() => this.profiles.needed() && !!this.profiles.profile());
+    private readonly url = toSignal(
+        this.router.events.pipe(
+            filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+            map((e) => e.urlAfterRedirects)
+        ),
+        { initialValue: this.router.url }
+    );
+    /** el avatar solo en Inicio, Películas y Series (como la web player); en lo demás, solo el logo a la derecha */
+    protected readonly profHere = computed(() => this.prof() && /\/xtreams\/[^/]+\/(home|vod|series)(\?|$)/.test(this.url()));
     protected readonly logoFailed = signal(false);
     protected readonly searchOpen = signal(false);
     protected readonly menuOpen = signal(false);
@@ -91,10 +106,12 @@ export class WorkspaceNfHeaderComponent {
     });
     protected readonly links = computed<NfNavLink[]>(() => {
         const root = this.root();
-        // the distributor can turn the sports section off
-        const sports: NfNavLink[] = this.branding.features().sports
+        // the distributor can turn the sports section off; the kids profile never has it
+        const sports: NfNavLink[] = this.branding.features().sports && !this.profiles.kids()
             ? [{ label: 'MPX.NAV.SPORTS', path: ['/workspace', 'sports'] }]
             : [];
+        // perfil infantil sin canales para niños en la lista: sin TV en vivo
+        const live: NfNavLink[] = this.kids.noLive() ? [] : [{ label: 'MPX.NAV.LIVE_TV', path: [...(root ?? []), 'live'] }];
         if (!root)
             return [
                 { label: 'MPX.NAV.HOME', path: ['/workspace', 'sources'] },
@@ -104,7 +121,7 @@ export class WorkspaceNfHeaderComponent {
             { label: 'MPX.NAV.HOME', path: [...root, 'home'] },
             { label: 'MPX.NAV.SERIES', path: [...root, 'series'] },
             { label: 'MPX.NAV.MOVIES', path: [...root, 'vod'] },
-            { label: 'MPX.NAV.LIVE_TV', path: [...root, 'live'] },
+            ...live,
             ...sports,
             { label: 'MPX.NAV.EXPLORE', path: [...root, 'explore'] },
         ];
@@ -194,6 +211,12 @@ export class WorkspaceNfHeaderComponent {
     protected go(path: string[]): void {
         this.menuOpen.set(false);
         void this.router.navigate(path);
+    }
+
+    /** «Cambiar perfil» / «Administrar perfiles»: la pantalla de perfiles */
+    protected openProfiles(manage: boolean): void {
+        this.menuOpen.set(false);
+        void this.router.navigate(['/profiles'], manage ? { queryParams: { manage: '1' } } : {});
     }
 
     protected account(): void {

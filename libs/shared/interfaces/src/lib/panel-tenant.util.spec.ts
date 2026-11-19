@@ -91,8 +91,8 @@ describe('panel tenant util', () => {
         saveTenantCode(parseTenantConfig(CONFIG)!);
         expect(readTenantChoice()).toBe('code');
         expect(panelTenantFields()).toEqual({ tenant: '123456', app: PANEL_APP_ID });
-        expect(withTenantQuery('https://p/api/alerta.php?a=1')).toBe('https://p/api/alerta.php?a=1&t=123456&app=windows');
-        expect(withTenantQuery('https://p/api/tmdb.php')).toBe('https://p/api/tmdb.php?t=123456&app=windows');
+        expect(withTenantQuery('https://p/api/alerta.php?a=1')).toBe('https://p/api/alerta.php?a=1&t=123456&app=' + PANEL_APP_ID);
+        expect(withTenantQuery('https://p/api/tmdb.php')).toBe('https://p/api/tmdb.php?t=123456&app=' + PANEL_APP_ID);
         expect(tenantStorageSuffix()).toBe('@t123456');
         expect(readTenantFeatures().sports).toBe(false);
         expect(readTenantCache()?.name).toBe('Mi TV');
