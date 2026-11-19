@@ -93,6 +93,12 @@ export function buildTenantThemeCss(palette: PanelTenantPalette | null): string 
         '--app-card-hover-bg': t.card,
         '--app-heading-color': t.text,
         '--app-body-color': t.textMuted,
+        // «¿Quién está viendo?» (apps/web/src/app/profiles): las mismas variables que la web player
+        '--pf-bg': t.bg,
+        '--pf-bg-rgb': rgb(t.bg).join(','),
+        '--pf-card': t.surface,
+        '--pf-focus': t.focus,
+        '--pf-on': t.accent,
     };
     const body = Object.entries(vars)
         .map(([k, v]) => `${k}: ${v};`)

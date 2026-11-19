@@ -1,3 +1,4 @@
+import { PROF_HERE } from './prof-here';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -79,7 +80,8 @@ export class WorkspaceNfHeaderComponent {
         { initialValue: this.router.url }
     );
     /** el avatar solo en Inicio, Películas y Series (como la web player); en lo demás, solo el logo a la derecha */
-    protected readonly profHere = computed(() => this.prof() && /\/xtreams\/[^/]+\/(home|vod|series)(\?|$)/.test(this.url()));
+    /** el avatar a la izquierda solo en Inicio, Películas y Series y sus listas por categoría (web 2.7.1); en las fichas no */
+    protected readonly profHere = computed(() => this.prof() && PROF_HERE.test(this.url()));
     protected readonly logoFailed = signal(false);
     protected readonly searchOpen = signal(false);
     protected readonly menuOpen = signal(false);

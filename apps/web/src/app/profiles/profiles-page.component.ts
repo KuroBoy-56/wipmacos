@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, OnInit, signal, untracked, viewChildren, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, OnInit, signal, untracked, viewChildren, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -6,7 +6,8 @@ import { PanelBrandingService, Profile, ProfilesService } from '@iptvnator/servi
 import { AppConfig } from '../../environments/environment';
 import { ProfileEditComponent } from './profile-edit.component';
 import { ProfilePinComponent } from './profile-pin.component';
-import { ProfilesHighlight, weekHighlight } from './profiles-highlight';
+import { ProfilesBackdropComponent } from './profiles-backdrop.component';
+import { ProfilesHighlight, weekHighlights } from './profiles-highlight';
 
 type Ask = { p: Profile; then: 'select' | 'edit' };
 
@@ -19,7 +20,7 @@ type Ask = { p: Profile; then: 'select' | 'edit' };
 @Component({
     selector: 'app-profiles-page',
     standalone: true,
-    imports: [MatIcon, TranslatePipe, ProfileEditComponent, ProfilePinComponent],
+    imports: [MatIcon, TranslatePipe, ProfileEditComponent, ProfilePinComponent, ProfilesBackdropComponent],
     // los diálogos (otros componentes) usan las mismas clases pf-*
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,8 +39,8 @@ export class ProfilesPageComponent implements OnInit {
     protected readonly managing = signal(false);
     protected readonly edit = signal<{ p: Profile | null; pin: string } | null>(null);
     protected readonly ask = signal<Ask | null>(null);
-    protected readonly highlight = signal<ProfilesHighlight | null>(null);
-    protected readonly bgReady = signal(false);
+    /** 15 a 20 destacados de la semana: el fondo pasa por todos, 10 s cada uno */
+    protected readonly highlights = signal<ProfilesHighlight[]>([]);
     protected readonly logoFailed = signal(false);
     protected readonly list = computed(() => this.data()?.profiles ?? []);
     /** PIN ya comprobado en esta pantalla (para editar un perfil bloqueado); nunca se guarda */
@@ -67,7 +68,7 @@ export class ProfilesPageComponent implements OnInit {
         this.managing.set(this.route.snapshot.queryParamMap.get('manage') === '1');
         this.focusId = this.profiles.profile()?.id || this.profiles.lastId();
         void this.profiles.refresh();
-        void weekHighlight().then((h) => this.highlight.set(h));
+        void weekHighlights().then((l) => this.highlights.set(l));
     }
 
     private t(key: string, params?: Record<string, string>): string {
@@ -146,6 +147,14 @@ export class ProfilesPageComponent implements OnInit {
     protected exit(): void {
         if ((window as unknown as { electron?: unknown }).electron) window.close();
         else void this.router.navigateByUrl('/login');
+    }
+
+    /** con el mouse se agranda solo el perfil del puntero: el que tenía el foco al abrir lo suelta (web 2.5.4) */
+    @HostListener('mouseover', ['$event'])
+    protected pointer(e: MouseEvent): void {
+        const b = (e.target as HTMLElement | null)?.closest?.('.pf-item');
+        const a = document.activeElement as HTMLElement | null;
+        if (b && a && a !== b && a.classList.contains('pf-item')) a.blur();
     }
 
     /** flechas: arriba / abajo por la columna; Esc sale de «Administrar» */
