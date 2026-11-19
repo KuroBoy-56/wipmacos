@@ -316,11 +316,25 @@ so the DoH fallback does not apply to them.
 
 The login screen has no "Servidor" selector either. When the user signs in,
 `pickLineServer` (`apps/web/src/app/panel-login/line-server.util.ts`) probes
-every `fetch_dns` server in parallel with the typed user and password
-(`PortalStatusService.checkPortalStatus`). The first server that answers
-`active` is used for `submit_url`; otherwise an `expired` one, otherwise the
-first server. A single server is used without probing, and probing stops
-after 12 s. Auto-Demo still uses the first server.
+the `fetch_dns` servers with the typed user and password
+(`PortalStatusService.checkPortalStatus`) following the rule of
+`docs/LOGIN-SERVIDORES.md` in the panel, so XUI does not block the client's IP
+(often shared: CGNAT, hotels, offices):
+
+1. The DNS this user logged in with last time on this computer first, alone
+   (`localStorage` `login_dns|<user>`, written after a good `submit_url`).
+2. Then one at a time in the panel's order, stopping at the first server that
+   answers `active` or `expired`. Never all at once.
+3. Once per real server: two DNS with the same host and port are one XUI.
+4. http first; https only when http did not answer (a probe that takes more
+   than 12 s counts as no answer).
+5. After 20 s the servers still to probe go at the same time.
+6. If a server said no (`inactive`), that one goes to `submit_url` and the
+   panel gives the message; if none answered, the first server, and the notes
+   (one per server) go to `api/report.php` («Errores de las apps»).
+
+A single server is used without probing. Auto-Demo still uses the first
+server.
 
 ## Remote cache clear (panel order)
 
@@ -428,6 +442,61 @@ it. While it is on:
   fires `PANEL_DEMO_BLOCKED_EVENT`, `AppComponent` shows the snack bar).
 
 The panel enforces the same rule: it stores nothing for a demo line.
+
+## Profiles (Netflix style)
+
+Contract: `docs/PERFILES.md` in the panel (`api/profiles.php`,
+`api/kids_rate.php`, the `profile` parameter of `api/progress.php`).
+
+**Everything here only exists when the owner turns profiles on in the panel**
+and the line has 2 or more connections and is not a demo. Otherwise there is
+no profiles screen, the header is the usual one and nothing is filtered.
+
+- **When the app asks.** `ProfilesService` (`libs/services/src/lib/profiles/`)
+  calls `GET api/profiles.php` once per app start (with `max` =
+  `user_info.max_connections`, remembered by `with-portal.feature.ts` in
+  `pf_max|<line>`, as the panel's fallback when it cannot reach the IPTV
+  server). It remembers per line whether profiles were on (`pf_on|<line>`): if
+  they were off last time the workspace opens at once and the answer only
+  counts for the next start (never a jump mid-session); otherwise it waits at
+  most 6 s (`PROFILES_WAIT_MS`) and then enters with the main profile.
+- **Route gate.** Every workspace child goes through `profilesGateGuard`
+  (`apps/web/src/app/profiles/profiles.guard.ts`): with profiles needed and
+  none chosen it opens `/profiles?next=<url>`. The chosen profile lives in
+  memory, so each app start asks again (the last one used, `pf_last|<line>`,
+  has the focus).
+- **Profiles screen** (`/profiles`, `?manage=1` for «Administrar perfiles»):
+  profiles in a column on the left, the title top centre, «Salir» top left
+  (closes the app in Electron, `/login` in the PWA), the logo top right, the
+  version bottom left and, as background, the week's TMDB highlight
+  (`api/tmdb.php` `trending/all/week`, `profiles-highlight.ts`) with only its
+  name and rating. Hover only enlarges the avatar. PIN of 4 digits checked by
+  the panel (`pin_check`) and never stored on the computer; «¿Olvidaste el
+  PIN?» removes it with the line password (`pin_reset`). Add / edit / delete
+  in `profile-edit.component.ts` (the main profile cannot be deleted; a deleted
+  one comes back within 7 days when created with the exact same name).
+- **Per-profile data.** `setPanelProfile()` (`panel-profile.ts`) makes
+  `PanelProgressClient` send `profile` on every `progress.php` read and write
+  (the snapshot cache is keyed by line + profile; the main profile sends
+  nothing, as before). A 410 `{"code":"profile_gone"}` (deleted on another
+  device) forgets the profile and `ProfilesWatchService` goes back to
+  `/profiles`; it also rebuilds the local cache (`PanelCacheSyncService`)
+  whenever the chosen profile changes.
+- **Kids profile** (chosen only when created). `KidsFilterService` filters the
+  Netflix catalog (`injectNfCatalog`: Inicio, Películas, Series, Explorar, Top
+  10) with the panel's `kidsRules` (factory copy in `kids-rules.ts`, helpers in
+  `kids-filter.util.ts`, both in `@iptvnator/shared/interfaces`); doubtful
+  titles show only after a TMDB verdict from `api/kids_rate.php` (batches of
+  400 every 15 s, kept in `kids_rate<tenant suffix>`). Live TV keeps only kids
+  categories (`with-selection.feature.ts`) and disappears from the menu when
+  there are none. Sports, global search, favorites / recent, downloads and the
+  old category grids (`vod/:categoryId`) do not open (the guard sends them to
+  `/workspace`), and a detail page the filter rejects does not open either.
+- **Header.** On Inicio, Películas and Series the profile avatar goes on the
+  left (menu: «Cambiar perfil», «Administrar perfiles», the usual items), the
+  menu in the centre and the logo on the right (`workspace-nf-header`, class
+  `nf-header--prof`). Other pages show the menu and the logo only (the avatar
+  lives on Inicio, Películas and Series, as in the web player).
 
 ## Progress and favorites sync
 

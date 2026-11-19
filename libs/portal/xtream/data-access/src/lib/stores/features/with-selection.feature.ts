@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { ParentalControlService } from '@iptvnator/services';
+import { KidsFilterService, ParentalControlService } from '@iptvnator/services';
 import {
     patchState,
     signalStoreFeature,
@@ -188,9 +188,21 @@ export function withSelection() {
 
         withComputed((store) => {
             const parental = inject(ParentalControlService);
+            // perfil infantil (perfiles del panel): TV en vivo solo con las categorías de niños y sin canales +18
+            const kids = inject(KidsFilterService);
             const categoryName = (c: unknown): string => {
                 const o = (c ?? {}) as { category_name?: unknown; name?: unknown };
                 return String(o.category_name ?? o.name ?? '');
+            };
+            const categoryIdOf = (c: unknown): string => {
+                const o = (c ?? {}) as { category_id?: unknown; id?: unknown };
+                return String(o.category_id ?? o.id ?? '');
+            };
+            const kidsLive = <T extends { category_id?: unknown; name?: unknown; title?: unknown }>(list: T[]): T[] => {
+                if (!kids.active()) return list;
+                const storeAny = store as ParentSelectionStoreLike;
+                const ok = new Set(kids.liveCategories(storeAny.liveCategories?.() || [], categoryName).map(categoryIdOf));
+                return list.filter((item) => ok.has(String(item.category_id ?? '')) && kids.liveChannelOk(String(item.name ?? item.title ?? '')));
             };
             const getItemDate = (
                 item: XtreamSelectionItem,
@@ -372,13 +384,13 @@ export function withSelection() {
                 }
 
                 if (!categoryId) {
-                    return filterBySearchTerm(sortedContent(), searchTerm);
+                    return kidsLive(filterBySearchTerm(sortedContent(), searchTerm));
                 }
 
                 const filtered = content.filter(
                     (item) => Number(item.category_id) === categoryId
                 );
-                return filterBySearchTerm(filtered, searchTerm);
+                return kidsLive(filterBySearchTerm(filtered, searchTerm));
             });
 
             return {
@@ -510,7 +522,9 @@ export function withSelection() {
                               ? storeAny.vodCategories?.() || []
                               : storeAny.serialCategories?.() || [];
                     // control parental (como Roku): sin las de adultos ni las bloqueadas mientras esté bloqueado con el PIN
-                    return parental.visible(list, categoryName, (c) => type + ':' + String((c as unknown as { category_id?: unknown; id?: unknown })?.category_id ?? (c as unknown as { id?: unknown })?.id ?? ''));
+                    const visible = parental.visible(list, categoryName, (c) => type + ':' + String((c as unknown as { category_id?: unknown; id?: unknown })?.category_id ?? (c as unknown as { id?: unknown })?.id ?? ''));
+                    // perfil infantil: en vivo solo las categorías de niños
+                    return type === 'live' ? kids.liveCategories(visible, categoryName) : visible;
                 }),
             };
         }),

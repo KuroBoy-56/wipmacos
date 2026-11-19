@@ -3,6 +3,7 @@ import {
     clearSessionCredentials,
     clearTenant,
     getPanelApiBase,
+    PANEL_APP_ID,
     saveTenantCode,
     saveTenantSkip,
     setSessionAlertAccounts,
@@ -127,7 +128,7 @@ describe('fetchPanelAlert', () => {
             await fetchPanelAlert(fetcher as unknown as typeof fetch);
             const url = new URL((fetcher.mock.calls[0] as unknown[])[0] as string);
             expect(url.searchParams.get('t')).toBe('123456');
-            expect(url.searchParams.get('app')).toBe('windows');
+            expect(url.searchParams.get('app')).toBe(PANEL_APP_ID);
         });
 
         it('skips the alert when the distributor turned alerts off', async () => {

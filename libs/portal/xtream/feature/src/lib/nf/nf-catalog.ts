@@ -1,6 +1,6 @@
 import { computed, effect, inject, signal, untracked } from '@angular/core';
 import { XtreamStore } from '@iptvnator/portal/xtream/data-access';
-import { ParentalControlService } from '@iptvnator/services';
+import { KidsFilterService, ParentalControlService } from '@iptvnator/services';
 import { NfHeroService, NfHeroSlide } from './nf-hero.service';
 import { NfItem, toNfItems } from './nf-item';
 import { NfLibrary, NfLibraryService } from './nf-library.service';
@@ -59,11 +59,14 @@ export function injectNfCatalog(
         const hidden = parental.hiddenIds(cats, (c) => c.name, (c) => c.id, kind);
         return hidden.size ? items.filter((i) => !hidden.has(i.categoryId)) : items;
     };
+    // perfil infantil (perfiles del panel): solo lo que es para niños; sin perfil infantil, todo
+    const kids = inject(KidsFilterService);
+    const kidsRead = (i: NfItem) => ({ id: String(i.id), name: i.title, categoryId: i.categoryId, genre: i.genre, year: i.year, tmdb: i.tmdb });
     const movies = computed(() =>
-        withoutHidden(toNfItems(store.vodStreams() as unknown[], 'movie'), allMovieCategories(), 'vod')
+        kids.titles('vod', withoutHidden(toNfItems(store.vodStreams() as unknown[], 'movie'), allMovieCategories(), 'vod'), allMovieCategories(), kidsRead)
     );
     const series = computed(() =>
-        withoutHidden(toNfItems(store.serialStreams() as unknown[], 'series'), allSeriesCategories(), 'series')
+        kids.titles('series', withoutHidden(toNfItems(store.serialStreams() as unknown[], 'series'), allSeriesCategories(), 'series'), allSeriesCategories(), kidsRead)
     );
     const ready = computed(() => movies().length > 0 || series().length > 0);
 

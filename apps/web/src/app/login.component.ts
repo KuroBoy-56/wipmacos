@@ -4,7 +4,8 @@ import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { UiText } from '@iptvnator/shared/interfaces';
 import { PortalStatusService } from '@iptvnator/services';
-import { pickLineServer } from './panel-login/line-server.util';
+import { lastLineServer, pickLineServer, rememberLineServer } from './panel-login/line-server.util';
+import { reportPanelError } from './services/panel-error-reporter';
 import { LoginPostersService } from './panel-login/login-posters.service';
 import { PanelLoginService } from './panel-login/panel-login.service';
 import { PanelSessionService } from './panel-login/panel-session.service';
@@ -252,8 +253,13 @@ export class LoginComponent implements OnInit {
 
     /** The panel DNS that serves this line (no selector on screen). */
     private async lineServer(user: string, pass: string): Promise<string | null> {
-        return pickLineServer(await this.loadDns(), (server) =>
-            this.portalStatus.checkPortalStatus(server, user, pass, { skipCache: true })
+        return pickLineServer(
+            await this.loadDns(),
+            (server) => this.portalStatus.checkPortalStatus(server, user, pass, { skipCache: true }),
+            {
+                first: lastLineServer(user),
+                onUnreachable: (notes) => reportPanelError('network', 'Login: ningún servidor IPTV contestó', notes.join('\n'), '/login'),
+            }
         );
     }
 
@@ -279,6 +285,7 @@ export class LoginComponent implements OnInit {
             return;
         }
         const result = await this.panel.activate(user, pass, server);
+        if (result.ok) rememberLineServer(user, server);
         if (!result.ok) {
             this.busy.set(false);
             if (result.blocked) this.blocked.set(true);
