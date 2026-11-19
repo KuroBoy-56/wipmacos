@@ -16,6 +16,7 @@ import {
 import { PortalStatusType } from '../../xtream-state';
 import { createLogger } from '@iptvnator/portal/shared/util';
 import { resolveXtreamPortalStatus } from '@iptvnator/shared/interfaces';
+import { rememberLineMax } from '@iptvnator/services';
 
 /**
  * Portal state for managing playlist and portal status
@@ -127,6 +128,13 @@ export function withPortal() {
                                   .filter(Boolean)
                             : undefined;
                         patchState(store, { portalStatus });
+                        rememberLineMax(
+                            {
+                                username: playlist.username,
+                                server: playlist.serverUrl,
+                            },
+                            Number(response?.user_info?.max_connections)
+                        );
                         const current = store.currentPlaylist();
                         if (current) {
                             patchState(store, {

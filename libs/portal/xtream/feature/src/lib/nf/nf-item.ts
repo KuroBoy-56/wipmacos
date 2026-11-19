@@ -15,6 +15,8 @@ export interface NfItem {
     tmdb?: string;
     /** Release year ('' when unknown): helps the panel find the poster by title. */
     year?: string;
+    /** Género del servidor IPTV ('' si no lo manda): lo usa el filtro del perfil infantil. */
+    genre?: string;
 }
 
 function tmdbId(value: unknown): string {
@@ -75,6 +77,7 @@ export function toNfItem(
         added: addedSeconds(raw['added'] ?? raw['last_modified']),
         tmdb: tmdbId(raw['tmdb'] ?? raw['tmdb_id']),
         year: yearOf(raw),
+        genre: text(raw['genre']),
     };
 }
 

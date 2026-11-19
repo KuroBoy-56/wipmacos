@@ -1,4 +1,5 @@
 import { clearTenant, isSessionDemo, PANEL_APP_ID, PANEL_DEMO_BLOCKED_EVENT, PANEL_TENANT_ERROR_EVENT, blockedForDemo, saveTenantCode, setSessionDemo } from '@iptvnator/shared/interfaces';
+import { onPanelProfileGone, setPanelProfile } from './panel-profile';
 import { lineKey } from './panel-progress.client';
 import { PanelSyncService } from './panel-sync.service';
 
@@ -272,5 +273,38 @@ describe('PanelSyncService', () => {
         expect(epgBodies.map((b) => b.channels.length)).toEqual([400, 1]);
         expect(epgBodies[0].token).toBe('tok');
         expect(Object.keys(epg)).toEqual(['0', '400']);
+    });
+
+    describe('with a chosen profile', () => {
+        afterEach(() => setPanelProfile(''));
+
+        it('sends the profile on every progress.php call and keeps its own snapshot', async () => {
+            setPanelProfile('p2');
+            const sync = service();
+            await sync.getAllProgress(creds);
+            await sync.saveProgress(creds, { type: 'movie', id: 10, title: 'Movie A' }, 250, 1000);
+            expect(calls.find((c) => c.url.includes('progress.php?v=2'))?.url).toContain('&profile=p2');
+            const save = calls.map((c) => c.init?.body && JSON.parse(String(c.init.body))).find((b) => b?.action === 'save');
+            expect(save.profile).toBe('p2');
+
+            // the main profile reads its usual files (no profile parameter)
+            setPanelProfile('main');
+            calls = [];
+            await sync.getAllProgress(creds);
+            expect(calls.find((c) => c.url.includes('progress.php?v=2'))?.url).not.toContain('profile=');
+        });
+
+        it('reports 410 profile_gone for the chosen profile', async () => {
+            const gone = jest.fn();
+            onPanelProfileGone(gone);
+            setPanelProfile('p2');
+            global.fetch = jest.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+                const body = init?.body ? JSON.parse(String(init.body)) : null;
+                if (body?.action === 'auth') return jsonResponse({ success: true, token: 'tok' });
+                return jsonResponse({ success: false, code: 'profile_gone' }, 410);
+            }) as typeof fetch;
+            await service().getAllProgress(creds);
+            expect(gone).toHaveBeenCalledWith('p2');
+        });
     });
 });

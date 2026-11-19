@@ -1,0 +1,66 @@
+<div class="pf-modal" role="dialog" aria-modal="true" (click)="backdrop($event)" (keydown.escape)="closed.emit()">
+    <div class="pf-card">
+        @if (confirmDelete() && profile(); as p) {
+            <h2>{{ 'MPX.PROFILES.DELETE_Q' | translate: { n: p.name } }}</h2>
+            <p>{{ 'MPX.PROFILES.DELETE_TEXT' | translate }}</p>
+            <p class="pf-err" role="alert">{{ error() }}</p>
+            <div class="pf-actions">
+                <button type="button" class="pf-btn pf-btn-danger" [disabled]="busy()" (click)="remove()">{{ 'MPX.PROFILES.DELETE' | translate }}</button>
+                <button type="button" class="pf-btn" (click)="confirmDelete.set(false)">{{ 'MPX.PROFILES.CANCEL' | translate }}</button>
+            </div>
+        } @else {
+            <h2>{{ (profile() ? 'MPX.PROFILES.EDIT' : 'MPX.PROFILES.ADD') | translate }}</h2>
+            <div class="pf-edit-top">
+                <button type="button" class="pf-av pf-avbtn" [attr.aria-label]="'MPX.PROFILES.AVATAR' | translate" (click)="pickAvatar.set(!pickAvatar())">
+                    <img [src]="avatar()" alt="" />
+                    <span class="pf-edit-icon" aria-hidden="true"><mat-icon>edit</mat-icon></span>
+                </button>
+                <label class="pf-field">
+                    <span>{{ 'MPX.PROFILES.NAME' | translate }}</span>
+                    <input class="pf-input" maxlength="20" autocomplete="off" [value]="name()" (input)="name.set($any($event.target).value)" (keydown.enter)="save(pin1.value, pin2.value)" />
+                </label>
+            </div>
+            @if (pickAvatar()) {
+                <div class="pf-avgrid">
+                    @for (a of data().avatars; track a) {
+                        <button type="button" class="pf-avopt" [class.on]="a === avatar()" [attr.aria-label]="'MPX.PROFILES.AVATAR' | translate" (click)="choose(a)"><img [src]="a" alt="" loading="lazy" /></button>
+                    }
+                </div>
+            }
+            @if (!profile()) {
+                <div class="pf-sec">
+                    <label class="pf-check"><input type="checkbox" [checked]="kids()" (change)="kids.set($any($event.target).checked)" /> {{ 'MPX.PROFILES.KIDS_PROFILE' | translate }}</label>
+                    @if (kids()) {
+                        <p class="pf-note">{{ 'MPX.PROFILES.KIDS_NOTE_ADD' | translate }}</p>
+                    }
+                </div>
+            } @else if (profile()?.kids) {
+                <p class="pf-note">{{ 'MPX.PROFILES.KIDS_NOTE_EDIT' | translate }}</p>
+            }
+            <div class="pf-sec">
+                <h3>{{ (locked() ? 'MPX.PROFILES.PIN_PROTECTED' : 'MPX.PROFILES.PIN_LOCK') | translate }}</h3>
+                @if (locked()) {
+                    <label class="pf-check"><input type="checkbox" [checked]="pinChange()" (change)="pinChange.set($any($event.target).checked); pinOff.set(false)" /> {{ 'MPX.PROFILES.PIN_CHANGE' | translate }}</label>
+                    <label class="pf-check"><input type="checkbox" [checked]="pinOff()" (change)="pinOff.set($any($event.target).checked); pinChange.set(false)" /> {{ 'MPX.PROFILES.PIN_REMOVE' | translate }}</label>
+                } @else {
+                    <label class="pf-check"><input type="checkbox" [checked]="pinOn()" (change)="pinOn.set($any($event.target).checked)" /> {{ 'MPX.PROFILES.PIN_ASK' | translate }}</label>
+                }
+                <div class="pf-row" [hidden]="!askNewPin()">
+                    <input #pin1 class="pf-input pf-pinnew" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" [placeholder]="'MPX.PROFILES.PIN_NEW' | translate" (input)="$any($event.target).value = $any($event.target).value.replace(/\D+/g, '')" />
+                    <input #pin2 class="pf-input pf-pinnew" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" [placeholder]="'MPX.PROFILES.PIN_REPEAT' | translate" (input)="$any($event.target).value = $any($event.target).value.replace(/\D+/g, '')" />
+                </div>
+            </div>
+            @if (!profile()) {
+                <p class="pf-note">{{ 'MPX.PROFILES.RECOVER_NOTE' | translate }}</p>
+            }
+            <p class="pf-err" role="alert">{{ busy() ? ('MPX.PROFILES.SAVING' | translate) : error() }}</p>
+            <div class="pf-actions">
+                <button type="button" class="pf-btn pf-btn-main" [disabled]="busy()" (click)="save(pin1.value, pin2.value)">{{ (profile() ? 'MPX.PROFILES.SAVE' : 'MPX.PROFILES.CREATE') | translate }}</button>
+                <button type="button" class="pf-btn" (click)="closed.emit()">{{ 'MPX.PROFILES.CANCEL' | translate }}</button>
+                @if (profile() && !profile()?.main) {
+                    <button type="button" class="pf-btn pf-btn-danger push" (click)="error.set(''); confirmDelete.set(true)">{{ 'MPX.PROFILES.DELETE' | translate }}</button>
+                }
+            </div>
+        }
+    </div>
+</div>

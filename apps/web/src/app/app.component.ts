@@ -14,6 +14,7 @@ import { DataService, RuntimeCapabilitiesService, SettingsStore } from '@iptvnat
 import { AppLanguage, AUTO_UPDATE_PLAYLISTS, currentAppLanguage, DEFAULT_APP_LANGUAGE, DEMO_BLOCKED_MESSAGE, OPEN_FILE, PANEL_DEMO_BLOCKED_EVENT, rememberAppLanguage, resolveAppLanguage, Settings, STORE_KEY, Theme, createDevLogger } from '@iptvnator/shared/interfaces';
 import { SettingsService } from './services/settings.service';
 import { PanelCacheSyncService } from './services/panel-cache-sync.service';
+import { ProfilesWatchService } from './profiles/profiles-watch.service';
 import { CACHE_CLEAR_NOTICE_MS, PANEL_CACHE_CLEAR_EVENT } from './panel-login/cache-clear.util';
 import { PORTAL_EXTERNAL_PLAYBACK } from '@iptvnator/portal/shared/util';
 
@@ -43,6 +44,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private settingsStore = inject(SettingsStore);
     private runtime = inject(RuntimeCapabilitiesService);
     private panelCacheSync = inject(PanelCacheSyncService);
+    // perfiles: la copia local por perfil y el regreso a «¿Quién está viendo?» con un 410
+    private profilesWatch = inject(ProfilesWatchService);
     // Instantiated early so MPV/VLC progress reaches the panel from any screen.
     private externalPlayback = inject(PORTAL_EXTERNAL_PLAYBACK);
     private readonly workspaceShellActions = inject(WORKSPACE_SHELL_ACTIONS);

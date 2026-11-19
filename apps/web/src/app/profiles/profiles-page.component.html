@@ -1,0 +1,88 @@
+<div class="pf-root" (keydown)="keys($event)">
+    @if (highlight(); as h) {
+        <img class="pf-bg" [class.ok]="bgReady()" [src]="h.backdrop" alt="" (load)="bgReady.set(true)" (error)="highlight.set(null)" />
+    }
+    <div class="pf-shade"></div>
+
+    <header class="pf-top">
+        <button type="button" class="pf-exit" (click)="exit()"><mat-icon aria-hidden="true">logout</mat-icon> {{ 'MPX.PROFILES.EXIT' | translate }}</button>
+        @if (branding.logoUrl() && !logoFailed()) {
+            <img class="pf-logo" [src]="branding.logoUrl()" [alt]="branding.brandName()" (error)="logoFailed.set(true)" />
+        } @else if (branding.name()) {
+            <span class="pf-logo-name">{{ branding.name() }}</span>
+        } @else {
+            <img class="pf-logo" src="assets/images/logo.png" alt="MPX Player" />
+        }
+    </header>
+
+    <h1 class="pf-title">{{ (managing() ? 'MPX.PROFILES.MANAGE' : 'MPX.PROFILES.WHO') | translate }}</h1>
+
+    <main class="pf-side">
+        @if (!data()) {
+            <p class="pf-msg">{{ 'MPX.PROFILES.LOAD_FAIL' | translate }}</p>
+            <div class="pf-actions">
+                <button type="button" class="pf-btn pf-btn-main" (click)="profiles.forget(); exit()">{{ 'MPX.PROFILES.EXIT' | translate }}</button>
+                <button type="button" class="pf-btn" (click)="profiles.refresh()">{{ 'MPX.PROFILES.RETRY' | translate }}</button>
+            </div>
+        } @else {
+            <ul class="pf-list">
+                @for (p of list(); track p.id) {
+                    <li>
+                        <button #item type="button" class="pf-item" (click)="pick(p)">
+                            <span class="pf-av">
+                                <img [src]="p.avatar" alt="" />
+                                @if (managing()) {
+                                    <span class="pf-edit" aria-hidden="true"><mat-icon>edit</mat-icon></span>
+                                }
+                                @if (p.kids) {
+                                    <span class="pf-kids">{{ 'MPX.PROFILES.KIDS' | translate }}</span>
+                                }
+                            </span>
+                            <span class="pf-name">{{ p.name }}</span>
+                            @if (p.locked) {
+                                <mat-icon class="pf-lock" [attr.title]="'MPX.PROFILES.PIN_PROTECTED' | translate">lock</mat-icon>
+                            }
+                        </button>
+                    </li>
+                }
+                @if (data()?.canCreate) {
+                    <li>
+                        <button #item type="button" class="pf-item pf-add" (click)="edit.set({ p: null, pin: '' })">
+                            <span class="pf-av"><mat-icon aria-hidden="true">add</mat-icon></span>
+                            <span class="pf-name">{{ 'MPX.PROFILES.ADD' | translate }}</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+            <button type="button" class="pf-btn pf-manage" [class.on]="managing()" (click)="toggleManage()">
+                @if (!managing()) {
+                    <mat-icon aria-hidden="true">edit</mat-icon>
+                }
+                {{ (managing() ? 'MPX.PROFILES.DONE' : 'MPX.PROFILES.MANAGE') | translate }}
+            </button>
+        }
+    </main>
+
+    @if (highlight(); as h) {
+        <aside class="pf-hl">
+            <b class="pf-hl-t">{{ h.title }}</b>
+            <span class="pf-hl-m">
+                @if (h.rating > 0) {
+                    <span class="pf-hl-r">★ {{ h.rating.toFixed(1) }}</span>
+                }
+                @if (h.year) {
+                    <span>{{ h.year }}</span>
+                }
+                <span>{{ (h.kind === 'tv' ? 'MPX.PROFILES.SERIES' : 'MPX.PROFILES.MOVIE') | translate }}</span>
+            </span>
+        </aside>
+    }
+    <span class="pf-ver">{{ 'MPX.PROFILES.VERSION' | translate: { v: version } }}</span>
+</div>
+
+@if (ask(); as a) {
+    <app-profile-pin [title]="pinTitle(a)" [name]="a.p.name" [avatar]="a.p.avatar" [check]="checkPin" [resetWith]="resetPin" (closed)="ask.set(null)" />
+}
+@if (edit(); as e) {
+    <app-profile-edit [profile]="e.p" [data]="data()!" [pin]="e.pin" (saved)="saved($event)" (deleted)="deleted($event)" (closed)="edit.set(null)" />
+}

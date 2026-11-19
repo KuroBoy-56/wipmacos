@@ -70,3 +70,5 @@ export * from './lib/stalker-vod-details.interface';
 export * from './lib/vod-details-adapters';
 export * from './lib/vod-details-item.interface';
 export * from './lib/session-credentials.util';
+// Perfil infantil (perfiles del panel)
+export * from './lib/kids-filter.util';

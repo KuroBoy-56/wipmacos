@@ -323,6 +323,18 @@ export class PanelSyncService {
         return sportsTeam(this.client, this.creds(userIdObj), id);
     }
 
+    /** Perfiles (api/profiles.php, docs/PERFILES.md del panel): GET con la lista o POST con una acción. */
+    async profilesRequest<T>(action: string | null, fields: Record<string, unknown> = {}): Promise<T | null> {
+        const creds = this.creds();
+        if (!action) return this.client.getJson<T>('profiles.php', creds, fields as Record<string, string>);
+        return this.client.postAny<T>('profiles.php', creds, { action, ...fields });
+    }
+
+    /** Clasificación de TMDB del perfil infantil (api/kids_rate.php). */
+    async kidsRate<T>(items: unknown[]): Promise<T | null> {
+        return this.client.postJson<T>('kids_rate.php', this.creds(), { items });
+    }
+
     /** Reloads the snapshot from the panel; false when the panel could not be read. */
     async refresh(userIdObj?: SyncUserCredentials | null): Promise<boolean> {
         return !!(await this.client.getSnapshot(this.creds(userIdObj), true));
