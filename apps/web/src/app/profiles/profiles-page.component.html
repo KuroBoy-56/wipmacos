@@ -1,8 +1,5 @@
-<div class="pf-root" (keydown)="keys($event)">
-    @if (highlight(); as h) {
-        <img class="pf-bg" [class.ok]="bgReady()" [src]="h.backdrop" alt="" (load)="bgReady.set(true)" (error)="highlight.set(null)" />
-    }
-    <div class="pf-shade"></div>
+<div class="pf-root" [class.pf-managing]="managing()" (keydown)="keys($event)">
+    <app-profiles-backdrop [items]="highlights()" />
 
     <header class="pf-top">
         <button type="button" class="pf-exit" (click)="exit()"><mat-icon aria-hidden="true">logout</mat-icon> {{ 'MPX.PROFILES.EXIT' | translate }}</button>
@@ -15,9 +12,8 @@
         }
     </header>
 
-    <h1 class="pf-title">{{ (managing() ? 'MPX.PROFILES.MANAGE' : 'MPX.PROFILES.WHO') | translate }}</h1>
-
     <main class="pf-side">
+        <h1 class="pf-title">{{ (managing() ? 'MPX.PROFILES.MANAGE' : 'MPX.PROFILES.WHO') | translate }}</h1>
         @if (!data()) {
             <p class="pf-msg">{{ 'MPX.PROFILES.LOAD_FAIL' | translate }}</p>
             <div class="pf-actions">
@@ -35,10 +31,13 @@
                                     <span class="pf-edit" aria-hidden="true"><mat-icon>edit</mat-icon></span>
                                 }
                                 @if (p.kids) {
-                                    <span class="pf-kids">{{ 'MPX.PROFILES.KIDS' | translate }}</span>
+                                    <span class="pf-kids pf-kids-av">{{ 'MPX.PROFILES.KIDS' | translate }}</span>
                                 }
                             </span>
                             <span class="pf-name">{{ p.name }}</span>
+                            @if (p.kids) {
+                                <span class="pf-kids">{{ 'MPX.PROFILES.KIDS' | translate }}</span>
+                            }
                             @if (p.locked) {
                                 <mat-icon class="pf-lock" [attr.title]="'MPX.PROFILES.PIN_PROTECTED' | translate">lock</mat-icon>
                             }
@@ -63,20 +62,6 @@
         }
     </main>
 
-    @if (highlight(); as h) {
-        <aside class="pf-hl">
-            <b class="pf-hl-t">{{ h.title }}</b>
-            <span class="pf-hl-m">
-                @if (h.rating > 0) {
-                    <span class="pf-hl-r">★ {{ h.rating.toFixed(1) }}</span>
-                }
-                @if (h.year) {
-                    <span>{{ h.year }}</span>
-                }
-                <span>{{ (h.kind === 'tv' ? 'MPX.PROFILES.SERIES' : 'MPX.PROFILES.MOVIE') | translate }}</span>
-            </span>
-        </aside>
-    }
     <span class="pf-ver">{{ 'MPX.PROFILES.VERSION' | translate: { v: version } }}</span>
 </div>
 

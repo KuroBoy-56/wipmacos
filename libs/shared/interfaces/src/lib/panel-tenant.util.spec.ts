@@ -131,6 +131,11 @@ describe('panel tenant theme', () => {
     it('builds CSS only for a palette', () => {
         expect(buildTenantThemeCss(null)).toBe('');
         const css = buildTenantThemeCss({ accent: '#1E88E5', bg: '#0B1220', surface: '#131C2E', text: '#E6EDF7' });
+        // the profiles screen takes the same colours as the web player (--pf-*)
+        expect(css).toContain('--pf-bg: #0B1220;');
+        expect(css).toContain('--pf-bg-rgb: 11,18,32;');
+        expect(css).toContain('--pf-card: #131C2E;');
+        expect(css).toContain('--pf-on: #1E88E5;');
         expect(css).toContain('--nf-red: #1E88E5;');
         expect(css).toContain('--nf-focus: #1E88E5;');
         expect(css).toContain('--nf-bg: #0B1220;');

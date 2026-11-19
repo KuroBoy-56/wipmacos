@@ -49,10 +49,10 @@ export function injectNfCatalog(
     const allSeriesCategories = computed(() =>
         toCategories(store.serialCategories() as unknown[])
     );
-    const movieCategories = computed(() =>
+    const visibleMovieCategories = computed(() =>
         parental.visible(allMovieCategories(), (c) => c.name, (c) => 'vod:' + c.id)
     );
-    const seriesCategories = computed(() =>
+    const visibleSeriesCategories = computed(() =>
         parental.visible(allSeriesCategories(), (c) => c.name, (c) => 'series:' + c.id)
     );
     const withoutHidden = (items: NfItem[], cats: NfCategory[], kind: 'vod' | 'series'): NfItem[] => {
@@ -68,6 +68,15 @@ export function injectNfCatalog(
     const series = computed(() =>
         kids.titles('series', withoutHidden(toNfItems(store.serialStreams() as unknown[], 'series'), allSeriesCategories(), 'series'), allSeriesCategories(), kidsRead)
     );
+    // en el perfil infantil, solo las categorías que todavía tienen algún título para niños: así los accesos de
+    // plataforma, las filas y los géneros no muestran Marvel, terror… (la web filtra las categorías en el origen)
+    const withKidsTitles = (cats: NfCategory[], items: NfItem[]): NfCategory[] => {
+        if (!kids.active()) return cats;
+        const used = new Set(items.map((i) => i.categoryId));
+        return cats.filter((c) => used.has(c.id));
+    };
+    const movieCategories = computed(() => withKidsTitles(visibleMovieCategories(), movies()));
+    const seriesCategories = computed(() => withKidsTitles(visibleSeriesCategories(), series()));
     const ready = computed(() => movies().length > 0 || series().length > 0);
 
     const heroSlides = signal<NfHeroSlide[] | null>(
@@ -81,8 +90,11 @@ export function injectNfCatalog(
         const pools = heroTypes.map((t) =>
             t === 'movie' ? movies() : series()
         );
+        // el perfil infantil tiene sus propios destacados: al cambiar de perfil no queda el del otro (web 2.6.1)
+        const kidsKey = kids.active() ? '|kids' : '';
         untracked(() => {
-            const key = `${playlist.id}|${heroTypes.join(',')}`;
+            heroService.useProfile(kidsKey);
+            const key = `${playlist.id}|${heroTypes.join(',')}${kidsKey}`;
             if (heroTypes.length) {
                 void heroService
                     .slides(

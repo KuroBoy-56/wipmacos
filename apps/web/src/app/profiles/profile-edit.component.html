@@ -13,7 +13,7 @@
             <div class="pf-edit-top">
                 <button type="button" class="pf-av pf-avbtn" [attr.aria-label]="'MPX.PROFILES.AVATAR' | translate" (click)="pickAvatar.set(!pickAvatar())">
                     <img [src]="avatar()" alt="" />
-                    <span class="pf-edit-icon" aria-hidden="true"><mat-icon>edit</mat-icon></span>
+                    <span class="pf-edit" aria-hidden="true"><mat-icon>edit</mat-icon></span>
                 </button>
                 <label class="pf-field">
                     <span>{{ 'MPX.PROFILES.NAME' | translate }}</span>
@@ -28,17 +28,24 @@
                 </div>
             }
             @if (!profile()) {
+                <!-- el interruptor «Perfil infantil», como la web player (solo al crear) -->
                 <div class="pf-sec">
-                    <label class="pf-check"><input type="checkbox" [checked]="kids()" (change)="kids.set($any($event.target).checked)" /> {{ 'MPX.PROFILES.KIDS_PROFILE' | translate }}</label>
-                    @if (kids()) {
-                        <p class="pf-note">{{ 'MPX.PROFILES.KIDS_NOTE_ADD' | translate }}</p>
-                    }
+                    <label class="pf-switch-row">
+                        <span>
+                            <b>{{ 'MPX.PROFILES.KIDS_PROFILE' | translate }}</b>
+                            <small>{{ 'MPX.PROFILES.KIDS_NOTE_ADD' | translate }}</small>
+                        </span>
+                        <input type="checkbox" role="switch" [checked]="kids()" (change)="kids.set($any($event.target).checked)" />
+                        <span class="pf-tog" aria-hidden="true"></span>
+                    </label>
                 </div>
             } @else if (profile()?.kids) {
-                <p class="pf-note">{{ 'MPX.PROFILES.KIDS_NOTE_EDIT' | translate }}</p>
+                <div class="pf-sec">
+                    <p class="pf-note pf-note-kids"><span class="pf-kids">{{ 'MPX.PROFILES.KIDS' | translate }}</span> {{ 'MPX.PROFILES.KIDS_NOTE_EDIT' | translate }}</p>
+                </div>
             }
             <div class="pf-sec">
-                <h3>{{ (locked() ? 'MPX.PROFILES.PIN_PROTECTED' : 'MPX.PROFILES.PIN_LOCK') | translate }}</h3>
+                <h3><mat-icon aria-hidden="true">{{ locked() ? 'lock' : 'lock_open' }}</mat-icon> {{ (locked() ? 'MPX.PROFILES.PIN_PROTECTED' : 'MPX.PROFILES.PIN_LOCK') | translate }}</h3>
                 @if (locked()) {
                     <label class="pf-check"><input type="checkbox" [checked]="pinChange()" (change)="pinChange.set($any($event.target).checked); pinOff.set(false)" /> {{ 'MPX.PROFILES.PIN_CHANGE' | translate }}</label>
                     <label class="pf-check"><input type="checkbox" [checked]="pinOff()" (change)="pinOff.set($any($event.target).checked); pinChange.set(false)" /> {{ 'MPX.PROFILES.PIN_REMOVE' | translate }}</label>

@@ -48,6 +48,14 @@ export class NfHeroService {
     private readonly cache = new Map<string, Promise<NfHeroSlide[]>>();
     /** Último fondo mostrado: queda de fondo mientras carga otro billboard (nunca pantalla negra). */
     readonly lastBackdrop = signal('');
+    private profileKey = '';
+
+    /** Otro tipo de perfil (el infantil o no): el último fondo era del otro y no se vuelve a mostrar. */
+    useProfile(key: string): void {
+        if (key === this.profileKey) return;
+        this.profileKey = key;
+        this.lastBackdrop.set('');
+    }
 
     slides(
         key: string,
