@@ -468,9 +468,20 @@ no profiles screen, the header is the usual one and nothing is filtered.
 - **Profiles screen** (`/profiles`, `?manage=1` for «Administrar perfiles»):
   profiles in a column on the left, the title top centre, «Salir» top left
   (closes the app in Electron, `/login` in the PWA), the logo top right, the
-  version bottom left and, as background, the week's TMDB highlight
-  (`api/tmdb.php` `trending/all/week`, `profiles-highlight.ts`) with only its
-  name and rating. Hover only enlarges the avatar. PIN of 4 digits checked by
+  version bottom left and, as background, 15 to 20 of the week's TMDB
+  highlights (`api/tmdb.php` `trending/all/week`, page 2 only when page 1 has
+  fewer than 15; `profiles-highlight.ts`) with only their name and rating, as
+  the web player 2.7.4: `profiles-backdrop.component.ts` shows each one 10 s
+  with a fade between two layers (the next one appears only once loaded, one
+  that does not load is skipped, nothing changes while the window is hidden),
+  full screen with the theme colour fading in from the left edge to 66 % of
+  the width and a light shade top and bottom. A distributor palette repaints
+  the screen through `--pf-bg`, `--pf-bg-rgb`, `--pf-card`, `--pf-focus` and
+  `--pf-on` (`buildTenantThemeCss`); «Eliminar perfil» stays red. Hover only
+  enlarges the avatar and the profile focused on opening lets go of it when
+  the mouse goes to another one. Small windows follow the web player's rules
+  (720p, a low window with the profiles in a row and a single scroll in the
+  avatar picker, a narrow window with two per row). PIN of 4 digits checked by
   the panel (`pin_check`) and never stored on the computer; «¿Olvidaste el
   PIN?» removes it with the line password (`pin_reset`). Add / edit / delete
   in `profile-edit.component.ts` (the main profile cannot be deleted; a deleted
@@ -482,17 +493,22 @@ no profiles screen, the header is the usual one and nothing is filtered.
   device) forgets the profile and `ProfilesWatchService` goes back to
   `/profiles`; it also rebuilds the local cache (`PanelCacheSyncService`)
   whenever the chosen profile changes.
-- **Kids profile** (chosen only when created). `KidsFilterService` filters the
-  Netflix catalog (`injectNfCatalog`: Inicio, Películas, Series, Explorar, Top
+- **Kids profile** (chosen only when created, with the «Perfil infantil»
+  switch). `KidsFilterService` filters the Netflix catalog (`injectNfCatalog`: Inicio, Películas, Series, Explorar, Top
   10) with the panel's `kidsRules` (factory copy in `kids-rules.ts`, helpers in
   `kids-filter.util.ts`, both in `@iptvnator/shared/interfaces`); doubtful
   titles show only after a TMDB verdict from `api/kids_rate.php` (batches of
   400 every 15 s, kept in `kids_rate<tenant suffix>`). Live TV keeps only kids
   categories (`with-selection.feature.ts`) and disappears from the menu when
-  there are none. Sports, global search, favorites / recent, downloads and the
+  there are none. The catalog's categories keep only those with kids titles,
+  so platform tiles, rows and genres show no Marvel or horror, and the
+  billboard is cached apart (`|kids` in its key; `NfHeroService.useProfile`
+  drops the last backdrop), so switching from the main profile never leaves
+  its billboard. Sports, global search, favorites / recent, downloads and the
   old category grids (`vod/:categoryId`) do not open (the guard sends them to
   `/workspace`), and a detail page the filter rejects does not open either.
-- **Header.** On Inicio, Películas and Series the profile avatar goes on the
+- **Header.** On Inicio, Películas, Series and their category lists
+  (`prof-here.ts`) the profile avatar goes on the
   left (menu: «Cambiar perfil», «Administrar perfiles», the usual items), the
   menu in the centre and the logo on the right (`workspace-nf-header`, class
   `nf-header--prof`). Other pages show the menu and the logo only (the avatar
