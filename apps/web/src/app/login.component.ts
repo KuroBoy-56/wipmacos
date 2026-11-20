@@ -98,15 +98,9 @@ export class LoginComponent implements OnInit {
 
     async ngOnInit(): Promise<void> {
         this.loadPosters();
-        // «Cerrar sesión» (/login?out=1): sin check_mac ni entrada automática hasta volver a abrir la app
         if (this.route.snapshot.queryParamMap.has('out')) await this.signOut.signOut();
         if (this.needsDistributor() || this.tenant.retryMessage()) return;
         await this.startDeviceCheck(false, this.signOut.signedOut ? 'skip' : 'auto');
-    }
-
-    /** «Verificar activación» (como Roku): pregunta al panel (check_mac) si este equipo tiene una línea y, si la tiene, entra. */
-    async verifyActivation(): Promise<void> {
-        if (!this.busy() && !this.demoBusy()) await this.startDeviceCheck(true, 'button');
     }
 
     /** the panel decides: without its TMDB key (owner or distributor) there is no poster wall */
@@ -163,8 +157,8 @@ export class LoginComponent implements OnInit {
         }
     }
 
-    /** mode: skip = después de cerrar sesión a mano (no pregunta al panel); button = «Verificar activación» */
-    private async startDeviceCheck(restart = false, mode: 'auto' | 'skip' | 'button' = 'auto'): Promise<void> {
+    /** mode: skip = tras «Cerrar sesión» (/login?out=1: sin check_mac ni entrar solo); button = «Verificar activación» */
+    protected async startDeviceCheck(restart = false, mode: 'auto' | 'skip' | 'button' = 'auto'): Promise<void> {
         if (this.deviceCheckStarted && !restart) return;
         this.deviceCheckStarted = true;
         this.message.set(null);
