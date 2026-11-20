@@ -101,6 +101,10 @@
             >
                 <mat-icon>settings</mat-icon>{{ 'MPX.NAV.SETTINGS' | translate }}
             </button>
+            <!-- como las otras apps: lleva al inicio de sesión sin entrar solo (solo al volver a abrir la app) -->
+            <button type="button" role="menuitem" (click)="logout()">
+                <mat-icon>logout</mat-icon>{{ 'MPX.NAV.LOGOUT' | translate }}
+            </button>
         </div>
     }
 </div>

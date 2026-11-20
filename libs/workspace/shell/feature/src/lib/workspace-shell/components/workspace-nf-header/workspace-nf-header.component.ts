@@ -215,6 +215,12 @@ export class WorkspaceNfHeaderComponent {
         void this.router.navigate(path);
     }
 
+    /** «Cerrar sesión»: el inicio de sesión la cierra (out=1) y no le pregunta al panel ni entra solo */
+    protected logout(): void {
+        this.menuOpen.set(false);
+        void this.router.navigate(['/login'], { queryParams: { out: '1' } });
+    }
+
     /** «Cambiar perfil» / «Administrar perfiles»: la pantalla de perfiles */
     protected openProfiles(manage: boolean): void {
         this.menuOpen.set(false);

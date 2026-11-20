@@ -1322,6 +1322,8 @@
             "PASSWORD": "Senha",
             "SHOW_PASSWORD": "Mostrar senha",
             "CHECKING_DEVICE": "Verificando o dispositivo…",
+            "CHECK_ACTIVATION": "Verificar ativação",
+            "NOT_ACTIVATED": "Este aparelho ainda não está ativado. Passe o código abaixo ao seu distribuidor.",
             "DEVICE_ID": "ID do dispositivo",
             "HINT": "Entre com o usuário e a senha da sua assinatura.",
             "HINT_DEMO": "Entre com o usuário e a senha da sua assinatura ou ative uma demo.",
@@ -1383,6 +1385,7 @@
             "REFRESHING": "Atualizando…",
             "DOWNLOADS": "Downloads",
             "SETTINGS": "Configurações",
+            "LOGOUT": "Sair da conta",
             "ACCOUNT_LOCKED": "Os detalhes da conta estão bloqueados por segurança."
         },
         "SPORTS": {

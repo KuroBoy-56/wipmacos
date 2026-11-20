@@ -91,6 +91,7 @@ export class ReviewThemeComponent {
 
     async logout(): Promise<void> {
         this.review.close();
-        await this.router.navigate(['/login']);
+        // como el resto de las apps: después de cerrar sesión el inicio de sesión no entra solo
+        await this.router.navigate(['/login'], { queryParams: { out: '1' } });
     }
 }

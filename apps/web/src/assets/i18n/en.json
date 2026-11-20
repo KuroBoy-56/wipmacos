@@ -1322,6 +1322,8 @@
             "PASSWORD": "Password",
             "SHOW_PASSWORD": "Show password",
             "CHECKING_DEVICE": "Checking the device…",
+            "CHECK_ACTIVATION": "Check activation",
+            "NOT_ACTIVATED": "This device isn't activated yet. Give the code below to your distributor.",
             "DEVICE_ID": "Device ID",
             "HINT": "Sign in with the username and password of your subscription.",
             "HINT_DEMO": "Sign in with the username and password of your subscription, or start a demo.",
@@ -1383,6 +1385,7 @@
             "REFRESHING": "Refreshing…",
             "DOWNLOADS": "Downloads",
             "SETTINGS": "Settings",
+            "LOGOUT": "Sign out",
             "ACCOUNT_LOCKED": "Account details are locked for security."
         },
         "SPORTS": {
