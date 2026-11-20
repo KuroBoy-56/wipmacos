@@ -139,6 +139,17 @@ Typed user and password send `replace: 1` in `submit_url` (`PanelLoginService.ac
 the main process only for `submit_url`): the panel leaves the device with that line only (the old line leaves the
 device; see `login_replace_device` in the panel's `api/login.php`).
 
+Since 1.6.3 another user on the device starts from scratch (panel `includes/replaced_lines.php`): its own parental PIN
+(0000 when new on the device), «Continuar viendo», «Mi lista» and profiles. The previous line leaves Clientes and the
+panel keeps a copy for 7 days: typing that same user and password on the same device within 7 days brings it back as it
+was (PIN included) with its «Continuar viendo» and «Mi lista»; after 7 days the copy is deleted and, when the line is no
+longer in the panel, its saved progress too. On the desktop side the stored parental PIN is removed when a session ends
+(`clearParentalPin()` in `PanelSessionService.clear()`; the next `check_mac` gives the right one) and «Ocultar
+contenido para adultos» and «Bloquear categorías» are per line (`parental_hide_adult|<line>`,
+`parental_blocked_cats|<line>`, `lineKey` = `user@server`; `ParentalControlService.reload()` on every session start):
+the new user starts with the defaults and the previous one finds its own settings again. Values stored before 1.6.3 for
+the whole device move to the first line that signs in.
+
 ### Platform, fake screen and error reports
 
 - **Platform.** Every `login.php` payload and the `progress.php` `auth` body
