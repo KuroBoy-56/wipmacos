@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { UiText } from '@iptvnator/shared/interfaces';
 import { PortalStatusService } from '@iptvnator/services';
@@ -10,6 +10,7 @@ import { LoginPostersService } from './panel-login/login-posters.service';
 import { PanelLoginService } from './panel-login/panel-login.service';
 import { PanelSessionService } from './panel-login/panel-session.service';
 import { PanelSessionGuardService } from './panel-login/panel-session-guard.service';
+import { PanelSignOutService } from './panel-login/panel-sign-out.service';
 import { SecureDnsPickerComponent } from './panel-login/secure-dns-picker.component';
 import { PanelTenantService } from './panel-login/panel-tenant.service';
 import { FakeScreenComponent } from './panel-login/fake-screen/fake-screen.component';
@@ -53,6 +54,8 @@ export class LoginComponent implements OnInit {
     private readonly portalStatus = inject(PortalStatusService);
     private readonly posterService = inject(LoginPostersService);
     private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+    private readonly signOut = inject(PanelSignOutService);
     private readonly reviewTheme = inject(ReviewThemeService);
     protected readonly tenant = inject(PanelTenantService);
     protected readonly branding = this.tenant.branding;
@@ -104,8 +107,15 @@ export class LoginComponent implements OnInit {
 
     async ngOnInit(): Promise<void> {
         this.loadPosters();
+        // «Cerrar sesión» (/login?out=1): sin check_mac ni entrada automática hasta volver a abrir la app
+        if (this.route.snapshot.queryParamMap.has('out')) await this.signOut.signOut();
         if (this.needsDistributor() || this.tenant.retryMessage()) return;
-        await this.startDeviceCheck();
+        await this.startDeviceCheck(false, this.signOut.signedOut ? 'skip' : 'auto');
+    }
+
+    /** «Verificar activación» (como Roku): pregunta al panel (check_mac) si este equipo tiene una línea y, si la tiene, entra. */
+    async verifyActivation(): Promise<void> {
+        if (!this.busy() && !this.demoBusy()) await this.startDeviceCheck(true, 'button');
     }
 
     /** the panel decides: without its TMDB key (owner or distributor) there is no poster wall */
@@ -162,7 +172,8 @@ export class LoginComponent implements OnInit {
         }
     }
 
-    private async startDeviceCheck(restart = false): Promise<void> {
+    /** mode: skip = después de cerrar sesión a mano (no pregunta al panel); button = «Verificar activación» */
+    private async startDeviceCheck(restart = false, mode: 'auto' | 'skip' | 'button' = 'auto'): Promise<void> {
         if (this.deviceCheckStarted && !restart) return;
         this.deviceCheckStarted = true;
         this.message.set(null);
@@ -184,6 +195,11 @@ export class LoginComponent implements OnInit {
             this.review.set(this.panel.reviewOffered);
         });
         this.deviceId.set(await this.panel.deviceId());
+        if (mode === 'skip') {
+            this.checking.set(false);
+            await this.loadDns();
+            return;
+        }
         const check = await this.panel.checkDevice();
         if (check.status === 'active') {
             // the panel line is checked on the IPTV server before entering (wrong password or expired: no entry)
@@ -208,7 +224,8 @@ export class LoginComponent implements OnInit {
             this.say(check.message, 'error');
         } else {
             await this.session.clear();
-            if (check.fake && !fakeUnlocked()) this.showFake(check.fake);
+            if (mode === 'button') this.say({ key: 'MPX.LOGIN.NOT_ACTIVATED' }, 'error');
+            else if (check.fake && !fakeUnlocked()) this.showFake(check.fake);
         }
         this.checking.set(false);
         await this.loadDns();
@@ -284,7 +301,7 @@ export class LoginComponent implements OnInit {
             this.say({ key: 'MPX.LOGIN.ERR_NO_SERVERS' }, 'error');
             return;
         }
-        const result = await this.panel.activate(user, pass, server);
+        const result = await this.panel.activate(user, pass, server, true);
         if (result.ok) rememberLineServer(user, server);
         if (!result.ok) {
             this.busy.set(false);
@@ -370,6 +387,7 @@ export class LoginComponent implements OnInit {
     private async enter(account: Parameters<PanelSessionService['start']>[0], lineSeen = true): Promise<void> {
         try {
             await this.session.start(account);
+            this.signOut.signedIn();
             this.guard.watch(account, lineSeen);
             await this.router.navigate(['/workspace']);
         } catch {

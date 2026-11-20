@@ -247,12 +247,14 @@ export class PanelLoginService {
         return res.ok && Array.isArray(res.data) ? res.data : [];
     }
 
+    /** replace: usuario y contraseña escritos; el panel deja el equipo solo con esta línea (quita la anterior) */
     async activate(
         username: string,
         password: string,
-        dns: string
+        dns: string,
+        replace = false
     ): Promise<{ ok: boolean; message?: UiText; blocked?: boolean }> {
-        const res = await this.request<{ status?: string }>('submit_url', { username, password, url: dns });
+        const res = await this.request<{ status?: string }>('submit_url', { username, password, url: dns, ...(replace ? { replace: 1 } : {}) });
         if (res.ok && res.data?.status === 'ok') return { ok: true };
         if (isDeviceBlocked(res)) return { ok: false, message: blockedText(res), blocked: true };
         return { ok: false, message: panelErrorText(res, 'MPX.PANEL.ERR_ACTIVATE') };

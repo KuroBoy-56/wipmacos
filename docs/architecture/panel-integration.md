@@ -126,6 +126,21 @@ The distributor guardian (`PanelTenantService.runCheck`) asks `tenant_config`
 once more before wiping the code and the session on a fatal answer, and a fatal
 code seen on progress / EPG / sports only triggers that check, never a wipe.
 
+### Sign out, «Verificar activación» and the device's line (1.6.2)
+
+Like Roku and the other apps: the profile menu has **Cerrar sesión** (and the review theme's «Cerrar sesión»), which
+goes to `/login?out=1`. The login closes the session there (`PanelSignOutService`,
+`apps/web/src/app/panel-login/panel-sign-out.service.ts`: guard stopped, profile forgotten, lines and `session_*`
+keys removed) and, while the app stays open, does **not** run `check_mac` nor enter by itself
+(`startDeviceCheck(..., 'skip')`). The automatic entry only happens when the app is opened (the flag lives in
+memory). **Verificar activación** on the login (`verifyActivation()`, mode `'button'`) asks `check_mac`: with a line it
+enters (checked on the IPTV server as on start); without one it says «Este equipo aún no está activado. Dale el
+código de abajo a tu distribuidor.» (no fake screen).
+
+Typed user and password send `replace: 1` in `submit_url` (`PanelLoginService.activate(..., true)`, passed through by
+the main process only for `submit_url`): the panel leaves the device with that line only (the old line leaves the
+device; see `login_replace_device` in the panel's `api/login.php`).
+
 ### Platform, fake screen and error reports
 
 - **Platform.** Every `login.php` payload and the `progress.php` `auth` body

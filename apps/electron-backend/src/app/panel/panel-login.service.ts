@@ -123,6 +123,8 @@ export async function panelLoginRequest(
                   pin: action === 'set_pin' && PIN.test(payload?.pin ?? '') ? payload?.pin : undefined,
                   // review_login: Auto-Demo del tema de prueba
                   demo: action === 'review_login' && Number(payload?.demo) === 1 ? 1 : undefined,
+                  // submit_url con usuario y contraseña escritos: el panel deja el equipo solo con esta línea
+                  replace: action === 'submit_url' && Number(payload?.replace) === 1 ? 1 : undefined,
                   // without a distributor ("Omitir") both stay out of the payload
                   tenant: tenant || undefined,
                   app: tenant ? PANEL_APP_ID : undefined,

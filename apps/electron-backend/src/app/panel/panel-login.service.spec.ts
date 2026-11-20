@@ -71,6 +71,15 @@ describe('panelLoginRequest', () => {
         expect(plain).toEqual({ mac_address: 'ID', username: 'u', password: 'p', url: 'http://dns.test', platform: PANEL_APP_ID, ts: expect.any(Number) });
     });
 
+    it('sends replace: 1 only for submit_url when asked', async () => {
+        const { fetch, calls } = fakeFetch(200, '{"status":"ok"}');
+        await panelLoginRequest('submit_url', { username: 'u', password: 'p', url: 'http://dns.test', replace: 1 }, { fetch, masterKey, deviceId: 'ID' });
+        await panelLoginRequest('check_mac', { replace: 1 }, { fetch, masterKey, deviceId: 'ID' });
+        const plain = (i: number) => JSON.parse(decryptPayload(calls[i].body.get('data') ?? '', masterKey) ?? '{}');
+        expect(plain(0).replace).toBe(1);
+        expect(plain(1).replace).toBeUndefined();
+    });
+
     it('sends the app language inside the encrypted payload of every action', async () => {
         const { fetch, calls } = fakeFetch(200, '{"status":"ok"}');
         await panelLoginRequest('submit_url', { username: 'u', password: 'p', url: 'http://dns.test', lang: 'pt' }, { fetch, masterKey, deviceId: 'ID' });
