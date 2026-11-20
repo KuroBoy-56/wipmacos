@@ -28,6 +28,35 @@ export function readParentalPin(): string {
     }
 }
 
+/** Al cerrar la sesión: el próximo usuario usa el PIN que le dé el panel (0000 hasta entonces), nunca el del anterior. */
+export function clearParentalPin(): void {
+    try {
+        localStorage.removeItem(PIN_KEY);
+    } catch {
+        /* storage blocked */
+    }
+}
+
+/**
+ * «Ocultar…» y las categorías bloqueadas son de cada línea (usuario@servidor): otro usuario en el equipo empieza de
+ * cero y el anterior encuentra lo suyo al volver. Lo guardado antes para todo el equipo pasa a la primera línea que
+ * entra. Sin línea (sin sesión) se usa la clave de siempre.
+ */
+function lineScoped(key: string, line: string): string {
+    if (!line) return key;
+    const own = key + '|' + line;
+    try {
+        const old = localStorage.getItem(key);
+        if (old !== null) {
+            if (localStorage.getItem(own) === null) localStorage.setItem(own, old);
+            localStorage.removeItem(key);
+        }
+    } catch {
+        /* storage blocked */
+    }
+    return own;
+}
+
 /** El PIN que dice el panel (check_mac / set_pin); otro valor no se guarda. */
 export function saveParentalPin(pin: unknown): void {
     if (!isParentalPin(pin)) return;
@@ -38,10 +67,10 @@ export function saveParentalPin(pin: unknown): void {
     }
 }
 
-/** «Ocultar contenido para adultos»: encendido de fábrica. */
-export function readHideAdult(): boolean {
+/** «Ocultar contenido para adultos»: encendido de fábrica. line = lineKey de la sesión */
+export function readHideAdult(line = ''): boolean {
     try {
-        return localStorage.getItem(HIDE_KEY) !== '0';
+        return localStorage.getItem(lineScoped(HIDE_KEY, line)) !== '0';
     } catch {
         return true;
     }
@@ -50,26 +79,26 @@ export function readHideAdult(): boolean {
 /** «Bloquear categorías» (como Roku): claves "tipo:id" (vod, series, live) de las categorías bloqueadas. */
 const BLOCKED_KEY = 'parental_blocked_cats';
 
-export function readBlockedCats(): string[] {
+export function readBlockedCats(line = ''): string[] {
     try {
-        const v = JSON.parse(localStorage.getItem(BLOCKED_KEY) || '[]');
+        const v = JSON.parse(localStorage.getItem(lineScoped(BLOCKED_KEY, line)) || '[]');
         return Array.isArray(v) ? v.map(String) : [];
     } catch {
         return [];
     }
 }
 
-export function saveBlockedCats(keys: readonly string[]): void {
+export function saveBlockedCats(keys: readonly string[], line = ''): void {
     try {
-        localStorage.setItem(BLOCKED_KEY, JSON.stringify([...keys]));
+        localStorage.setItem(lineScoped(BLOCKED_KEY, line), JSON.stringify([...keys]));
     } catch {
         /* storage blocked */
     }
 }
 
-export function saveHideAdult(hide: boolean): void {
+export function saveHideAdult(hide: boolean, line = ''): void {
     try {
-        localStorage.setItem(HIDE_KEY, hide ? '1' : '0');
+        localStorage.setItem(lineScoped(HIDE_KEY, line), hide ? '1' : '0');
     } catch {
         /* storage blocked */
     }

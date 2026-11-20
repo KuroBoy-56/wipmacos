@@ -1,15 +1,24 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { isAdultName, readBlockedCats, readHideAdult, readParentalPin, saveBlockedCats, saveHideAdult, saveParentalPin } from '@iptvnator/shared/interfaces';
+import { lineKey } from '../panel-sync/panel-progress.client';
+import { sessionCredentials } from '../panel-sync/panel-sync.service';
+
+/** la línea abierta (usuario@servidor); '' sin sesión */
+function currentLine(): string {
+    return lineKey(sessionCredentials());
+}
 
 /**
  * Estado del control parental de la app abierta (como Roku): «Ocultar canales y categorías para adultos» (encendido de
  * fábrica), «Bloquear categorías» (las elegidas, "tipo:id") y «Contenido protegido en esta sesión»: con el PIN del panel
  * se ve todo hasta cerrar la app. Mientras está bloqueado, esas categorías (y sus títulos) no aparecen en Inicio,
- * Películas, Series, Explorar ni TV en vivo.
+ * Películas, Series, Explorar ni TV en vivo. «Ocultar…» y las categorías bloqueadas son de cada línea: con otro usuario
+ * en el equipo todo empieza de cero (reload() al abrir la sesión) y el anterior encuentra lo suyo al volver.
  */
 @Injectable({ providedIn: 'root' })
 export class ParentalControlService {
-    private readonly hide = signal(readHideAdult());
+    private line = currentLine();
+    private readonly hide = signal(readHideAdult(this.line));
     private readonly unlockedNow = signal(false);
 
     /** «Ocultar contenido para adultos» encendido */
@@ -24,7 +33,7 @@ export class ParentalControlService {
         return this.locked() && isAdultName(categoryName);
     }
 
-    private readonly blockedKeys = signal<ReadonlySet<string>>(new Set(readBlockedCats()));
+    private readonly blockedKeys = signal<ReadonlySet<string>>(new Set(readBlockedCats(this.line)));
     /** categorías bloqueadas ("tipo:id") */
     readonly blocked = this.blockedKeys.asReadonly();
 
@@ -53,7 +62,7 @@ export class ParentalControlService {
         const next = new Set(this.blockedKeys());
         if (next.has(key)) next.delete(key);
         else next.add(key);
-        saveBlockedCats([...next]);
+        saveBlockedCats([...next], this.line);
         this.blockedKeys.set(next);
     }
 
@@ -76,7 +85,7 @@ export class ParentalControlService {
     /** apagar «Ocultar…» pide el PIN; encenderlo no */
     setHideAdult(hide: boolean, pin = ''): boolean {
         if (!hide && pin.trim() !== readParentalPin()) return false;
-        saveHideAdult(hide);
+        saveHideAdult(hide, this.line);
         this.hide.set(hide);
         if (hide) this.unlockedNow.set(false);
         return true;
@@ -89,6 +98,14 @@ export class ParentalControlService {
 
     /** cerrar sesión: se vuelve a bloquear */
     reset(): void {
+        this.unlockedNow.set(false);
+    }
+
+    /** sesión nueva (otra línea o la misma): «Ocultar…» y las bloqueadas de esa línea, todo bloqueado otra vez */
+    reload(): void {
+        this.line = currentLine();
+        this.hide.set(readHideAdult(this.line));
+        this.blockedKeys.set(new Set(readBlockedCats(this.line)));
         this.unlockedNow.set(false);
     }
 }

@@ -3,8 +3,9 @@ import { Store } from '@ngrx/store';
 import { firstValueFrom } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 import { PlaylistActions, selectAllPlaylistsMeta } from '@iptvnator/m3u-state';
-import { PanelSyncService, PlaylistDeleteActionService } from '@iptvnator/services';
+import { PanelSyncService, ParentalControlService, PlaylistDeleteActionService } from '@iptvnator/services';
 import {
+    clearParentalPin,
     clearSessionCredentials,
     normalizeXtreamServerUrl,
     Playlist,
@@ -36,6 +37,7 @@ export class PanelSessionService {
     private readonly store = inject(Store);
     private readonly playlistDelete = inject(PlaylistDeleteActionService);
     private readonly panelSync = inject(PanelSyncService);
+    private readonly parental = inject(ParentalControlService);
 
     async start(account: PanelAccount): Promise<void> {
         // a new session/line starts without remembered stream schemes
@@ -92,6 +94,8 @@ export class PanelSessionService {
         if (account.isDemo) setSessionDemoTimes(account.demoExpires, account.demoDuration);
         setSessionPassword(account.password);
         setSessionAlertAccounts([{ user: account.username, pass: account.password, dns: server, title }]);
+        // control parental de esta línea («Ocultar…» y bloqueadas): otro usuario empieza de cero
+        this.parental.reload();
 
         void this.panelSync.refresh({ username: account.username, password: account.password, server });
     }
@@ -109,6 +113,9 @@ export class PanelSessionService {
         }
         clearSessionCredentials();
         resetStreamSchemePreference();
+        // el PIN parental guardado era del usuario que sale: el próximo usa el que le dé el panel
+        clearParentalPin();
+        this.parental.reload();
     }
 
     private async removeOtherLines(playlists: PlaylistMeta[], keepId: string | undefined): Promise<void> {
