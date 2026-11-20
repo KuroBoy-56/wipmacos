@@ -133,7 +133,7 @@ goes to `/login?out=1`. The login closes the session there (`PanelSignOutService
 `apps/web/src/app/panel-login/panel-sign-out.service.ts`: guard stopped, profile forgotten, lines and `session_*`
 keys removed) and, while the app stays open, does **not** run `check_mac` nor enter by itself
 (`startDeviceCheck(..., 'skip')`). The automatic entry only happens when the app is opened (the flag lives in
-memory). **Verificar activación** on the login (`verifyActivation()`, mode `'button'`) asks `check_mac`: with a line it
+memory). **Verificar activación** on the login (`startDeviceCheck(true, 'button')`) asks `check_mac`: with a line it
 enters (checked on the IPTV server as on start); without one it says «Este equipo aún no está activado. Dale el
 código de abajo a tu distribuidor.» (no fake screen).
 
