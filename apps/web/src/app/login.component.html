@@ -97,6 +97,12 @@
                     <span class="nf-spinner" aria-hidden="true"></span>
                 </button>
                 }
+                <!-- como Roku: pregunta al panel si este equipo tiene una línea (check_mac) y, si la tiene, entra -->
+                @if (!review()) {
+                <button class="nf-btn-dark nf-btn-block" type="button" [disabled]="busy() || demoBusy()" (click)="verifyActivation()">
+                    <span class="lbl">{{ 'MPX.LOGIN.CHECK_ACTIVATION' | translate }}</span>
+                </button>
+                }
             }
 
             @if (!review()) {

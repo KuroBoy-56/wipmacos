@@ -55,6 +55,11 @@ export interface PanelLoginPayload {
     pin?: string;
     /** review_login: 1 = Auto-Demo del tema de prueba. */
     demo?: number;
+    /**
+     * submit_url: 1 = the user typed user and password; the panel leaves the device with this line only (the line it
+     * had before leaves the device).
+     */
+    replace?: number;
 }
 
 /** One error for the panel («Errores de las apps»): see api/report.php. */

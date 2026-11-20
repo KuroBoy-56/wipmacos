@@ -1322,6 +1322,8 @@
             "PASSWORD": "Mot de passe",
             "SHOW_PASSWORD": "Afficher le mot de passe",
             "CHECKING_DEVICE": "Vérification de l'appareil…",
+            "CHECK_ACTIVATION": "Vérifier l'activation",
+            "NOT_ACTIVATED": "Cet appareil n'est pas encore activé. Donnez le code ci-dessous à votre distributeur.",
             "DEVICE_ID": "ID de l'appareil",
             "HINT": "Connectez-vous avec le nom d'utilisateur et le mot de passe de votre abonnement.",
             "HINT_DEMO": "Connectez-vous avec le nom d'utilisateur et le mot de passe de votre abonnement, ou lancez une démo.",
@@ -1383,6 +1385,7 @@
             "REFRESHING": "Actualisation…",
             "DOWNLOADS": "Téléchargements",
             "SETTINGS": "Paramètres",
+            "LOGOUT": "Se déconnecter",
             "ACCOUNT_LOCKED": "Les détails du compte sont verrouillés par sécurité."
         },
         "SPORTS": {
