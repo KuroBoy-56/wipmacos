@@ -16,7 +16,16 @@
     <div class="channel-content">
         <div class="channel-logo-shell" aria-hidden="true">
             @if (showLogoFallback()) {
-                <mat-icon class="channel-logo-fallback">live_tv</mat-icon>
+                @if (brandLogo() && !brandLogoFailed()) {
+                    <img
+                        class="channel-logo channel-logo-brand"
+                        [src]="brandLogo()"
+                        (error)="brandLogoFailed.set(true)"
+                        alt=""
+                    />
+                } @else {
+                    <mat-icon class="channel-logo-fallback">live_tv</mat-icon>
+                }
             }
             @if (logo()) {
                 <img

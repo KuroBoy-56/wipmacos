@@ -4,11 +4,17 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { EpgProgram } from '@iptvnator/shared/interfaces';
+import { signal } from '@angular/core';
+import { PanelBrandingService } from '@iptvnator/services';
 import { ChannelListItemComponent } from './channel-list-item.component';
 
 describe('ChannelListItemComponent', () => {
     let fixture: ComponentFixture<ChannelListItemComponent>;
     let dialog: { open: jest.Mock };
+    const branding = {
+        choice: signal<'none' | 'skip' | 'code'>('skip'),
+        logoUrl: signal<string | null>(null),
+    };
 
     beforeEach(async () => {
         dialog = {
@@ -26,6 +32,7 @@ describe('ChannelListItemComponent', () => {
                     provide: MatDialog,
                     useValue: dialog,
                 },
+                { provide: PanelBrandingService, useValue: branding },
             ],
         }).compileComponents();
 
@@ -78,11 +85,38 @@ describe('ChannelListItemComponent', () => {
         ).toBeNull();
     });
 
-    it('shows the generic fallback icon when no logo is available', () => {
+    const brandSrc = () =>
+        (fixture.nativeElement.querySelector('.channel-logo-brand') as HTMLImageElement | null)?.getAttribute('src') ?? null;
+
+    it('shows the app logo for a channel without logo when there is no distributor', () => {
+        branding.choice.set('skip');
+        branding.logoUrl.set(null);
         fixture.componentRef.setInput('name', 'Channel Without Logo');
         fixture.componentRef.setInput('logo', '');
         fixture.detectChanges();
 
+        expect(brandSrc()).toBe('assets/images/logo.png');
+        expect(fixture.nativeElement.querySelector('.channel-logo-fallback')).toBeNull();
+    });
+
+    it('shows the distributor logo (never the app logo) for a channel without logo', () => {
+        branding.choice.set('code');
+        branding.logoUrl.set('https://panel.example/img/tenants/5/logo_1.png');
+        fixture.componentRef.setInput('name', 'Channel Without Logo');
+        fixture.componentRef.setInput('logo', '');
+        fixture.detectChanges();
+
+        expect(brandSrc()).toBe('https://panel.example/img/tenants/5/logo_1.png');
+    });
+
+    it('shows the generic icon when the distributor has no logo', () => {
+        branding.choice.set('code');
+        branding.logoUrl.set(null);
+        fixture.componentRef.setInput('name', 'Channel Without Logo');
+        fixture.componentRef.setInput('logo', '');
+        fixture.detectChanges();
+
+        expect(brandSrc()).toBeNull();
         expect(
             fixture.nativeElement.querySelector('.channel-logo-fallback')
         ).not.toBeNull();
