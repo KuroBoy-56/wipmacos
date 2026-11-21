@@ -283,6 +283,13 @@ lines, alerts, TMDB key, sports, name, logo and colours. The panel contract
   "Cambiar distribuidor" (forget it, log out, back to the step; with Omitir it
   lets the user enter a code).
 
+### Channel without logo (1.6.4)
+
+A live channel without logo, or whose logo does not load, shows the brand logo in the channel list
+(`ChannelListItemComponent.brandLogo`, `libs/ui/components`): `assets/images/logo.png` with Omitir, the distributor's
+`logoUrl` with a code and, if the distributor has no logo (or it does not load), the generic `live_tv` icon. Never the
+app logo for a distributor, as in the web player, Android and the TV apps.
+
 ## DNS button
 
 The login screen and Settings show a DNS button
