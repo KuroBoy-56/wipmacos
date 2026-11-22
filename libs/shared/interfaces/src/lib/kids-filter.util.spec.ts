@@ -21,12 +21,24 @@ describe('perfil infantil', () => {
         expect(level('Toy Story 4', '', ['INFANTILES'])).toBe('strong');
         expect(level('Shrek', 'Animación, Comedia', ['ANIMADAS'])).toBe('strong');
         expect(level('Moana 2', 'Animación, Familia', ['DISNEY+'])).toBe('strong');
-        expect(level('Frozen II', '', ['DISNEY+'])).toBe('weak');
+        expect(level('Frozen II', '', ['DISNEY+'])).toBe('strong'); // v3: kids_titles
         expect(level('Mírame así, el camino de Noa', 'Comedia, Familia, Telenovela', ['SERIES NUEVAS'])).toBe('weak');
         expect(level('Rick y Morty: la película', 'Animación, Comedia', ['ANIMADAS'])).toBe('');
         expect(level('Deadpool & Wolverine', 'Acción, Comedia', ['ESTRENOS 2024'])).toBe('');
         expect(level('Thor: amor y trueno', '', ['MARVEL'])).toBe('');
         expect(level('Loki', '', ['DISNEY+'])).toBe('');
+    });
+
+    it('v3: títulos de niños (kids_titles) fuera de una categoría de niños', () => {
+        const level = (name: string, genre: string, cats: string[]) => kidsItemLevel(name, genre, cats.map((c) => kidsCatClass(c)));
+        expect(level('Shrek 2 (2004)', 'Animación, Comedia', ['ESTRENOS 2024'])).toBe('strong');
+        expect(level('Paw Patrol: La película', '', ['PELICULAS'])).toBe('strong');
+        expect(level('Toy Story 3', 'Animación, Familia', ['DISNEY+'])).toBe('strong');
+        expect(level('Coco Chanel', '', ['ESTRENOS 2024'])).toBe('');
+        expect(level('Shrek 2', 'Acción, Drama', ['ESTRENOS 2024'])).toBe(''); // con un género que no es de niños no se mira
+        expect(level('Winnie the Pooh: Blood and Honey', '', ['ESTRENOS 2024'])).toBe('');
+        expect(level('Bambi: The Reckoning', 'Terror', ['ESTRENOS 2024'])).toBe('');
+        expect(level('Mickey 17', '', ['ESTRENOS 2024'])).toBe('');
     });
 
     it('lo dudoso solo con el «ok» de TMDB; lo seguro salvo que TMDB diga «no»', () => {

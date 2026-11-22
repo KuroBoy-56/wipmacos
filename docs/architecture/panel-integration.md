@@ -524,8 +524,12 @@ no profiles screen, the header is the usual one and nothing is filtered.
   whenever the chosen profile changes.
 - **Kids profile** (chosen only when created, with the «Perfil infantil»
   switch). `KidsFilterService` filters the Netflix catalog (`injectNfCatalog`: Inicio, Películas, Series, Explorar, Top
-  10) with the panel's `kidsRules` (factory copy in `kids-rules.ts`, helpers in
-  `kids-filter.util.ts`, both in `@iptvnator/shared/interfaces`); doubtful
+  10) with the panel's `kidsRules` (factory copy in `kids-rules.ts`, generated
+  from the panel's `includes/kids_rules.php`, helpers in
+  `kids-filter.util.ts`, both in `@iptvnator/shared/interfaces`; rules v3 add
+  `kids_titles`: Shrek, Toy Story, Paw Patrol… count as a kids category even in
+  «Estrenos», checked only without a genre or with a kids / family / animation
+  genre, never against the block lists or a TMDB «no»); doubtful
   titles show only after a TMDB verdict from `api/kids_rate.php` (batches of
   400 every 15 s, kept in `kids_rate<tenant suffix>`). Live TV keeps only kids
   categories (`with-selection.feature.ts`) and disappears from the menu when
