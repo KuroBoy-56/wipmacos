@@ -7,7 +7,7 @@
 import { KIDS_RULES_LOCAL } from './kids-rules';
 
 export type KidsRules = { v: number; rate_age_max?: number } & Record<string, unknown>;
-type Lists = 'kids' | 'family' | 'live' | 'disney' | 'block_cats' | 'kids_strong' | 'genre_kids' | 'genre_weak' | 'genre_anim' | 'genre_hard' | 'genre_block' | 'block_marks' | 'block_titles';
+type Lists = 'kids' | 'family' | 'live' | 'disney' | 'block_cats' | 'kids_strong' | 'genre_kids' | 'genre_weak' | 'genre_anim' | 'genre_hard' | 'genre_block' | 'block_marks' | 'block_titles' | 'kids_titles';
 export type KidsCatClass = 'block' | 'kids' | 'disney' | 'family' | '';
 /** 'strong' se ve salvo que TMDB diga 'no'; 'weak' solo si TMDB dice 'ok'; '' nunca */
 export type KidsLevel = 'strong' | 'weak' | '';
@@ -27,11 +27,24 @@ function valid(r: unknown): r is KidsRules {
 
 let rules: KidsRules = KIDS_RULES_LOCAL;
 let compiled: Partial<Record<Lists, RegExp | null>> = {};
+// nombre → ¿está en kids_titles? (el catálogo infantil se vuelve a armar cuando llegan veredictos de TMDB)
+let titleMemo = new Map<string, boolean>();
 
 function use(r: KidsRules): void {
     if (r === rules) return;
     rules = r;
     compiled = {};
+    titleMemo = new Map();
+}
+
+// ¿el nombre (ya normalizado) es de un título de niños de kids_titles (v3: Shrek, Toy Story, Paw Patrol…)?
+function kidsTitle(n: string): boolean {
+    let v = titleMemo.get(n);
+    if (v === undefined) {
+        v = m(n, 'kids_titles');
+        titleMemo.set(n, v);
+    }
+    return v;
 }
 
 /** Las del panel, si son más nuevas (v) que las guardadas y que la copia de fábrica. */
@@ -123,13 +136,17 @@ export function kidsItemLevel(name: unknown, genre: unknown, classes: readonly K
     const g = kidsFold(genre).trim();
     const has = (l: Lists) => !!g && m(g, l);
     const gWeak = has('genre_weak');
-    const kidsGenre = has('genre_kids') || (gWeak && has('genre_anim'));
+    const gAnim = has('genre_anim');
+    const kidsGenre = has('genre_kids') || (gWeak && gAnim);
     const gHard = has('genre_hard');
     const gBlock = has('genre_block');
+    // título de niños (kids_titles, v3) fuera de una categoría de niños: solo sin género o con género de niños, familia o
+    // animación, o en una categoría de Disney o familia (son cientos de títulos: así es rápido)
+    const tKids = !kidsCat && (!g || kidsGenre || gWeak || gAnim || weakCat) && kidsTitle(n);
     // crimen, terror, telenovela… sin nada de niños ni de familia: fuera
-    if (gBlock && !kidsGenre && !gWeak) return '';
-    if ((kidsCat || kidsGenre) && !gHard && !gBlock) return 'strong';
-    return kidsCat || kidsGenre || weakCat || gWeak ? 'weak' : '';
+    if (gBlock && !kidsGenre && !gWeak && !tKids) return '';
+    if ((kidsCat || kidsGenre || tKids) && !gHard && !gBlock) return 'strong';
+    return kidsCat || kidsGenre || tKids || weakCat || gWeak ? 'weak' : '';
 }
 
 export function kidsRatePass(level: KidsLevel, verdict: string): boolean {
