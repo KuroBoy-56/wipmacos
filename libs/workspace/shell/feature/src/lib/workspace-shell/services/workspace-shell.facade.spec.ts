@@ -725,11 +725,9 @@ describe('WorkspaceShellFacade', () => {
             'open-downloads',
             'open-settings',
             'open-sources',
-            'add-playlist-stalker',
-            'add-playlist-xtream',
-            'add-playlist-m3u',
-            'add-playlist',
         ]);
+        // the panel line is the only source: no "add M3U / Xtream / Stalker" command
+        expect(commands.some((command) => command.id.startsWith('add-playlist'))).toBe(false);
         expect(commands.every((command) => command.group === 'global')).toBe(
             true
         );

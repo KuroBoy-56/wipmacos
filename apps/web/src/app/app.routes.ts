@@ -7,6 +7,7 @@ import { LoginComponent } from './login.component';
 import { reviewThemeGuard, ReviewThemeService } from './panel-login/review/review-theme.service';
 import { AuthGuard } from './auth.guard';
 import { profilesGateGuard } from './profiles/profiles.guard';
+import { panelSourceGuard } from './panel-login/panel-source.guard';
 
 const workspaceEntryRedirect = async () =>
     inject(WorkspaceStartupPreferencesService).resolveInitialWorkspacePath();
@@ -66,8 +67,9 @@ export const routes: Routes = [
     {
         path: 'workspace',
         canActivate: [AuthGuard],
-        // la línea elige perfil y todavía no lo eligió: primero «¿Quién está viendo?» (profiles.guard.ts)
-        canActivateChild: [profilesGateGuard],
+        // la línea elige perfil y todavía no lo eligió: primero «¿Quién está viendo?» (profiles.guard.ts);
+        // solo se abre la línea que dio el panel (panel-source.guard.ts)
+        canActivateChild: [profilesGateGuard, panelSourceGuard],
         data: {
             layout: 'workspace',
         },

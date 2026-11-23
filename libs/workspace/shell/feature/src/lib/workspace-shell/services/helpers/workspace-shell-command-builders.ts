@@ -232,49 +232,6 @@ export function getGlobalCommandDefinitions(
                 void ctx.router.navigate(['/workspace', 'dashboard']);
             },
         },
-        {
-            id: 'add-playlist',
-            group: 'global',
-            icon: 'add_circle_outline',
-            labelKey: 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_LABEL',
-            descriptionKey:
-                'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_DESCRIPTION',
-            priority: 80,
-            run: () => actions.openAddPlaylistDialog(),
-        },
-        {
-            id: 'add-playlist-m3u',
-            group: 'global',
-            icon: 'folder_open',
-            labelKey: 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_M3U_LABEL',
-            descriptionKey:
-                'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_M3U_DESCRIPTION',
-            keywords: ['m3u', 'm3u8', 'file', 'url', 'add', 'import'],
-            priority: 79,
-            run: () => actions.openAddPlaylistDialog('url'),
-        },
-        {
-            id: 'add-playlist-xtream',
-            group: 'global',
-            icon: 'cloud',
-            labelKey: 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_XTREAM_LABEL',
-            descriptionKey:
-                'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_XTREAM_DESCRIPTION',
-            keywords: ['xtream', 'codes', 'iptv', 'add', 'import'],
-            priority: 78,
-            run: () => actions.openAddPlaylistDialog('xtream'),
-        },
-        {
-            id: 'add-playlist-stalker',
-            group: 'global',
-            icon: 'cast',
-            labelKey: 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_STALKER_LABEL',
-            descriptionKey:
-                'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_STALKER_DESCRIPTION',
-            keywords: ['stalker', 'portal', 'mac', 'ministra', 'add'],
-            priority: 77,
-            run: () => actions.openAddPlaylistDialog('stalker'),
-        },
     ];
 }
 

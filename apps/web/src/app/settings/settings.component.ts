@@ -46,7 +46,6 @@ import {
 import { SettingsStore } from '../services/settings-store.service';
 import { SettingsService } from './../services/settings.service';
 import { SettingsAboutSectionComponent } from './settings-about-section.component';
-import { SettingsBackupSectionComponent } from './settings-backup-section.component';
 import { SettingsDistributorSectionComponent } from './settings-distributor-section.component';
 import { SettingsParentalSectionComponent } from './settings-parental-section.component';
 import { SettingsDashboardSectionComponent } from './settings-dashboard-section.component';
@@ -80,7 +79,6 @@ import { SettingsRemoteControlSectionComponent } from './settings-remote-control
 import { SettingsResetSectionComponent } from './settings-reset-section.component';
 import { SettingsSectionScrollDirective } from './settings-section-scroll.directive';
 import { SettingsTmdbSectionComponent } from './settings-tmdb-section.component';
-import { SettingsBackupFacade } from './settings-backup.facade';
 import { SettingsPlaylistResetFacade } from './settings-playlist-reset.facade';
 import {
     buildRemoveAllProgressLabel,
@@ -104,7 +102,6 @@ import { SettingsSnackbarService } from './settings-snackbar.service';
         SecureDnsPickerComponent,
         MatDialogModule,
         SettingsAboutSectionComponent,
-        SettingsBackupSectionComponent,
         SettingsDashboardSectionComponent,
         SettingsDistributorSectionComponent,
         SettingsParentalSectionComponent,
@@ -117,7 +114,6 @@ import { SettingsSnackbarService } from './settings-snackbar.service';
         SettingsTmdbSectionComponent,
     ],
     providers: [
-        SettingsBackupFacade,
         SettingsPlaylistResetFacade,
         SettingsSnackbarService,
     ],
@@ -134,7 +130,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private store = inject(Store);
     private translate = inject(TranslateService);
     private matDialog = inject(MatDialog);
-    private readonly backupFacade = inject(SettingsBackupFacade);
     private readonly playlistResetFacade = inject(SettingsPlaylistResetFacade);
     private readonly runtime = inject(RuntimeCapabilitiesService);
     private readonly epgBridge = inject(EpgRuntimeBridgeService);
@@ -209,7 +204,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     visibleQrCodeIp = signal<string | null>(null);
     readonly isRemovingAllPlaylists = this.playlistResetFacade.isRemovingAllPlaylists;
     readonly isClearingEpgData = signal(false);
-    readonly isExportingData = this.backupFacade.isExportingData;
     readonly removeAllProgress = this.playlistResetFacade.removeAllProgress;
 
     private settingsStore = inject(SettingsStore);
@@ -521,14 +515,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
                 }
             },
         });
-    }
-
-    async exportData() {
-        await this.backupFacade.exportData(() => this.waitForUiFeedbackFrame());
-    }
-
-    importData() {
-        this.backupFacade.importData(() => this.setSettings());
     }
 
     private async waitForUiFeedbackFrame(): Promise<void> {
