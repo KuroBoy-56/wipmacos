@@ -15,6 +15,7 @@ import {
     trace,
 } from './debug-trace';
 import { resolveWorkerRuntimeBootstrap } from '../workers/worker-runtime-paths';
+import { initDatabase } from '../database/connection';
 
 type PendingRequest = {
     resolve: (value: unknown) => void;
@@ -41,6 +42,7 @@ function createWorkerError(error: {
 
 export class DatabaseWorkerClient {
     private worker: Worker | null = null;
+    private dbReady: Promise<void> | null = null;
     private readyPromise: Promise<void> | null = null;
     private readyResolve: (() => void) | null = null;
     private readyReject: ((reason?: unknown) => void) | null = null;
@@ -53,6 +55,7 @@ export class DatabaseWorkerClient {
         options?: RequestOptions
     ): Promise<TResult> {
         await this.ensureWorker();
+        await this.waitForMainDatabase();
 
         const requestId = randomUUID();
         const startedAt = Date.now();
@@ -81,6 +84,27 @@ export class DatabaseWorkerClient {
                 payload,
             });
         });
+    }
+
+    /**
+     * The worker opens the database with its first query; the main process must have opened it first (tables and
+     * WAL). On a fresh install both opened the new file at the same time: the main process got "database is locked",
+     * never created the tables and every query answered "no such table: playlists" («Portal no disponible»).
+     */
+    private async waitForMainDatabase(): Promise<void> {
+        if (!this.dbReady) {
+            this.dbReady = initDatabase().then(
+                () => undefined,
+                (error) => {
+                    this.dbReady = null; // the next request tries again
+                    console.error(
+                        '[DB Worker] main database not ready:',
+                        error
+                    );
+                }
+            );
+        }
+        await this.dbReady;
     }
 
     async cancel(operationId: string): Promise<{ success: boolean }> {

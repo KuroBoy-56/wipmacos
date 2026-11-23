@@ -121,8 +121,15 @@ export default class Main {
 
         if (App.mainWindow) setDownloadsMainWindow(App.mainWindow);
 
+        // the database starts opening before the window loads (its first queries need the tables)
+        const databaseReady = initDatabase().catch((error) => {
+            console.error(
+                '[startup] database init failed (retried on the next query):',
+                error
+            );
+        });
         await App.loadMainWindow();
-        await initDatabase();
+        await databaseReady;
 
         if (isStartupTraceEnabled()) trace('startup', 'init-database:done');
         await resetStaleDownloads();
