@@ -14,6 +14,7 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema';
 import { getIptvnatorDatabasePath } from './path-utils';
+import { enableWal } from './sqlite-wal';
 
 export type DatabaseInstance = BetterSQLite3Database<typeof schema>;
 
@@ -793,7 +794,7 @@ export async function initDatabase(
 
     initPromise = (async () => {
         const filePath = getDatabasePath();
-        sqlite = new Database(filePath, {
+        const connection = new Database(filePath, {
             readonly,
             verbose: isSqlTraceEnabled()
                 ? (message?: unknown) => {
@@ -811,29 +812,44 @@ export async function initDatabase(
             });
         }
 
-        // Enable foreign keys
-        sqlite.pragma('foreign_keys = ON');
-        sqlite.pragma('busy_timeout = 5000');
+        try {
+            // busy_timeout first: every later statement waits for another connection instead of failing
+            connection.pragma('busy_timeout = 5000');
+            connection.pragma('foreign_keys = ON');
 
-        if (!readonly) {
-            sqlite.pragma('journal_mode = WAL');
-            sqlite.pragma('synchronous = NORMAL');
+            if (!readonly) {
+                await enableWal(connection);
+                connection.pragma('synchronous = NORMAL');
+            }
+
+            connection.pragma('cache_size = -64000');
+            connection.pragma('temp_store = MEMORY');
+            connection.pragma('mmap_size = 268435456');
+
+            // Create tables only for read-write connections
+            if (!readonly && !skipTableCreation) {
+                createTables(connection);
+                runMigrations(connection);
+            }
+        } catch (error) {
+            try {
+                connection.close();
+            } catch {
+                // already unusable
+            }
+            throw error;
         }
 
-        sqlite.pragma('cache_size = -64000');
-        sqlite.pragma('temp_store = MEMORY');
-        sqlite.pragma('mmap_size = 268435456');
-
-        // Create tables only for read-write connections
-        if (!readonly && !skipTableCreation) {
-            createTables(sqlite);
-            runMigrations(sqlite);
-        }
-
-        const database = drizzle(sqlite, { schema });
+        sqlite = connection;
+        const database = drizzle(connection, { schema });
         db = database;
         return database;
     })();
+    // a failed start (database locked, disk full…) is tried again by the next call instead of staying broken until
+    // the app restarts (before, every later query kept the same error and the tables were never created)
+    initPromise.catch(() => {
+        initPromise = null;
+    });
 
     return initPromise;
 }

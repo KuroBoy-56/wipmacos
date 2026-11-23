@@ -27,6 +27,11 @@ jest.mock('worker_threads', () => {
     };
 });
 
+const mockInitDatabase = jest.fn();
+jest.mock('../database/connection', () => ({
+    initDatabase: (...args: unknown[]) => mockInitDatabase(...args),
+}));
+
 jest.mock('../workers/worker-runtime-paths', () => ({
     resolveWorkerRuntimeBootstrap: (...args: unknown[]) =>
         resolveWorkerRuntimeBootstrap(...args),
@@ -39,6 +44,8 @@ describe('DatabaseWorkerClient', () => {
     beforeEach(async () => {
         jest.resetModules();
         mockWorkerInstances.length = 0;
+        mockInitDatabase.mockReset();
+        mockInitDatabase.mockResolvedValue({});
         resolveWorkerRuntimeBootstrap.mockReset();
         resolveWorkerRuntimeBootstrap.mockReturnValue({
             workerPath: '/mock/workers/database.worker.js',
@@ -103,6 +110,61 @@ describe('DatabaseWorkerClient', () => {
         });
 
         await expect(requestPromise).resolves.toEqual([{ id: 1 }]);
+    });
+
+    it('sends no query to the worker until the main database is ready (tables created first)', async () => {
+        let openDatabase: () => void = () => undefined;
+        mockInitDatabase.mockReturnValue(
+            new Promise((resolve) => {
+                openDatabase = () => resolve({});
+            })
+        );
+        const client = createClient();
+        const requestPromise = client.request('DB_GET_APP_PLAYLIST_METAS', {});
+        const worker = mockWorkerInstances[0];
+
+        worker.emit('message', { type: 'ready' });
+        await flushPromises();
+        expect(worker.postMessage).not.toHaveBeenCalled();
+
+        openDatabase();
+        await flushPromises();
+        expect(worker.postMessage).toHaveBeenCalledTimes(1);
+        const request = worker.postMessage.mock.calls[0][0];
+        worker.emit('message', {
+            type: 'response',
+            requestId: request.requestId,
+            success: true,
+            result: {},
+        });
+        await expect(requestPromise).resolves.toEqual({});
+    });
+
+    it('a main database that failed to open is tried again on the next query', async () => {
+        mockInitDatabase.mockRejectedValueOnce(
+            Object.assign(new Error('database is locked'), {
+                code: 'SQLITE_BUSY',
+            })
+        );
+        const client = createClient();
+        const first = client.request('DB_GET_APP_PLAYLIST_METAS', {});
+        const worker = mockWorkerInstances[0];
+        worker.emit('message', { type: 'ready' });
+        await flushPromises();
+        const second = client.request('DB_GET_APP_PLAYLIST_METAS', {});
+        await flushPromises();
+
+        expect(mockInitDatabase).toHaveBeenCalledTimes(2);
+        for (const call of worker.postMessage.mock.calls) {
+            worker.emit('message', {
+                type: 'response',
+                requestId: call[0].requestId,
+                success: true,
+                result: {},
+            });
+        }
+        await expect(first).resolves.toEqual({});
+        await expect(second).resolves.toEqual({});
     });
 
     it('forwards worker events to the pending request callback', async () => {
