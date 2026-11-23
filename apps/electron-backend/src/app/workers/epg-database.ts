@@ -16,9 +16,23 @@ export class EpgDatabase {
 
     constructor(Database: typeof BetterSqlite3) {
         this.db = new Database(getIptvnatorDatabasePath());
-        this.db.pragma('foreign_keys = ON');
-        this.db.pragma('journal_mode = WAL');
+        // busy_timeout first; WAL is set by the main process (switching here failed with "database is locked")
         this.db.pragma('busy_timeout = 5000');
+        this.db.pragma('foreign_keys = ON');
+        try {
+            if (
+                String(
+                    this.db.pragma('journal_mode', { simple: true })
+                ).toLowerCase() !== 'wal'
+            ) {
+                this.db.pragma('journal_mode = WAL');
+            }
+        } catch (error) {
+            console.warn(
+                '[EPG Worker] journal_mode = WAL not set here (the main process sets it):',
+                error
+            );
+        }
 
         this.insertChannelStmt = this.db.prepare(`
             INSERT INTO epg_channels (id, display_name, icon_url, url, source_url, updated_at)

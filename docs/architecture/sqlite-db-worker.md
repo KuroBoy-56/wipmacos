@@ -65,7 +65,8 @@ Keep SQL-heavy logic here so the worker entry remains a thin dispatcher:
 2. `ipcMain.handle(...)` in the Electron backend builds a payload and delegates
    to `DatabaseWorkerClient`.
 3. `DatabaseWorkerClient` lazily starts one long-lived `worker_threads` worker
-   and correlates requests with a generated `requestId`.
+   and correlates requests with a generated `requestId`. It waits for the
+   main-process `initDatabase()` (tables + WAL) before posting a request.
 4. The worker executes SQLite work and sends back either:
     1. `ready`
     2. `event`
@@ -320,17 +321,37 @@ is unavailable or the SQLite playlist migration has not completed.
 EPG remains on its own worker, so both workers must use compatible SQLite
 pragmas.
 
-Applied now in both the shared connection path and worker-owned connections:
+Applied now in both the shared connection path and worker-owned connections,
+in this order:
 
-1. `foreign_keys = ON`
-2. `journal_mode = WAL`
-3. `busy_timeout = 5000`
+1. `busy_timeout = 5000` (first, so every later statement waits for another
+   connection instead of failing)
+2. `foreign_keys = ON`
+3. `journal_mode = WAL`, only when the file is not already in WAL
+
+Startup order (fresh install, 1.6.7): the main process owns table creation and
+WAL. `main.ts` starts `initDatabase()` before the window loads, and
+`DatabaseWorkerClient.request()` waits for `initDatabase()` before posting a
+query, so the DB worker never opens the brand-new file at the same moment.
+Before, both opened it at once: `PRAGMA journal_mode = WAL` in the main process
+failed with "database is locked" (that pragma does not wait for
+`busy_timeout`), the tables were never created, every query answered
+"no such table: playlists" and the app showed «Portal no disponible» until it
+was restarted. Now:
+
+1. the main process retries WAL for ~5 s on `SQLITE_BUSY`/`SQLITE_LOCKED` and
+   otherwise keeps the default journal (`enableWal` in
+   `libs/shared/database/src/lib/sqlite-wal.ts`); the tables are created anyway
+2. a failed `initDatabase()` closes its connection and is tried again by the
+   next call instead of keeping the same error until a restart
+3. the DB and EPG workers never fail to open because of WAL (they only warn;
+   the main process sets it and it stays in the file)
 
 Current sources:
 
-1. `libs/shared/database/src/lib/connection.ts`
+1. `libs/shared/database/src/lib/connection.ts` (+ `sqlite-wal.ts`)
 2. `apps/electron-backend/src/app/workers/database.worker-connection.ts`
-3. `apps/electron-backend/src/app/workers/epg-parser.worker.ts`
+3. `apps/electron-backend/src/app/workers/epg-database.ts`
 
 Main-process EPG ownership is split across focused event modules:
 

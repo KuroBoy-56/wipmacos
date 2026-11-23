@@ -77,9 +77,24 @@ export async function getWorkerDatabase(): Promise<AppDatabase> {
               }
             : undefined,
     });
-    sqlite.pragma('foreign_keys = ON');
-    sqlite.pragma('journal_mode = WAL');
+    // busy_timeout first: the main process may be creating the tables right now. WAL is set by the main process and
+    // stays in the file; switching to it here failed with "database is locked" when both opened a new install at once
     sqlite.pragma('busy_timeout = 5000');
+    sqlite.pragma('foreign_keys = ON');
+    try {
+        if (
+            String(
+                sqlite.pragma('journal_mode', { simple: true })
+            ).toLowerCase() !== 'wal'
+        ) {
+            sqlite.pragma('journal_mode = WAL');
+        }
+    } catch (error) {
+        console.warn(
+            '[DB Worker] journal_mode = WAL not set here (the main process sets it):',
+            error
+        );
+    }
     sqlite.pragma('synchronous = NORMAL');
     sqlite.pragma('cache_size = -64000');
     sqlite.pragma('temp_store = MEMORY');
