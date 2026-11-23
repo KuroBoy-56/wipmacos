@@ -13,10 +13,6 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { ExternalPlaybackDockComponent } from '@iptvnator/ui/components';
 import { DOCUMENT } from '@angular/common';
-import {
-    PlaylistDropOverlayComponent,
-    PlaylistDropZoneDirective,
-} from '../playlist-drop-overlay';
 import { WorkspaceShellContextSidebarComponent } from './components/workspace-shell-context-sidebar/workspace-shell-context-sidebar.component';
 import { WorkspaceShellImportOverlayComponent } from './components/workspace-shell-import-overlay/workspace-shell-import-overlay.component';
 import { WorkspaceNfHeaderComponent } from './components/workspace-nf-header/workspace-nf-header.component';
@@ -34,8 +30,6 @@ import { WorkspacePanelAlertComponent } from './components/workspace-panel-alert
     selector: 'app-workspace-shell',
     imports: [
         ExternalPlaybackDockComponent,
-        PlaylistDropOverlayComponent,
-        PlaylistDropZoneDirective,
         RouterOutlet,
         WorkspaceShellContextSidebarComponent,
         WorkspaceNfHeaderComponent,

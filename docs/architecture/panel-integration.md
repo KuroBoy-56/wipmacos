@@ -150,6 +150,27 @@ contenido para adultos» and «Bloquear categorías» are per line (`parental_hi
 the new user starts with the defaults and the previous one finds its own settings again. Values stored before 1.6.3 for
 the whole device move to the first line that signs in.
 
+### The panel line is the only source (1.6.8)
+
+The desktop app only plays the line the panel gives the device. Since 1.6.8 there is no way to use it with any other
+source (an M3U file or URL, a Stalker portal, an Xtream line from another provider):
+
+- **Route guard**: `panelSourceGuard` (`apps/web/src/app/panel-login/panel-source.guard.ts`, a `canActivateChild` of
+  `/workspace` next to `profilesGateGuard`) only opens `/workspace/xtreams/<id>` when `<id>` is the panel line
+  (`session_token` = `panel-<id>`, written by `PanelSessionService.start`). `/workspace/playlists/…` (M3U) and
+  `/workspace/stalker/…` never open; anything else goes to the panel line's `home` (or `/login` without a session).
+- **Clean database**: `PanelSessionService.removeOtherLines` removes every playlist that is not the panel line on each
+  session start (before 1.6.8 only Xtream ones; an M3U or Stalker list stayed), and `clear()` removes them all.
+- **No way to add one**: the "add playlist" dialog (M3U file / URL / text, Xtream, Stalker) is no longer opened
+  (`AppWorkspaceShellActionsService.openAddPlaylistDialog` goes back to the panel line, so the dialog and its import
+  forms are not in the build), the Ctrl+K palette has no "add" commands, a file dropped on the window is not imported
+  (the workspace shell has no drop zone) and Settings has no «Copia de seguridad» (import loaded lists from any
+  provider; export wrote the line's user and password to a file).
+
+The login itself was already sealed: `/workspace` needs `AuthGuard` (a session the panel opened), and the login only
+opens one after the panel answers `check_mac` (active line), `submit_url` (`status: ok`, server from `fetch_dns`) or
+`auto_demo`.
+
 ### Platform, fake screen and error reports
 
 - **Platform.** Every `login.php` payload and the `progress.php` `auth` body

@@ -162,7 +162,6 @@ describe('SettingsComponent', () => {
     let translate: TranslateService;
     let dialogService: DialogService;
     let playlistsService: PlaylistsService;
-    let playlistBackupService: PlaylistBackupService;
     let store: Store;
     let mockStore: MockStore;
     let databaseService: DatabaseService;
@@ -317,7 +316,6 @@ describe('SettingsComponent', () => {
         translate = TestBed.inject(TranslateService);
         dialogService = TestBed.inject(DialogService);
         playlistsService = TestBed.inject(PlaylistsService);
-        playlistBackupService = TestBed.inject(PlaylistBackupService);
         store = TestBed.inject(Store);
         mockStore = TestBed.inject(MockStore);
         databaseService = TestBed.inject(DatabaseService);
@@ -912,119 +910,6 @@ describe('SettingsComponent', () => {
             expect.objectContaining({ panelClass: ['settings-snackbar'] })
         );
         expect(refreshSpy).toHaveBeenCalled();
-    });
-
-    it('shows an export busy state until the backup file has been written', async () => {
-        let resolveExport: (value: {
-            defaultFileName: string;
-            json: string;
-            manifest: {
-                kind: string;
-                version: number;
-                exportedAt: string;
-                includeSecrets: boolean;
-                playlists: never[];
-            };
-        }) => void = () => undefined;
-
-        (playlistBackupService.exportBackup as jest.Mock).mockReturnValueOnce(
-            new Promise((resolve) => {
-                resolveExport = resolve;
-            })
-        );
-
-        const exportPromise = component.exportData();
-
-        expect(component.isExportingData()).toBe(true);
-
-        resolveExport({
-            defaultFileName: 'iptvnator-playlist-backup-2026-04-21.json',
-            json: '{}',
-            manifest: {
-                kind: 'iptvnator-playlist-backup',
-                version: 1,
-                exportedAt: '2026-04-21T00:00:00.000Z',
-                includeSecrets: true,
-                playlists: [],
-            },
-        });
-
-        await exportPromise;
-
-        expect(window.electron.saveFileDialog).toHaveBeenCalledWith(
-            'iptvnator-playlist-backup-2026-04-21.json',
-            [
-                {
-                    extensions: ['json'],
-                    name: 'JSON',
-                },
-            ]
-        );
-        expect(window.electron.writeFile).toHaveBeenCalledWith(
-            '/tmp/backup.json',
-            '{}'
-        );
-        expect(component.isExportingData()).toBe(false);
-    });
-
-    it('falls back to browser backup download when desktop file-save preload is incomplete', async () => {
-        fixture.destroy();
-        const saveFileDialog = jest.fn().mockResolvedValue('/tmp/backup.json');
-        window.electron = {
-            platform: 'linux',
-            saveFileDialog,
-        } as unknown as typeof window.electron;
-
-        const createObjectURL = jest.fn().mockReturnValue('blob:backup');
-        const revokeObjectURL = jest.fn();
-        const originalCreateObjectURL = window.URL.createObjectURL;
-        const originalRevokeObjectURL = window.URL.revokeObjectURL;
-        Object.defineProperty(window.URL, 'createObjectURL', {
-            configurable: true,
-            value: createObjectURL,
-        });
-        Object.defineProperty(window.URL, 'revokeObjectURL', {
-            configurable: true,
-            value: revokeObjectURL,
-        });
-        const clickSpy = jest
-            .spyOn(HTMLAnchorElement.prototype, 'click')
-            .mockImplementation();
-        let partialFileSaveFixture: ComponentFixture<SettingsComponent> | null =
-            null;
-
-        try {
-            partialFileSaveFixture = TestBed.createComponent(SettingsComponent);
-            const partialFileSaveComponent =
-                partialFileSaveFixture.componentInstance;
-            partialFileSaveComponent.fetchLocalIpAddresses = jest
-                .fn()
-                .mockResolvedValue(undefined);
-            partialFileSaveFixture.detectChanges();
-
-            expect(partialFileSaveComponent.isDesktop).toBe(true);
-            expect(partialFileSaveComponent.supportsDesktopFileSave).toBe(
-                false
-            );
-
-            await partialFileSaveComponent.exportData();
-
-            expect(saveFileDialog).not.toHaveBeenCalled();
-            expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
-            expect(clickSpy).toHaveBeenCalled();
-            expect(revokeObjectURL).toHaveBeenCalledWith('blob:backup');
-        } finally {
-            partialFileSaveFixture?.destroy();
-            clickSpy.mockRestore();
-            Object.defineProperty(window.URL, 'createObjectURL', {
-                configurable: true,
-                value: originalCreateObjectURL,
-            });
-            Object.defineProperty(window.URL, 'revokeObjectURL', {
-                configurable: true,
-                value: originalRevokeObjectURL,
-            });
-        }
     });
 
     it('shows a failure snackbar and skips refresh when clearing EPG data rejects', async () => {

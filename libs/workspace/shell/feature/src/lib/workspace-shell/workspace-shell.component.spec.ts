@@ -1,6 +1,5 @@
 import {
     Component,
-    Directive,
     input,
     output,
     signal,
@@ -62,29 +61,11 @@ class MockExternalPlaybackDockComponent {
 }
 
 @Component({
-    selector: 'app-playlist-drop-overlay',
-    template: '',
-    standalone: true,
-})
-class MockPlaylistDropOverlayComponent {
-    readonly state = input<unknown>({ kind: 'idle' });
-}
-
-@Component({
     selector: 'app-workspace-panel-alert',
     template: '',
     standalone: true,
 })
 class MockWorkspacePanelAlertComponent {}
-
-@Directive({
-    selector: '[appPlaylistDropZone]',
-    exportAs: 'playlistDropZone',
-    standalone: true,
-})
-class MockPlaylistDropZoneDirective {
-    readonly overlayState = signal({ kind: 'idle' });
-}
 
 @Component({
     selector: 'app-workspace-shell-import-overlay',
@@ -185,8 +166,6 @@ async function setup(facade = new MockWorkspaceShellFacade()) {
                 imports: [
                     RouterOutlet,
                     MockExternalPlaybackDockComponent,
-                    MockPlaylistDropOverlayComponent,
-                    MockPlaylistDropZoneDirective,
                     MockWorkspaceShellContextSidebarComponent,
                     MockWorkspaceNfHeaderComponent,
                     MockWorkspaceShellImportOverlayComponent,

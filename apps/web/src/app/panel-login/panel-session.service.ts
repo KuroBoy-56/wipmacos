@@ -118,9 +118,13 @@ export class PanelSessionService {
         this.parental.reload();
     }
 
+    /**
+     * The panel line is the only source: every other playlist goes, Xtream or not (an M3U file
+     * or a Stalker portal added by hand, dropped on the window or restored from a backup).
+     */
     private async removeOtherLines(playlists: PlaylistMeta[], keepId: string | undefined): Promise<void> {
         for (const playlist of playlists) {
-            if (!playlist.serverUrl || playlist._id === keepId) continue;
+            if (playlist._id === keepId) continue;
             await this.playlistDelete.deletePlaylist(playlist);
             this.store.dispatch(PlaylistActions.removePlaylist({ playlistId: playlist._id }));
             try {
