@@ -14,21 +14,13 @@ export class AppWorkspaceShellActionsService implements WorkspaceShellActions {
     private readonly dialog = inject(MatDialog);
     private readonly router = inject(Router);
 
-    openAddPlaylistDialog(type?: WorkspacePlaylistType): void {
-        void import('@iptvnator/playlist/import/feature').then(
-            ({ AddPlaylistDialogComponent }) => {
-                this.dialog.open(AddPlaylistDialogComponent, {
-                    // Width sized for the 5-card method picker plus the
-                    // selected method's form below. Matches the v0.22
-                    // mockup; falls back to viewport-clamped width on
-                    // narrow screens so the grid can collapse via the
-                    // SCSS responsive breakpoints.
-                    width: '780px',
-                    maxWidth: '92vw',
-                    data: type ? { type } : {},
-                });
-            }
-        );
+    /**
+     * MPX Player only plays the line the panel gives the device (panel-login/): there is no
+     * dialog to add an M3U, Xtream or Stalker source by hand. Every old "add" entry point
+     * (sources, dashboard, empty states) lands here and just goes back to the panel line.
+     */
+    openAddPlaylistDialog(_type?: WorkspacePlaylistType): void {
+        void this.router.navigate(['/workspace']);
     }
 
     openGlobalSearch(initialQuery = ''): void {
