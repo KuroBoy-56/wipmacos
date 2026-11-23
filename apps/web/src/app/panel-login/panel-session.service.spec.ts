@@ -26,7 +26,11 @@ describe('PanelSessionService (the panel line is the only source)', () => {
         password: 'y',
         serverUrl: 'http://other.example.com',
     } as unknown as PlaylistMeta;
-    const m3u = { _id: 'm3u-file', title: 'lista.m3u', count: 120 } as unknown as PlaylistMeta;
+    const m3u = {
+        _id: 'm3u-file',
+        title: 'lista.m3u',
+        count: 120,
+    } as unknown as PlaylistMeta;
     const stalker = {
         _id: 'stalker-portal',
         title: 'Portal',
@@ -43,10 +47,24 @@ describe('PanelSessionService (the panel line is the only source)', () => {
         TestBed.configureTestingModule({
             providers: [
                 PanelSessionService,
-                { provide: Store, useValue: { select: () => of(playlists), dispatch } },
-                { provide: PlaylistDeleteActionService, useValue: { deletePlaylist } },
-                { provide: PanelSyncService, useValue: { refresh: jest.fn().mockResolvedValue(undefined) } },
-                { provide: ParentalControlService, useValue: { reload: jest.fn(), reset: jest.fn() } },
+                {
+                    provide: Store,
+                    useValue: { select: () => of(playlists), dispatch },
+                },
+                {
+                    provide: PlaylistDeleteActionService,
+                    useValue: { deletePlaylist },
+                },
+                {
+                    provide: PanelSyncService,
+                    useValue: {
+                        refresh: jest.fn().mockResolvedValue(undefined),
+                    },
+                },
+                {
+                    provide: ParentalControlService,
+                    useValue: { reload: jest.fn(), reset: jest.fn() },
+                },
             ],
         });
         return TestBed.inject(PanelSessionService);
@@ -68,7 +86,9 @@ describe('PanelSessionService (the panel line is the only source)', () => {
         expect(deleted).toEqual(['m3u-file', 'other-xtream', 'stalker-portal']);
         const removed = dispatch.mock.calls
             .map(([action]) => action)
-            .filter((action) => action.type === PlaylistActions.removePlaylist.type)
+            .filter(
+                (action) => action.type === PlaylistActions.removePlaylist.type
+            )
             .map((action) => action.playlistId)
             .sort();
         expect(removed).toEqual(['m3u-file', 'other-xtream', 'stalker-portal']);

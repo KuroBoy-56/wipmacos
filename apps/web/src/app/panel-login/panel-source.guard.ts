@@ -24,7 +24,10 @@ export function panelLineId(): string {
  * null = the url may open; otherwise where to go instead. Only the panel line's Xtream pages
  * open: an M3U playlist or a Stalker portal never comes from the panel.
  */
-export function panelSourceRedirect(url: string, lineId: string): string | null {
+export function panelSourceRedirect(
+    url: string,
+    lineId: string
+): string | null {
     const match = SOURCE_URL.exec(url);
     if (!match) return null;
     const [, kind, rawId] = match;
@@ -35,7 +38,9 @@ export function panelSourceRedirect(url: string, lineId: string): string | null 
         // keep the raw id
     }
     if (kind === 'xtreams' && lineId && id === lineId) return null;
-    return lineId ? `/workspace/xtreams/${encodeURIComponent(lineId)}/home` : '/login';
+    return lineId
+        ? `/workspace/xtreams/${encodeURIComponent(lineId)}/home`
+        : '/login';
 }
 
 export const panelSourceGuard: CanActivateChildFn = (_route, state) => {
