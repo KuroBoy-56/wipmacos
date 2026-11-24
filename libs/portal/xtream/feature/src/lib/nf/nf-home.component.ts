@@ -1,3 +1,4 @@
+import { HScrollComponent } from '@iptvnator/ui/components';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -32,7 +33,7 @@ const PLATFORM_ROWS = 5;
 @Component({
     selector: 'app-nf-home',
     standalone: true,
-    imports: [NfHeroComponent, NfRowComponent, RouterLink, TranslatePipe],
+    imports: [HScrollComponent, NfHeroComponent, NfRowComponent, RouterLink, TranslatePipe],
     template: `
         <div class="nf-page">
             <app-nf-hero
@@ -42,6 +43,7 @@ const PLATFORM_ROWS = 5;
             />
 
             @if (platforms().length) {
+                <app-hscroll class="nf-plat-wrap">
                 <nav
                     class="nf-platforms"
                     [attr.aria-label]="'MPX.NF.PLATFORMS' | translate"
@@ -67,6 +69,7 @@ const PLATFORM_ROWS = 5;
                         </a>
                     }
                 </nav>
+                </app-hscroll>
             }
 
             <div class="nf-rows">
