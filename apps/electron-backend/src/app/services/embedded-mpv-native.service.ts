@@ -801,13 +801,18 @@ export class EmbeddedMpvNativeService {
             return this.cachedLinuxMpvExecutableReason;
         }
 
+        // the first start inside a Snap / Flatpak sandbox can take longer than 3 s (cold squashfs, linker cache)
+        const sandboxed = Boolean(process.env.SNAP || process.env.FLATPAK_ID);
         const result = spawnSync('mpv', ['--version'], {
             stdio: 'ignore',
-            timeout: 3000,
+            timeout: sandboxed ? 15000 : 3000,
         });
-        this.cachedLinuxMpvExecutableReason =
-            result.status === 0 ? null : this.getLinuxMpvMissingMessage();
-        return this.cachedLinuxMpvExecutableReason;
+        const reason = result.status === 0 ? null : this.getLinuxMpvMissingMessage();
+        // a timeout is not "missing": ask again next time instead of remembering it for the whole run
+        if (!(result.error && (result.error as NodeJS.ErrnoException).code === 'ETIMEDOUT')) {
+            this.cachedLinuxMpvExecutableReason = reason;
+        }
+        return reason;
     }
 
     private getLinuxMpvMissingMessage(): string {
