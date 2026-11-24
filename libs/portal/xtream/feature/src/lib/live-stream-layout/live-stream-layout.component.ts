@@ -312,6 +312,8 @@ export class LiveStreamLayoutComponent implements OnInit, OnDestroy {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe(() => this.liveAutoOpenState.captureFromHistoryState());
+        // the navigation that created this page may have ended already (state written before the subscription)
+        this.liveAutoOpenState.captureFromHistoryState();
 
         effect(() => {
             const pendingId = this.pendingAutoOpenLiveItemId();
@@ -342,7 +344,8 @@ export class LiveStreamLayoutComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.playLive(item);
+            // asked for (Deportes, recién agregados): it always plays, even with «abrir con doble clic»
+            this.playLive(item, true);
             // Ensure selectedItem is set so EPG loading and remote-control
             // status reflect the channel (constructStreamUrl also does this
             // internally, but an explicit call makes the intent clear and

@@ -162,13 +162,20 @@ export class TmdbApiService {
         language: string,
         apiKey: string
     ): Promise<T> {
-        if (language === TMDB_MATCH_LANGUAGE) return details;
         const d: TmdbMovieDetails | TmdbTvDetails = details;
-        d.recommendations = await this.request<TmdbSearchResponse>(
-            `${path}/recommendations`,
-            { language: TMDB_MATCH_LANGUAGE },
-            apiKey
-        ).catch(() => d.recommendations);
+        const ask = (sub: string, page: string) =>
+            this.request<TmdbSearchResponse>(`${path}/${sub}`, { language: TMDB_MATCH_LANGUAGE, page }, apiKey)
+                .then((r) => r?.results ?? [])
+                .catch(() => []);
+        // more candidates for "Similares": recommendations (2 pages) + TMDB "similar"; the catalog keeps its own
+        const [first, second, similar] = await Promise.all([
+            language === TMDB_MATCH_LANGUAGE ? Promise.resolve(d.recommendations?.results ?? []) : ask('recommendations', '1'),
+            ask('recommendations', '2'),
+            ask('similar', '1'),
+        ]);
+        const seen = new Set<number>();
+        const results = [...first, ...second, ...similar].filter((r) => r?.id && !seen.has(r.id) && seen.add(r.id));
+        d.recommendations = results.length ? { results } : d.recommendations;
         return details;
     }
 

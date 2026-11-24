@@ -111,9 +111,13 @@
     scrollbar-width: none;
     flex: 1 1 360px;
     min-width: 0;
+    overflow-y: hidden;
 
     &::-webkit-scrollbar { display: none; }
 }
+
+// arrow wrapper (app-hscroll) around the chips: it is the flex item now
+.sp-hs { flex: 1 1 360px; min-width: 0; }
 
 .sp-chip {
     white-space: nowrap;
@@ -170,7 +174,9 @@
     grid-auto-columns: minmax(300px, 380px);
     gap: 12px;
     overflow-x: auto;
-    padding-bottom: 6px;
+    overflow-y: hidden;
+    align-items: start;
+    padding: 4px 0 8px;
     scroll-snap-type: x mandatory;
     scrollbar-width: thin;
 
@@ -194,6 +200,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
     gap: 10px;
+    // an open «Ver canales» list never stretches the other cards of the row into empty boxes
+    align-items: start;
 }
 
 .sp-card {
@@ -203,6 +211,8 @@
     border-radius: 8px;
     padding: 14px 16px;
     display: grid;
+    // one column that never grows past the card: a long league or team name no longer cuts the card
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s;
     overflow: hidden;
@@ -374,7 +384,7 @@
     .sp-bar { position: static; gap: 10px; }
     .sp-days { order: 1; }
     .sp-search { order: 2; flex: 1 1 140px; }
-    .sp-chips { order: 3; flex-basis: 100%; }
+    .sp-chips, .sp-hs { order: 3; flex-basis: 100%; }
     .sp-live-row { grid-auto-columns: 86%; }
     .sp-grid { grid-template-columns: 1fr; gap: 8px; }
     .sp-card { padding: 12px; gap: 8px; }

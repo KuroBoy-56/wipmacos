@@ -398,7 +398,8 @@ body.macos-platform .nf-header {
 
     + .nf-rows,
     + .nf-titlebar,
-    + .nf-platforms {
+    + .nf-platforms,
+    + .nf-plat-wrap > .nf-platforms {
         margin-top: 0;
     }
 }
@@ -571,6 +572,7 @@ body.macos-platform .nf-header {
     display: flex;
     gap: 10px;
     overflow-x: auto;
+    overflow-y: hidden;
     padding: 14px var(--nf-pad) 6px;
     scrollbar-width: none;
 
@@ -708,10 +710,12 @@ body.macos-platform .nf-header {
     display: flex;
     gap: 6px;
     overflow-x: auto;
-    overflow-y: visible;
+    // hidden, not visible: with overflow-x auto a visible y computes to auto and the wheel scrolled the
+    // row up and down over itself (the Top 10 posters slid out of sight); the padding keeps the hover zoom
+    overflow-y: hidden;
     scroll-behavior: smooth;
     scrollbar-width: none;
-    padding: 10px var(--nf-pad) 18px;
+    padding: 24px var(--nf-pad) 26px;
     scroll-padding: 0 var(--nf-pad);
     overscroll-behavior-x: contain;
 
@@ -722,8 +726,8 @@ body.macos-platform .nf-header {
 
 .nf-arrow {
     position: absolute;
-    top: 10px;
-    bottom: 18px;
+    top: 24px;
+    bottom: 26px;
     width: var(--nf-pad);
     min-width: 40px;
     z-index: 6;
@@ -977,10 +981,12 @@ body.macos-platform .nf-header {
     z-index: 4;
     display: flex;
     gap: 14px;
-    padding: 0 var(--nf-pad);
-    margin-top: -9vw;
-    margin-bottom: 8px;
+    // room for the hover zoom: the row never scrolls up and down and never cuts the tile
+    padding: 12px var(--nf-pad);
+    margin-top: calc(-9vw - 12px);
+    margin-bottom: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -990,6 +996,10 @@ body.macos-platform .nf-header {
     + .nf-rows {
         margin-top: 0;
     }
+}
+
+.nf-plat-wrap + .nf-rows {
+    margin-top: 0;
 }
 
 .nf-plat {

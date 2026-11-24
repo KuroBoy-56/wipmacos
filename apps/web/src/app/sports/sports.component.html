@@ -50,6 +50,7 @@
                     (input)="onQuery($any($event.target).value)"
                 />
             </div>
+            <app-hscroll class="sp-hs">
             <div class="sp-chips">
                 <button type="button" class="sp-chip" [class.active]="!sport()" (click)="sport.set('')">
                     {{ 'MPX.SPORTS.ALL' | translate }}<b>{{ totalForDay() }}</b>
@@ -65,16 +66,19 @@
                     </button>
                 }
             </div>
+            </app-hscroll>
         </div>
 
         @if (showLiveRow()) {
             <section class="sp-livewrap">
                 <h2 class="sp-h2"><span class="sp-dot"></span>{{ 'MPX.SPORTS.LIVE_NOW' | translate }}</h2>
+                <app-hscroll class="sp-hs-live">
                 <div class="sp-live-row">
                     @for (e of liveEvents(); track e.id) {
-                        <ng-container *ngTemplateOutlet="card; context: { $implicit: e }" />
+                        <ng-container *ngTemplateOutlet="card; context: { $implicit: e, list: liveEvents() }" />
                     }
                 </div>
+                </app-hscroll>
             </section>
         }
 
@@ -89,7 +93,7 @@
                 </div>
                 <div class="sp-grid">
                     @for (e of group.items; track e.id) {
-                        <ng-container *ngTemplateOutlet="card; context: { $implicit: e }" />
+                        <ng-container *ngTemplateOutlet="card; context: { $implicit: e, list: group.items }" />
                     }
                 </div>
             </section>
@@ -104,7 +108,7 @@
     }
 </main>
 
-<ng-template #card let-e>
+<ng-template #card let-e let-list="list">
     @let st = status(e);
     <article class="sp-card" [class.live]="st === 'live'">
         <div class="sp-top">
@@ -151,12 +155,12 @@
         }
         <div class="sp-foot">
             <span class="v">{{ e.v || (st === 'soon' ? time(e) : '') }}</span>
-            <button type="button" class="sp-tv" (click)="open(e)">
+            <button type="button" class="sp-tv" (click)="open(e, list)">
                 {{ 'MPX.SPORTS.SEE_CHANNELS' | translate }}
             </button>
         </div>
-        @if (menu(); as mn) {
-            @if (mn.id === e.id) {
+        @if (menus()[e.id]; as mn) {
+            @if (mn) {
                 <div class="sp-menu" role="menu" [attr.aria-label]="mn.title || ('MPX.SPORTS.WHERE' | translate)">
                     <div class="sp-menu-title">{{ mn.title || ('MPX.SPORTS.WHERE' | translate) }}</div>
                     @if (mn.typing !== undefined) {
@@ -202,17 +206,21 @@
                     (keyup.enter)="fixtures.search($any($event.target).value)"
                 />
             </div>
+            <app-hscroll class="sp-hs">
             <div class="sp-chips">
                 @for (r of fixtures.recents(); track r) {
                     <button type="button" class="sp-chip" [class.active]="fixtures.query() === r" (click)="fixtures.search(r)">🔎 {{ r }}</button>
                 }
             </div>
+            </app-hscroll>
         } @else {
+            <app-hscroll class="sp-hs">
             <div class="sp-chips">
                 @for (c of fixtures.nationChips(); track c[0]) {
                     <button type="button" class="sp-chip" [class.active]="fixtures.comp() === c[0]" (click)="fixtures.comp.set(c[0])">{{ c[1] | translate }}</button>
                 }
             </div>
+            </app-hscroll>
         }
     </div>
     @let list = tab() === 'teams' ? fixtures.teamCards() : fixtures.nationCards();
@@ -221,7 +229,7 @@
     } @else if (list.length) {
         <div class="sp-grid">
             @for (e of list; track e.id + e.ts) {
-                <ng-container *ngTemplateOutlet="card; context: { $implicit: e }" />
+                <ng-container *ngTemplateOutlet="card; context: { $implicit: e, list: list }" />
             }
         </div>
     } @else if (!fixtures.data()) {

@@ -153,6 +153,7 @@ export function buildXtreamNavigationTarget(params: {
             openXtreamLiveItemId: streamId,
             openXtreamLiveTitle: params.title || '',
             openXtreamLivePoster: params.imageUrl || '',
+            openXtreamLiveCategoryId: toPathSegment(params.categoryId) || '',
         },
     };
 }

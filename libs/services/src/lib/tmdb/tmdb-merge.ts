@@ -64,7 +64,8 @@ function creatorNames(details: TmdbTvDetails): string {
         .join(', ');
 }
 
-const MAX_RECOMMENDATIONS = 12;
+// wide pool: only the titles the provider has are shown (matched by title in the catalog)
+const MAX_RECOMMENDATIONS = 60;
 
 /** Best YouTube trailer key: official trailer > any trailer > teaser */
 function pickTrailerKey(details: TmdbDetails): string {

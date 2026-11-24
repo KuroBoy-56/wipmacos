@@ -1,3 +1,4 @@
+import { HScrollComponent } from '@iptvnator/ui/components';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PanelStandingLeague, PanelStandingRow, PanelSportsTeam, PanelSyncService } from '@iptvnator/services';
@@ -15,7 +16,7 @@ const ZONES = ['p', 's', 'o', 'r'] as const;
  */
 @Component({
     selector: 'app-sports-tables',
-    imports: [TranslatePipe],
+    imports: [HScrollComponent, TranslatePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrl: './sports-tables.component.scss',
     template: `
@@ -25,26 +26,36 @@ const ZONES = ['p', 's', 'o', 'r'] as const;
             </div>
         } @else {
             @if (regions().length > 1) {
-                <div class="sp-chips">
+                <app-hscroll>
+                <app-hscroll>
+            <div class="sp-chips">
                     @for (r of regions(); track r) {
                         <button type="button" class="sp-chip" [class.active]="region() === r" (click)="pickRegion(r)">{{ regionLabel(r) | translate }}</button>
                     }
                 </div>
+            </app-hscroll>
+                </app-hscroll>
             }
             @if (divisions().length > 1) {
-                <div class="sp-chips">
+                <app-hscroll>
+                <app-hscroll>
+            <div class="sp-chips">
                     @for (d of divisions(); track d) {
                         <button type="button" class="sp-chip" [class.active]="division() === d" (click)="pickDivision(d)">
                             {{ d === women ? ('MPX.SPORTS.WOMEN_LEAGUE' | translate) : ('MPX.SPORTS.DIVISION' | translate: { n: d }) }}
                         </button>
                     }
                 </div>
+            </app-hscroll>
+                </app-hscroll>
             }
+            <app-hscroll>
             <div class="sp-chips">
                 @for (lg of list(); track lg.id) {
                     <button type="button" class="sp-chip" [class.active]="league()?.id === lg.id" (click)="leagueId.set(lg.id)">{{ lg.n }}</button>
                 }
             </div>
+            </app-hscroll>
             @if (league(); as lg) {
                 <div class="st-title">
                     @if (lg.b) {
