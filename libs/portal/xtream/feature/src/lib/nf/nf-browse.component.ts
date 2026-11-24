@@ -1,3 +1,4 @@
+import { HScrollComponent } from '@iptvnator/ui/components';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -28,6 +29,7 @@ const ROWS_STEP = 10;
     selector: 'app-nf-browse',
     standalone: true,
     imports: [
+        HScrollComponent,
         NfHeroComponent,
         NfNearEndDirective,
         NfRowComponent,
@@ -57,6 +59,7 @@ const ROWS_STEP = 10;
             </div>
 
             @if (genres().length) {
+                <app-hscroll>
                 <nav class="nf-chips" [attr.aria-label]="'MPX.NF.GENRES' | translate">
                     @for (g of genres(); track g.key) {
                         <a
@@ -67,6 +70,7 @@ const ROWS_STEP = 10;
                         >
                     }
                 </nav>
+                </app-hscroll>
             }
 
             <div class="nf-rows">

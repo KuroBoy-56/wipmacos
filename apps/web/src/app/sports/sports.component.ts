@@ -1,3 +1,4 @@
+import { HScrollComponent } from '@iptvnator/ui/components';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -34,6 +35,8 @@ import {
     toSportsCards,
 } from './sports-schedule.util';
 
+type SportsMenu = { id: string; title?: string; opts: SportsMenuOpt[]; typing?: string };
+
 /** auto: best channel; tv: one broadcast channel of the menu; teams: by teams / event name (Roku's menu). */
 export type SportsWatchMode = { kind: 'auto' } | { kind: 'teams' } | { kind: 'tv'; index: number };
 
@@ -48,7 +51,7 @@ interface SportChip {
     selector: 'app-sports',
     templateUrl: './sports.component.html',
     styleUrl: './sports.component.scss',
-    imports: [NgTemplateOutlet, TranslatePipe, SportsTablesComponent],
+    imports: [HScrollComponent, NgTemplateOutlet, TranslatePipe, SportsTablesComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SportsComponent implements OnInit {
@@ -81,8 +84,12 @@ export class SportsComponent implements OnInit {
     readonly channels = signal<SportsChannelsMap | null | undefined>(undefined);
     /** Match pressed while the channels were still being searched: opens when they arrive. */
     private pending: SportsCard | null = null;
-    /** "¿Dónde quieres verlo?" of one match (webOS): its rows, or the channels a search found; typing = search box. */
-    readonly menu = signal<{ id: string; title?: string; opts: SportsMenuOpt[]; typing?: string } | null>(null);
+    /**
+     * "¿Dónde quieres verlo?" (webOS) by match id: its rows, or the channels a search found; typing = search box.
+     * «Ver canales» opens it on every playable match of the same row / league at once, each with its own channels,
+     * so the row grows evenly instead of leaving the other cards as empty boxes.
+     */
+    readonly menus = signal<Record<string, SportsMenu>>({});
     /** Panel Deportes "solo IPTV": each match shows only the client's channels. */
     private readonly iptv = signal(false);
     /** Panel time zone (api/sports.php "tz"): hours and Today/Tomorrow follow the panel, not the computer. */
@@ -214,7 +221,7 @@ export class SportsComponent implements OnInit {
 
     selectTab(tab: SportsTab): void {
         this.tab.set(tab);
-        this.menu.set(null);
+        this.menus.set({});
         if (tab === 'nations' || tab === 'teams') void this.fixtures.load(() => this.alive);
     }
 
@@ -280,13 +287,16 @@ export class SportsComponent implements OnInit {
     }
 
     /** With broadcast channels: the menu (watch, each channel, by teams); without: straight to the channel. */
-    async open(e: SportsCard): Promise<void> {
+    async open(e: SportsCard, list: SportsCard[] = [e]): Promise<void> {
         if (!this.playable(e)) return;
+        if (this.menus()[e.id]) return this.menus.set({});
+        const cards = [e, ...list.filter((c) => c.id !== e.id && this.watchable(c))];
         let map = this.channels();
         // Equipos / Selecciones: matches outside the agenda are searched when pressed
-        if (map && !map.byEvent[e.id]) {
-            const one = await this.data.matchEvents([e]).catch(() => null);
-            if (one) this.channels.set((map = { ...map, byEvent: { ...map.byEvent, ...one.byEvent } }));
+        const missing = map ? cards.filter((c) => !map?.byEvent[c.id]) : [];
+        if (map && missing.length) {
+            const more = await this.data.matchEvents(missing).catch(() => null);
+            if (more) this.channels.set((map = { ...map, byEvent: { ...map.byEvent, ...more.byEvent } }));
         }
         if (map === undefined) {
             this.pending = e;
@@ -297,9 +307,10 @@ export class SportsComponent implements OnInit {
             this.toast('MPX.SPORTS.NO_CHANNEL_LIST');
             return;
         }
-        if (this.menu()?.id === e.id) return this.menu.set(null);
         const tr = (key: string, params?: Record<string, string>) => this.translate.instant(key, params);
-        this.menu.set({ id: e.id, opts: sportsMenu(e, map.byEvent[e.id], this.iptv(), tr) });
+        const next: Record<string, SportsMenu> = {};
+        for (const c of cards) next[c.id] = { id: c.id, opts: sportsMenu(c, map.byEvent[c.id], this.iptv(), tr) };
+        this.menus.set(next);
     }
 
     run(e: SportsCard, o: SportsMenuOpt): void {
@@ -308,7 +319,7 @@ export class SportsComponent implements OnInit {
         else if (a.kind === 'tv') void this.watch(e, { kind: 'tv', index: a.index });
         else if (a.kind === 'play') void this.play(a.target);
         else if (a.kind === 'search') void this.findChans(e, a.q);
-        else this.menu.update((m) => m && { ...m, typing: a.q });
+        else this.menus.update((m) => (m[e.id] ? { ...m, [e.id]: { ...m[e.id], typing: a.q } } : m));
     }
 
     /** Channels of the client's list with that name (channel, team or event), all green: they are the server's. */
@@ -317,11 +328,20 @@ export class SportsComponent implements OnInit {
         if (!q) return;
         const list = await this.data.searchChannels(q);
         if (!list.length) return this.toast('MPX.SPORTS.NO_SEARCH', { name: q });
-        this.menu.set({
-            id: e.id,
+        this.menus.update((m) => ({
+            ...m,
+            [e.id]: {
+                id: e.id,
             title: this.translate.instant('MPX.SPORTS.SEARCH_TITLE', { name: q }),
-            opts: list.map((c) => ({ title: c.name, green: true, act: { kind: 'play', target: c } })),
-        });
+                opts: list.map((c) => ({ title: c.name, green: true, act: { kind: 'play', target: c } })),
+            },
+        }));
+    }
+
+    /** Today, not ended nor postponed (no message: used for the other cards of the row). */
+    private watchable(e: SportsCard): boolean {
+        const st = this.status(e);
+        return e.dayKey === this.dayKeys()[0] && st !== 'fin' && st !== 'pp';
     }
 
     /** Ended, postponed or another day: nothing to watch yet. */
@@ -337,7 +357,7 @@ export class SportsComponent implements OnInit {
 
     /** Plays the chosen channel; without an exact one the first event channel (never the category list). */
     async watch(e: SportsCard, mode: SportsWatchMode = { kind: 'auto' }): Promise<void> {
-        this.menu.set(null);
+        this.menus.set({});
         const map = this.channels();
         if (!map || !this.playable(e)) return;
         const res = map.byEvent[e.id];
@@ -362,7 +382,7 @@ export class SportsComponent implements OnInit {
 
     /** Opens TV en vivo on that channel and plays it (also a channel newer than the saved list). */
     private async play(target: SportsChannelTarget, note?: string, params?: Record<string, string>): Promise<void> {
-        this.menu.set(null);
+        this.menus.set({});
         if (note) this.toast(note, params);
         const nav = buildXtreamNavigationTarget({
             playlistId: target.playlistId,

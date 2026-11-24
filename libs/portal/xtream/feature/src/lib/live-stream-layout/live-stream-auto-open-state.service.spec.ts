@@ -23,7 +23,7 @@ describe('LiveStreamAutoOpenStateService', () => {
         expect(service.pendingItemId()).toBe(101);
     });
 
-    it('clears the pending item id when history state has no live item id', () => {
+    it('keeps the pending channel when a later navigation has no live item id (Deportes)', () => {
         window.history.replaceState(
             { openXtreamLiveItemId: 101 },
             document.title
@@ -33,6 +33,28 @@ describe('LiveStreamAutoOpenStateService', () => {
         window.history.replaceState({}, document.title);
         service.captureFromHistoryState();
 
+        expect(service.pendingItemId()).toBe(101);
+    });
+
+    it('starts without a pending channel and keeps the category for a channel the list does not have', () => {
+        service.captureFromHistoryState();
         expect(service.pendingItemId()).toBeNull();
+
+        window.history.replaceState(
+            {
+                openXtreamLiveItemId: 7,
+                openXtreamLiveTitle: 'ESPN',
+                openXtreamLiveCategoryId: '12',
+            },
+            document.title
+        );
+        service.captureFromHistoryState();
+
+        expect(service.fallbackItem(7)).toEqual({
+            xtream_id: 7,
+            title: 'ESPN',
+            poster_url: '',
+            category_id: '12',
+        });
     });
 });

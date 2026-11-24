@@ -25,7 +25,9 @@ describe('TmdbApiService match language', () => {
     it('keeps "similar" titles in es-MX when details come in another language', async () => {
         const d = await new TmdbApiService().getMovieDetails(1, 'en-US', 'k');
         expect(d.recommendations?.results?.[0].title).toBe('El club de la pelea');
-        expect(calls.map((c) => c.searchParams.get('language'))).toEqual(['en-US', 'es-MX']);
+        // details in the app language, then the "Similares" pool in es-MX: recommendations (2 pages) + similar
+        expect(calls.map((c) => c.searchParams.get('language'))).toEqual(['en-US', 'es-MX', 'es-MX', 'es-MX']);
+        expect(calls.slice(1).map((c) => c.pathname.split('/').pop())).toEqual(['recommendations', 'recommendations', 'similar']);
     });
 
     it('keeps the actor filmography in es-MX', async () => {
@@ -33,9 +35,13 @@ describe('TmdbApiService match language', () => {
         expect(p.combined_credits?.cast?.[0].title).toBe('Siete pecados capitales');
     });
 
-    it('makes a single call in es-MX', async () => {
+    it('in es-MX the details already bring page 1: only page 2 and "similar" are added', async () => {
         await new TmdbApiService().getTvDetails(1, 'es-MX', 'k');
-        expect(calls).toHaveLength(1);
+        expect(calls).toHaveLength(3);
+        expect(calls.slice(1).map((c) => `${c.pathname.split('/').pop()}:${c.searchParams.get('page')}`)).toEqual([
+            'recommendations:2',
+            'similar:1',
+        ]);
     });
 
     it('asks the panel when the key is the panel one, and TMDB with a key typed by the user', async () => {

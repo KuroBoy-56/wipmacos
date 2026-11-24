@@ -175,7 +175,7 @@ export function matchRecommendationsToCatalog(
         }
     }
 
-    const limit = options.limit ?? 12;
+    const limit = options.limit ?? 24;
     const seenIds = new Set<number>();
     const matched: SimilarCatalogItem[] = [];
 
