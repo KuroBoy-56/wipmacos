@@ -575,6 +575,9 @@ body.macos-platform .nf-header {
     overflow-y: hidden;
     padding: 14px var(--nf-pad) 6px;
     scrollbar-width: none;
+    // above the billboard's bottom fade: the genre chips were hidden in the gradient
+    position: relative;
+    z-index: 6;
 
     &::-webkit-scrollbar {
         display: none;
