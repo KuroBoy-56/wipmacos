@@ -7,6 +7,8 @@ import { InjectionToken, Signal, Type } from '@angular/core';
  */
 export interface NfHomeLive {
     readonly enabled: Signal<boolean>;
+    /** Ajustes › Habilitar tarjetas de plataformas: con la fila en vivo, las plataformas van debajo de ella */
+    readonly platformCards?: Signal<boolean>;
     readonly component: Type<unknown>;
     attach(): () => void;
 }

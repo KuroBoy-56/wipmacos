@@ -1,3 +1,4 @@
+import { panelProfile } from './panel-profile';
 import { Injectable } from '@angular/core';
 import { lineKey, PanelProgressClient } from './panel-progress.client';
 import {
@@ -333,6 +334,14 @@ export class PanelSyncService {
         const creds = this.creds();
         if (!action) return this.client.getJson<T>('profiles.php', creds, fields as Record<string, string>);
         return this.client.postAny<T>('profiles.php', creds, { action, ...fields });
+    }
+
+    /** Avisos de partidos en la nube (api/alerts.php, por línea y perfil): GET (action null) o POST, con el perfil elegido. */
+    async alertsRequest<T>(action: string | null, fields: Record<string, unknown> = {}): Promise<T | null> {
+        const creds = this.creds();
+        const profile = panelProfile();
+        if (!action) return this.client.getJson<T>('alerts.php', creds, profile ? { profile } : {});
+        return this.client.postAny<T>('alerts.php', creds, { action, ...(profile ? { profile } : {}), ...fields });
     }
 
     /** Clasificación de TMDB del perfil infantil (api/kids_rate.php). */

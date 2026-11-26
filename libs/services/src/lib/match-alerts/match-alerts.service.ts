@@ -88,6 +88,9 @@ export class MatchAlertsService {
         return `mpx:bell|${lineKey(sessionCredentials())}`;
     }
 
+    /** todo esto existe solo con perfiles: uno elegido que no sea el infantil */
+    readonly on = computed(() => !!this.profiles.profile() && !this.profiles.kids());
+
     readonly teams = computed(() => {
         this.rev();
         return read<FavTeam[]>(this.key('fav_teams'), []);
@@ -109,6 +112,8 @@ export class MatchAlertsService {
         this.fxAt = 0;
         this.changed();
         this.askPermission();
+        // también en la nube: el celular de la misma línea y perfil avisa en su barra de notificaciones
+        void this.cloud('set_teams', { teams: list });
     }
 
     private marked(): Record<string, { t: string; s: number }> {
@@ -122,6 +127,7 @@ export class MatchAlertsService {
 
     /** activa o quita los avisos de un partido; true = quedó activado */
     toggle(e: AlertableEvent): boolean {
+        if (!this.on()) return false;
         const m = this.marked();
         const on = !(e.id in m);
         if (on) m[e.id] = { t: eventTitle(e), s: eventStart(e) };
@@ -129,7 +135,39 @@ export class MatchAlertsService {
         write(this.key('alert_events'), m);
         this.changed();
         if (on) this.askPermission();
+        void this.cloud('event', { id: e.id, on, event: { t: eventTitle(e), s: eventStart(e), h: e.h ?? '', a: e.a ?? '' } });
         return on;
+    }
+
+    /** manda un cambio a la nube; sin respuesta queda marcado y se manda todo en la próxima sincronización */
+    private async cloud(action: string, fields: Record<string, unknown>): Promise<void> {
+        const r = await this.sync.alertsRequest<{ success?: boolean }>(action, fields).catch(() => null);
+        if (!r) write(this.key('alerts_dirty'), 1);
+    }
+
+    /**
+     * Baja de la nube los equipos y partidos de este perfil (lo marcado en el celular o en la TV). Si un cambio de aquí
+     * no llegó, primero se manda todo lo de aquí.
+     */
+    async pull(): Promise<void> {
+        if (!this.on() || !sessionCredentials().username) return;
+        if (read<number>(this.key('alerts_dirty'), 0)) {
+            const ok = await this.sync.alertsRequest('set_teams', { teams: this.teams() }).catch(() => null);
+            if (!ok) return;
+            for (const [id, v] of Object.entries(this.marked())) {
+                await this.sync.alertsRequest('event', { id, on: true, event: { t: v.t, s: v.s } }).catch(() => null);
+            }
+            localStorage.removeItem(this.key('alerts_dirty'));
+        }
+        type Cloud = { success?: boolean; enabled?: boolean; teams?: FavTeam[]; events?: Record<string, { t: string; s: number }> };
+        const r = await this.sync.alertsRequest<Cloud>(null).catch(() => null);
+        if (!r?.success || !r.enabled) return;
+        const events: Record<string, { t: string; s: number }> = {};
+        for (const [id, v] of Object.entries(r.events ?? {})) if (v && v.s) events[id] = { t: String(v.t ?? ''), s: Number(v.s) };
+        write(this.key('fav_teams'), Array.isArray(r.teams) ? r.teams : []);
+        write(this.key('alert_events'), events);
+        this.fxAt = 0;
+        this.changed();
     }
 
     markRead(): void {
@@ -140,8 +178,13 @@ export class MatchAlertsService {
     /** una vez al abrir la app: revisa cada 20 s (sigue bien tras suspender la computadora) */
     start(): void {
         if (this.timer) return;
-        this.timer = setInterval(() => void this.tick(), 20_000);
-        setTimeout(() => void this.tick(), 5_000);
+        let n = 0;
+        // cada 20 s se revisa; cada 10 min (y al empezar) se baja lo de la nube
+        this.timer = setInterval(() => {
+            if (++n % 30 === 0) void this.pull();
+            void this.tick();
+        }, 20_000);
+        setTimeout(() => void this.pull().then(() => this.tick()), 5_000);
     }
 
     /** los próximos 21 días del panel (cada 6 h; null = el panel no los tiene) */
@@ -163,7 +206,7 @@ export class MatchAlertsService {
     }
 
     async tick(now = Date.now()): Promise<void> {
-        if (!sessionCredentials().username || this.profiles.kids()) return;
+        if (!sessionCredentials().username || !this.on()) return;
         const names = new Set(this.teams().map((t) => t.n));
         const m = this.marked();
         // marcados que ya pasaron: se olvidan
