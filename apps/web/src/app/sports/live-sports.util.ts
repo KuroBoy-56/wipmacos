@@ -82,7 +82,8 @@ export function liveCards(events: readonly PanelLiveEvent[], map: SportsChannels
         // un próximo que ya empezó hace más de 5 min y el livescore no trae: fuera hasta la próxima respuesta
         if (e.soon && e.s && e.s * 1000 < now - 5 * 60_000) continue;
         const ch = map.byEvent[String(e.id)];
-        if (ch?.best) out.push({ e, ch });
+        // solo un canal exacto: uno «habitual» (sin agenda, guía ni equipos) no cuenta
+        if (ch?.best && !ch.guess) out.push({ e, ch });
     }
     // en vivo primero, después los próximos por hora; como mucho LIVE_ROW_MAX (al final va «Ir a Deportes»)
     return out

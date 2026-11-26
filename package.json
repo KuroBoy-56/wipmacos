@@ -1,7 +1,7 @@
 {
     "name": "latmpx-tv",
     "productName": "MPX Player",
-    "version": "1.7.4",
+    "version": "1.7.5",
     "license": "MIT",
     "description": "IPTV player application.",
     "homepage": "https://github.com/4gray/iptvnator",

@@ -10,7 +10,6 @@ import {
     input,
     output,
     signal,
-    viewChild,
 } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { NgTemplateOutlet } from '@angular/common';
@@ -64,8 +63,6 @@ export class WorkspaceNfHeaderComponent {
 
     private readonly router = inject(Router);
     private readonly host = inject(ElementRef<HTMLElement>);
-    private readonly searchInput =
-        viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
     /** Distributor name / logo (built-in brand with "Omitir"). */
     protected readonly branding = inject(PanelBrandingService);
@@ -86,7 +83,6 @@ export class WorkspaceNfHeaderComponent {
     /** el avatar a la izquierda solo en Inicio, Películas y Series y sus listas por categoría (web 2.7.1); en las fichas no */
     protected readonly profHere = computed(() => this.prof() && PROF_HERE.test(this.url()));
     protected readonly logoFailed = signal(false);
-    protected readonly searchOpen = signal(false);
     protected readonly menuOpen = signal(false);
     protected readonly now = signal(new Date());
     protected readonly user = readUser();
@@ -150,38 +146,21 @@ export class WorkspaceNfHeaderComponent {
         inject(DestroyRef).onDestroy(() => clearInterval(timer));
     }
 
-    /** Used by the shell's Ctrl+F handler. */
-    containsSearchInput(target: EventTarget | null): boolean {
-        return !!target && target === this.searchInput()?.nativeElement;
+    /** Used by the shell's Ctrl+F handler: the header has no input of its own any more (the magnifier opens Explorar). */
+    containsSearchInput(): boolean {
+        return false;
     }
 
-    focusSearchInput(options?: { select?: boolean }): void {
-        this.searchOpen.set(true);
-        setTimeout(() => {
-            const el = this.searchInput()?.nativeElement;
-            el?.focus();
-            if (options?.select) el?.select();
-        });
+    /** Ctrl+F: the same as the magnifier. */
+    focusSearchInput(): void {
+        this.openExplore();
     }
 
-    protected toggleSearch(): void {
-        if (this.searchOpen()) {
-            this.searchOpen.set(false);
-            return;
-        }
-        this.focusSearchInput();
-    }
-
-    protected search(value: string): void {
+    /** Explorar, as in the web player, with the cursor in «Filtrar por título» (state read by NfExploreComponent). */
+    protected openExplore(): void {
         const root = this.root();
-        const q = value.trim();
-        if (!root || !q) return;
-        // same as the web player: search opens Explorar filtered by title
-        void this.router.navigate([...root, 'explore'], { queryParams: { q } });
-    }
-
-    protected blurSearch(value: string): void {
-        if (!value.trim()) this.searchOpen.set(false);
+        if (!root) return;
+        void this.router.navigate([...root, 'explore'], { state: { nfFocusFilter: true } });
     }
 
     protected toggleMenu(event: Event): void {

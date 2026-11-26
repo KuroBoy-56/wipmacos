@@ -131,26 +131,16 @@
 
 <div class="nf-header-right">
     @if (root()) {
-        <div class="nf-search" [class.open]="searchOpen()">
+        <!-- la lupa abre Explorar (como el web player) con el cursor en «Filtrar por título» -->
+        <div class="nf-search">
             <button
                 class="nf-icon-btn"
                 type="button"
                 [attr.aria-label]="'MPX.COMMON.SEARCH' | translate"
-                (click)="toggleSearch()"
+                (click)="openExplore()"
             >
                 <mat-icon>search</mat-icon>
             </button>
-            <input
-                #searchInput
-                type="search"
-                inputmode="search"
-                enterkeyhint="search"
-                [placeholder]="'MPX.NAV.SEARCH_PLACEHOLDER' | translate"
-                [attr.aria-label]="'MPX.COMMON.SEARCH' | translate"
-                (keydown.enter)="search(searchInput.value)"
-                (keydown.escape)="searchOpen.set(false)"
-                (blur)="blurSearch(searchInput.value)"
-            />
         </div>
     }
 
