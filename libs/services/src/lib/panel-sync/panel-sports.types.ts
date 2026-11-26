@@ -174,6 +174,8 @@ export interface PanelLiveEvent extends PanelSportsEvent {
     pr: string;
     li?: string;
     s?: number;
+    /** todavía no empieza (los próximos de next=1): sin marcador, con su hora */
+    soon?: boolean;
 }
 
 /**

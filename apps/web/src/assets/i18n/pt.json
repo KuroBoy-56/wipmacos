@@ -1482,7 +1482,9 @@
             "SPORT_FIGHTING": "Lutas",
             "SPORT_MOTORSPORT": "Automobilismo",
             "SPORT_TENNIS": "Tênis",
-            "SPORT_ICE_HOCKEY": "Hóquei"
+            "SPORT_ICE_HOCKEY": "Hóquei",
+            "FINISHED_TAB": "Finalizados",
+            "FINISHED_EMPTY": "Nenhum evento terminou hoje ainda. Os de hoje aparecem aqui quando terminam (esvazia às 00:00)."
         },
         "NF": {
             "SERIES_ONE": "Série",
@@ -1696,7 +1698,10 @@
                 "Esports": "Esports"
             },
             "PLAT_CARDS": "Ativar cartões de plataformas",
-            "PLAT_CARDS_HINT": "As plataformas (Netflix, Disney+…) voltam ao Início, abaixo de «Ao vivo agora»."
+            "PLAT_CARDS_HINT": "As plataformas (Netflix, Disney+…) voltam ao Início, abaixo de «Ao vivo agora».",
+            "STARTS": "Começa",
+            "GO_SPORTS": "Ir para Esportes",
+            "GO_SPORTS_SUB": "Toda a agenda de hoje e amanhã"
         },
         "ALERTS": {
             "M30": "A partida começa em 30 minutos",
@@ -1724,7 +1729,8 @@
             "NOW": "agora",
             "MIN_AGO": "há {{n}} min",
             "H_AGO": "há {{n}} h",
-            "CLOSE": "Fechar"
+            "CLOSE": "Fechar",
+            "TOO_LATE": "Os avisos só podem ser ativados em partidas que começam em mais de 5 minutos."
         }
     }
 }

@@ -5,6 +5,7 @@ import {
     hasScore,
     matchesSportsQuery,
     sportCounts,
+    eventsForDay,
     sportsDayKey,
     sportsEventStatus,
     toSportsCards,
@@ -71,5 +72,16 @@ describe('sports schedule utils', () => {
         // built-in labels are translation keys (the page translates them)
         expect(groups.map((g) => g.name)).toEqual(['La Liga', 'MPX.SPORTS.SPORT_TENNIS']);
         expect(sportCounts([card, other], card.dayKey)).toEqual({ Soccer: 1, Tennis: 1 });
+    });
+
+    it('Finalizados (with profiles): today without the ended ones, and the ended ones of today, latest first', () => {
+        const keys = ['2026-11-26', '2026-11-27'];
+        const mk = (id: string, dayKey: string, start: number) => ({ ...card, id, dayKey, start });
+        const list = [mk('a', keys[0], 1), mk('b', keys[0], 3), mk('c', keys[0], 2), mk('d', keys[1], 4), mk('y', '2026-11-25', 0)];
+        const st = (e: { id: string }) => (e.id === 'a' || e.id === 'b' || e.id === 'y' ? 'fin' : 'soon') as 'fin' | 'soon';
+        expect(eventsForDay(list, keys, 0, st, true).map((e) => e.id)).toEqual(['c']);
+        expect(eventsForDay(list, keys, 0, st, false).map((e) => e.id)).toEqual(['a', 'b', 'c']);
+        expect(eventsForDay(list, keys, 2, st, true).map((e) => e.id)).toEqual(['b', 'a']);
+        expect(eventsForDay(list, keys, 1, st, true).map((e) => e.id)).toEqual(['d']);
     });
 });

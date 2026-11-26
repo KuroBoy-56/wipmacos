@@ -5,7 +5,8 @@
             <app-hscroll>
                 <div class="lv-row">
                     @for (c of cards; track c.e.id) {
-                        <button type="button" class="lv-card" [attr.data-id]="c.e.id" [attr.aria-label]="label(c)" (click)="open(c)">
+                        <button type="button" class="lv-card" [class.soon]="c.e.soon" [attr.data-id]="c.e.id" [attr.aria-label]="label(c)"
+                            [appMatchAlert]="c.e" (click)="open(c)">
                             <app-live-field [sport]="c.e.sp" />
                             @if (theme(c); as th) {
                                 <span class="lv-theme" [style.background]="th"></span>
@@ -14,12 +15,16 @@
                             <span class="lv-body">
                                 <span class="lv-top">
                                     <span class="lv-lg">{{ c.e.lg }}</span>
-                                    <span class="lv-clock"><i></i>{{ clock(c) }}</span>
+                                    <span class="lv-clock" [class.soon]="c.e.soon"><i></i>{{ clock(c) }}</span>
                                 </span>
                                 @if (c.e.h || c.e.a) {
                                     <span class="lv-mid">
                                         <ng-container *ngTemplateOutlet="team; context: { name: c.e.h, src: c.e.hb }" />
-                                        <span class="lv-score">{{ score(c.e.hs) }}<small>-</small>{{ score(c.e.as) }}</span>
+                                        @if (c.e.soon) {
+                                            <span class="lv-score lv-vs">vs</span>
+                                        } @else {
+                                            <span class="lv-score">{{ score(c.e.hs) }}<small>-</small>{{ score(c.e.as) }}</span>
+                                        }
                                         <ng-container *ngTemplateOutlet="team; context: { name: c.e.a, src: c.e.ab }" />
                                     </span>
                                 } @else {
@@ -30,6 +35,14 @@
                             </span>
                         </button>
                     }
+                    <!-- al final: toda la agenda en Deportes -->
+                    <button type="button" class="lv-card lv-more" data-test-id="live-go-sports" (click)="goSports()">
+                        <span class="lv-more-body">
+                            <span class="lv-more-icon" aria-hidden="true">🏟️</span>
+                            <b>{{ 'MPX.LIVE.GO_SPORTS' | translate }}</b>
+                            <small>{{ 'MPX.LIVE.GO_SPORTS_SUB' | translate }}</small>
+                        </span>
+                    </button>
                 </div>
             </app-hscroll>
         </section>
