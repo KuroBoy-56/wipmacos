@@ -17,6 +17,7 @@ import { PanelCacheSyncService } from './services/panel-cache-sync.service';
 import { ProfilesWatchService } from './profiles/profiles-watch.service';
 import { CACHE_CLEAR_NOTICE_MS, PANEL_CACHE_CLEAR_EVENT } from './panel-login/cache-clear.util';
 import { PORTAL_EXTERNAL_PLAYBACK } from '@iptvnator/portal/shared/util';
+import { ProfileEnterComponent } from './profiles/profile-enter.component';
 
 const debugAppComponent = createDevLogger('AppComponent');
 
@@ -25,6 +26,7 @@ const debugAppComponent = createDevLogger('AppComponent');
     templateUrl: './app.component.html',
     imports: [
         EpgProgressPanelComponent,
+        ProfileEnterComponent,
         RouterOutlet,
         WindowControlsComponent,
     ],

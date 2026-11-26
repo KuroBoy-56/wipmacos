@@ -110,7 +110,7 @@
 
 <ng-template #card let-e let-list="list">
     @let st = status(e);
-    <article class="sp-card" [class.live]="st === 'live'">
+    <article class="sp-card" [class.live]="st === 'live'" [appMatchAlert]="e">
         <div class="sp-top">
             <span class="lg">{{ leagueLabel(e) }}</span>
             @switch (st) {

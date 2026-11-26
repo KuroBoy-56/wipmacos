@@ -47,7 +47,7 @@ import { shouldEnableServiceWorker } from './services/runtime-config';
 import { provideWorkspaceShellActions } from './services/workspace-shell-actions.service';
 import { PanelTenantService } from './panel-login/panel-tenant.service';
 import { PanelErrorHandler } from './services/panel-error-reporter';
-import { NF_HOME_LIVE, NfHomeLive } from '@iptvnator/services';
+import { MatchAlertsService, NF_HOME_LIVE, NfHomeLive } from '@iptvnator/services';
 import { LiveSportsRowComponent } from './sports/live-sports-row.component';
 import { LiveSportsService } from './sports/live-sports.service';
 
@@ -82,6 +82,8 @@ export const appConfig: ApplicationConfig = {
         },
         // distributor branding before the first screen + background guardian
         provideAppInitializer(() => inject(PanelTenantService).start()),
+        // avisos de partidos (equipos favoritos y partidos marcados en Deportes): revisa cada 20 s con la app abierta
+        provideAppInitializer(() => inject(MatchAlertsService).start()),
         provideAnimations(),
         provideHttpClient(withInterceptorsFromDi()),
         provideStore({

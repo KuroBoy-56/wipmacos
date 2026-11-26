@@ -22,3 +22,4 @@ export * from './lib/parental/parental-control.service';
 export * from './lib/profiles';
 
 export * from './lib/nf-home-live';
+export * from './lib/match-alerts/match-alerts.service';

@@ -1695,6 +1695,34 @@
                 "Cricket": "Críquete",
                 "Esports": "Esports"
             }
+        },
+        "ALERTS": {
+            "M30": "A partida começa em 30 minutos",
+            "M10": "Está para começar: faltam 10 minutos",
+            "LIVE": "Já começou! A partida está ao vivo",
+            "TEAMS": "Times favoritos",
+            "TEAMS_HINT": "Avisamos 30 e 10 minutos antes de cada partida e quando começa.",
+            "ADD": "Adicionar time",
+            "SPORT": "Esporte",
+            "LEAGUE": "Liga",
+            "NATIONS": "Seleções nacionais",
+            "CLUBS": "Ligas e copas",
+            "TEAM": "Time",
+            "CHOOSE": "Escolher…",
+            "NO_TEAMS": "Não há próximas partidas nesta liga",
+            "NO_DATA": "Ainda não há próximas partidas. Tente em alguns minutos.",
+            "LOADING": "Carregando…",
+            "REMOVE": "Remover",
+            "NOTIFY_ON": "Ativar notificações para este evento",
+            "NOTIFY_OFF": "Remover as notificações deste evento",
+            "ON_TOAST": "Vamos avisar 30 e 10 minutos antes e quando começar",
+            "OFF_TOAST": "Aviso removido",
+            "BELL": "Notificações",
+            "BELL_EMPTY": "Nenhuma notificação nas últimas 24 horas",
+            "NOW": "agora",
+            "MIN_AGO": "há {{n}} min",
+            "H_AGO": "há {{n}} h",
+            "CLOSE": "Fechar"
         }
     }
 }
