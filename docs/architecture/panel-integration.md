@@ -527,7 +527,11 @@ no profiles screen, the header is the usual one and nothing is filtered.
   full screen with the theme colour fading in from the left edge to 66 % of
   the width and a light shade top and bottom. A distributor palette repaints
   the screen through `--pf-bg`, `--pf-bg-rgb`, `--pf-card`, `--pf-focus` and
-  `--pf-on` (`buildTenantThemeCss`); «Eliminar perfil» stays red. Hover only
+  `--pf-on` (`buildTenantThemeCss`); with «Omitir» the owner's palette from the
+  `features` answer of `login.php` (`palette`, only when the owner set one)
+  repaints just those `--pf-*` variables (`applyOwnerProfilesTheme`, stored as
+  `panel_owner_pf_css` and painted before Angular by `panel-branding-boot.js`);
+  without either the screen stays black. «Eliminar perfil» stays red. Hover only
   enlarges the avatar and the profile focused on opening lets go of it when
   the mouse goes to another one. Small windows follow the web player's rules
   (720p, a low window with the profiles in a row and a single scroll in the

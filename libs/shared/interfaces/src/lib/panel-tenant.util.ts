@@ -241,7 +241,8 @@ function num(value: unknown): number {
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 
-function palette(value: unknown): PanelTenantPalette | null {
+/** accent/bg/surface/text en #RRGGBB, o null si falta alguno */
+export function parseTenantPalette(value: unknown): PanelTenantPalette | null {
     if (!value || typeof value !== 'object') return null;
     const p = value as Record<string, unknown>;
     const out: Record<string, string> = {};
@@ -267,7 +268,7 @@ export function parseTenantConfig(raw: unknown, now = Date.now()): PanelTenantCa
         name,
         logoUrl: logo,
         logoRev: num(t['logo_rev']),
-        palette: palette(t['palette']),
+        palette: parseTenantPalette(t['palette']),
         expiresAt: num(t['expires_at']),
         expiresDate: date,
         features: {
