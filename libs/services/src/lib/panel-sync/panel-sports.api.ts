@@ -1,7 +1,9 @@
 import { PanelProgressClient } from './panel-progress.client';
 import {
     PanelFixtureLeague,
+    PanelLiveEvent,
     PanelSportsAgenda,
+    PanelSportsLive,
     PanelSportsFixtures,
     PanelSportsTables,
     PanelSportsTeam,
@@ -24,6 +26,18 @@ export async function sportsAgenda(client: PanelProgressClient, creds: SyncUserC
         fixtures: body.fixtures && typeof body.fixtures === 'object' ? body.fixtures : undefined,
         chan: body.chan === 'iptv' ? 'iptv' : 'all',
     };
+}
+
+/** Live matches with score for the Home row (api/sports_live.php); null when the panel did not answer. */
+export async function sportsLive(client: PanelProgressClient, creds: SyncUserCredentials): Promise<PanelSportsLive | null> {
+    const body = await client.postJson<Partial<PanelSportsLive>>('sports_live.php', creds, {});
+    if (!body || typeof body.enabled !== 'boolean') return null;
+    const ttl = Math.min(3600, Math.max(15, Number(body.ttl) || 30));
+    if (!body.enabled) return { enabled: false, ttl, events: [], chan: 'all' };
+    const events = (Array.isArray(body.events) ? body.events : [])
+        .filter((e): e is PanelLiveEvent => !!e && !!e.id && !!(e.h || e.a || e.ev))
+        .map((e) => ({ ...e, ts: e.ts ?? '', v: e.v ?? '', th: e.th ?? '', pp: false, lb: e.lb ?? '', ev: e.ev ?? '', pr: String(e.pr ?? '') }));
+    return { enabled: true, ttl, events, match: body.match, chan: body.chan === 'iptv' ? 'iptv' : 'all' };
 }
 
 export async function sportsTables(client: PanelProgressClient, creds: SyncUserCredentials): Promise<PanelSportsTables | null> {

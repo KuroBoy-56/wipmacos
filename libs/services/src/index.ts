@@ -21,3 +21,4 @@ export * from './lib/panel-sync';
 export * from './lib/parental/parental-control.service';
 export * from './lib/profiles';
 
+export * from './lib/nf-home-live';

@@ -1,8 +1,9 @@
 import { HScrollComponent } from '@iptvnator/ui/components';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { PanelBrandingService, PanelWeekTopService, weekTop10Home } from '@iptvnator/services';
+import { NF_HOME_LIVE, PanelBrandingService, PanelWeekTopService, weekTop10Home } from '@iptvnator/services';
 import { injectNfCatalog } from './nf-catalog';
 import {
     NF_GENRES,
@@ -33,7 +34,7 @@ const PLATFORM_ROWS = 5;
 @Component({
     selector: 'app-nf-home',
     standalone: true,
-    imports: [HScrollComponent, NfHeroComponent, NfRowComponent, RouterLink, TranslatePipe],
+    imports: [HScrollComponent, NfHeroComponent, NfRowComponent, NgComponentOutlet, RouterLink, TranslatePipe],
     template: `
         <div class="nf-page">
             <app-nf-hero
@@ -42,7 +43,10 @@ const PLATFORM_ROWS = 5;
                 [kicker]="'MPX.NF.FEATURED' | translate"
             />
 
-            @if (platforms().length) {
+            <!-- partidos en vivo (perfiles activos y clave de pago de TheSportsDB en el panel): en el lugar de las plataformas -->
+            @if (live?.enabled()) {
+                <ng-container *ngComponentOutlet="live!.component" />
+            } @else if (platforms().length) {
                 <app-hscroll class="nf-plat-wrap">
                 <nav
                     class="nf-platforms"
@@ -156,8 +160,13 @@ export class NfHomeComponent {
     /** Top 10 de la semana del panel (api/top10.php), cruzado con el catálogo */
     private readonly weekTop = inject(PanelWeekTopService);
 
+    /** la fila de partidos en vivo que pone la app (NF_HOME_LIVE); se pregunta solo mientras Inicio está abierto */
+    protected readonly live = inject(NF_HOME_LIVE, { optional: true });
+
     constructor() {
         void this.weekTop.load();
+        const detach = this.live?.attach();
+        if (detach) inject(DestroyRef).onDestroy(detach);
     }
     /** Sin plataformas (features.platforms false): ni tiles ni filas de plataforma. */
     protected readonly platforms = computed(() =>
