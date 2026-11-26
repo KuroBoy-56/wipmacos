@@ -775,6 +775,18 @@ being played now, with score and minute, as on Android:
   the row exists) keeps one sport per line and profile
   (`localStorage mpx:live_sport|<line>|<profile>`).
 
+### Match alerts and the bell
+
+- Settings › «Equipos favoritos» (inside the «Deporte preferido» card): sport →
+  league (grouped «Selecciones nacionales» / «Ligas y copas», `rg === 'nat'`) →
+  team, all from `api/sports_fixtures.php` (`fixtureTeams`); national teams keep
+  their translated name (`hn` / `an`) as the label and the provider name to match.
+- Deportes: holding the click (600 ms) or right-clicking a card opens «Activar
+  notificaciones para este evento» (`MatchAlertDirective`); a marked card shows a bell.
+- `MatchAlertsService` warns 30 min, 10 min and at kick-off; all alerts go to the
+  header bell for 24 h, and a system notification shows only when the window has no
+  focus. Desktop has no OS alarms: with the app closed nothing is warned.
+
 ### Tablas, Selecciones, Equipos
 
 Tabs above the agenda (as Roku, Vega and Android), shown when the panel offers

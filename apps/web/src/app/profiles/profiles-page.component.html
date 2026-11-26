@@ -24,7 +24,7 @@
             <ul class="pf-list">
                 @for (p of list(); track p.id) {
                     <li>
-                        <button #item type="button" class="pf-item" (click)="pick(p)">
+                        <button #item type="button" class="pf-item" [attr.data-id]="p.id" (click)="pick(p)">
                             <span class="pf-av">
                                 <img [src]="p.avatar" alt="" />
                                 @if (managing()) {

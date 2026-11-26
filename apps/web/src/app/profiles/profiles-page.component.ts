@@ -1,3 +1,4 @@
+import { ProfileEnterService } from './profile-enter.component';
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, OnInit, signal, untracked, viewChildren, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
@@ -31,6 +32,7 @@ export class ProfilesPageComponent implements OnInit {
     protected readonly profiles = inject(ProfilesService);
     protected readonly branding = inject(PanelBrandingService);
     private readonly router = inject(Router);
+    private readonly enterFx = inject(ProfileEnterService);
     private readonly route = inject(ActivatedRoute);
     private readonly translate = inject(TranslateService);
 
@@ -82,6 +84,9 @@ export class ProfilesPageComponent implements OnInit {
     }
 
     protected enter(p: Profile): void {
+        // su avatar va al centro con el circulito mientras se arma Inicio (profile-enter.component.ts)
+        const el = document.querySelector(`.pf-item[data-id="${CSS.escape(p.id)}"] img`);
+        this.enterFx.begin(p.name, p.avatar, el);
         this.profiles.choose(p);
         this.go();
     }
