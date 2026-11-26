@@ -26,6 +26,8 @@ export interface PanelSportsEvent {
     pp: boolean;
     /** Channels that broadcast it (region first), when the panel knows them. */
     tv?: PanelSportsTv[];
+    /** Without tv: where its home team's (else its league's) matches were broadcast in the last 60 days. */
+    tvh?: PanelSportsTv[];
 }
 
 /** A broadcast channel of a match: name and country, e.g. { n: 'ESPN 2', c: 'México' }. */

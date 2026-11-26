@@ -52,7 +52,7 @@ export function sportsMenu(e: PanelSportsEvent, m: SportsEventChannels | undefin
         if (tv.ch) seen.add(tv.ch.streamId);
         opts.push({
             title: iptv && tv.ch ? tv.ch.name : tv.n + (tv.c ? ` (${tv.c})` : ''),
-            sub: tv.ch ? t('MPX.SPORTS.IN_LIST', { name: tv.ch.name }) : t('MPX.SPORTS.NOT_IN_LIST'),
+            sub: (tv.usual ? t('MPX.SPORTS.USUAL') + ' · ' : '') + (tv.ch ? t('MPX.SPORTS.IN_LIST', { name: tv.ch.name }) : t('MPX.SPORTS.NOT_IN_LIST')),
             green: !!tv.ch,
             act: { kind: 'tv', index },
         });

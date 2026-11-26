@@ -8,6 +8,7 @@ import {
     sportsTeamScore,
     sportsTokens,
 } from './sports-matcher';
+import { PanelSportsEvent } from './panel-sports.types';
 
 const rules = {
     ...DEFAULT_SPORTS_MATCH_RULES,
@@ -119,6 +120,31 @@ describe('broadcast channel search', () => {
         expect(findChannelByName('ESPN 4', streams)).toBeNull();
         expect(findChannelByName('TUDN', streams)?.stream_id).toBe(4);
         expect(findChannelByName('Sky Sports', streams)).toBeNull();
+    });
+
+    it('reads a bare name as its first channel ("ESPN" = "ESPN 1", "DAZN" = "DAZN 1")', () => {
+        const list = [
+            { stream_id: 11, name: 'MX | ESPN 1 FHD', category_id: 1 },
+            { stream_id: 12, name: 'ESPN 2 HD', category_id: 1 },
+            { stream_id: 13, name: 'DAZN 1 ES', category_id: 1 },
+        ];
+        expect(findChannelByName('ESPN', list)?.stream_id).toBe(11);
+        expect(findChannelByName('DAZN', list)?.stream_id).toBe(13);
+        expect(findChannelByName('ESPN 2', list)?.stream_id).toBe(12);
+        expect(findChannelByName('ESPN 3', list)).toBeNull();
+    });
+
+    it('uses the usual channels (tvh) only after the agenda and the teams', () => {
+        const list = [
+            { stream_id: 21, name: 'TUDN HD', category_id: 1 },
+            { stream_id: 22, name: 'EVENTO 05', category_id: 2 },
+        ];
+        const cats = [{ category_id: 1, category_name: 'Deportes' }, { category_id: 2, category_name: 'EVENTOS PPV' }];
+        const ev = { id: 'x', h: 'América', a: 'Toluca', lg: 'Liga MX', ev: '' } as unknown as PanelSportsEvent;
+        expect(findSportsChannelForEvent({ ...ev, tvh: [{ n: 'TUDN', c: 'México' }] }, list, cats)).toMatchObject({ streamId: '21', partial: true });
+        // with the agenda's channels the usual ones are not used
+        expect(findSportsChannelForEvent({ ...ev, tv: [{ n: 'Fox Sports', c: 'México' }], tvh: [{ n: 'TUDN', c: 'México' }] }, list, cats))
+            .toMatchObject({ streamId: '22', partial: true });
     });
 
     it('reads M+ as Movistar and finds glued names, like webOS', () => {

@@ -1,0 +1,95 @@
+<div class="nf-page">
+    <header class="nf-browse-head" [style.--accent]="accent()">
+        <h1>
+            @if (platformTag()?.img; as img) {
+                <img [src]="img" alt="" />
+            }
+            {{ headingText() }}
+        </h1>
+        <p>{{ subtitle().key | translate: subtitle().params }}</p>
+        @if (platform()) {
+            <app-nf-title-search [label]="headingText()" [(value)]="filter" />
+        }
+    </header>
+
+    <div class="nf-filterbar">
+        <div class="row1">
+            @if (!category()) {
+                <div class="nf-seg" role="group" [attr.aria-label]="'MPX.NF.TYPE' | translate">
+                    @for (t of types; track t.key) {
+                        <button type="button" [class.active]="type() === t.key" (click)="set({ type: t.key })">
+                            {{ t.label | translate }}
+                        </button>
+                    }
+                </div>
+            }
+            <select
+                class="nf-select"
+                [attr.aria-label]="'MPX.NF.SORT' | translate"
+                [value]="sort()"
+                (change)="set({ sort: $any($event.target).value })"
+            >
+                <option value="recent">{{ 'MPX.NF.EX_RECENT' | translate }}</option>
+                <option value="az">A - Z</option>
+                <option value="rating">{{ 'MPX.NF.EX_RATED' | translate }}</option>
+            </select>
+            @if (!platform()) {
+                <input
+                    #filterInput
+                    class="nf-input"
+                    type="search"
+                    inputmode="search"
+                    enterkeyhint="search"
+                    [placeholder]="'MPX.NF.EX_FILTER' | translate"
+                    [value]="filter()"
+                    (input)="filter.set($any($event.target).value)"
+                />
+            }
+            <span class="nf-count">{{
+                results().length ? ('MPX.NF.TITLES_COUNT' | translate: { count: countText() }) : ''
+            }}</span>
+        </div>
+        @if (!category()) {
+            <nav class="nf-chips" [attr.aria-label]="'MPX.NF.GENRES' | translate">
+                <button type="button" class="nf-chip" [class.active]="!genreTag()" (click)="set({ genre: null })">
+                    {{ 'MPX.NF.ALL_GENRES' | translate }}
+                </button>
+                @for (g of genres(); track g.key) {
+                    <button type="button" class="nf-chip" [class.active]="genreTag()?.key === g.key" (click)="set({ genre: g.key })">
+                        {{ g.label | translate }}
+                    </button>
+                }
+            </nav>
+            @if (!platform() && platforms().length) {
+                <nav class="nf-chips" style="padding-top: 2px" [attr.aria-label]="'MPX.NF.PLATFORMS' | translate">
+                    @for (p of platforms(); track p.key) {
+                        <button type="button" class="nf-chip" (click)="openPlatform(p.key)">{{ p.label | translate }}</button>
+                    }
+                </nav>
+            }
+        }
+    </div>
+
+    @if (catalog.ready()) {
+        @if (results().length) {
+            <div class="nf-grid">
+                @for (item of shown(); track item.type + item.id) {
+                    <a nfCard [item]="item" [routerLink]="link(item)"></a>
+                }
+            </div>
+            @if (shown().length < results().length) {
+                @for (step of [shown().length]; track step) {
+                    <div class="nf-grid-status" (nfNearEnd)="limit.set(limit() + page)">
+                        {{ 'MPX.COMMON.LOADING_MORE' | translate }}
+                    </div>
+                }
+            }
+        } @else {
+            <p class="nf-empty">{{ 'MPX.NF.NO_RESULTS' | translate }}</p>
+        }
+    } @else {
+        <p class="nf-grid-status">
+            {{ (catalog.loading() ? 'MPX.NF.LOADING_CATALOG' : 'MPX.NF.NO_CONTENT') | translate }}
+        </p>
+    }
+</div>

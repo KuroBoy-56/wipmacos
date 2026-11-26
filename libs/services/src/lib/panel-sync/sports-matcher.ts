@@ -244,7 +244,9 @@ export function findChannelByName(tvName: string, streams: readonly SportsLiveSt
             }
         }
     }
-    return best ? (best as IndexedStream).st : null;
+    if (best) return (best as IndexedStream).st;
+    // a bare name is its first channel ("ESPN" = "ESPN 1", "DAZN" = "DAZN 1")
+    return /\d$/.test(qc) ? null : findChannelByName(`${tvName} 1`, streams);
 }
 
 /** First broadcast channel of the match the client has, else the team / event-name match. */
@@ -258,5 +260,12 @@ export function findSportsChannelForEvent(
         const st = findChannelByName(t.n, streams);
         if (st) return toMatch(st);
     }
-    return findSportsChannel(event, streams, categories, panelRules);
+    const byTeams = findSportsChannel(event, streams, categories, panelRules);
+    if (byTeams && !byTeams.partial) return byTeams;
+    // where its home team / league is usually broadcast, before the event folder
+    for (const t of event.tv?.length ? [] : event.tvh ?? []) {
+        const st = findChannelByName(t.n, streams);
+        if (st) return toMatch(st, true);
+    }
+    return byTeams;
 }
