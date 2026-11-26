@@ -81,12 +81,11 @@ export class SportsDataService {
      * same): the card shows the channel before pressing and the menu knows which broadcast channels the client has.
      * null = no session line or no channels.
      */
-    async matchEvents(events: readonly PanelSportsEvent[]): Promise<SportsChannelsMap | null> {
+    async matchEvents(events: readonly PanelSportsEvent[], rules = this.agenda?.match): Promise<SportsChannelsMap | null> {
         const playlistId = await this.sessionPlaylistId();
         if (!playlistId) return null;
         const { streams, categories } = await this.liveChannels(playlistId);
         if (!streams.length) return null;
-        const rules = this.agenda?.match;
         const target = (st: SportsLiveStream): SportsChannelTarget =>
             ({ streamId: String(st.stream_id), categoryId: String(st.category_id ?? ''), name: String(st.name ?? ''), partial: false, playlistId });
         const byEvent: Record<string, SportsEventChannels> = {};

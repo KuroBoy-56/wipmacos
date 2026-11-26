@@ -1001,6 +1001,15 @@ body.macos-platform .nf-header {
     }
 }
 
+// «En vivo ahora» (apps/web/src/app/sports/live-sports-row.component.*) en el lugar de las plataformas
+.nf-hero.none + app-live-sports-row .lv {
+    margin-top: 0;
+}
+
+.nf-hero + app-live-sports-row:empty + .nf-rows {
+    margin-top: -9vw;
+}
+
 .nf-plat-wrap + .nf-rows {
     margin-top: 0;
 }

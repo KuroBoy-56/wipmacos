@@ -48,6 +48,7 @@ import { SettingsService } from './../services/settings.service';
 import { SettingsAboutSectionComponent } from './settings-about-section.component';
 import { SettingsDistributorSectionComponent } from './settings-distributor-section.component';
 import { SettingsParentalSectionComponent } from './settings-parental-section.component';
+import { SettingsLiveSportsSectionComponent } from './settings-live-sports-section.component';
 import { SettingsDashboardSectionComponent } from './settings-dashboard-section.component';
 import {
     SettingsDeleteAllPlaylistsDialogComponent,
@@ -104,6 +105,7 @@ import { SettingsSnackbarService } from './settings-snackbar.service';
         SettingsAboutSectionComponent,
         SettingsDashboardSectionComponent,
         SettingsDistributorSectionComponent,
+        SettingsLiveSportsSectionComponent,
         SettingsParentalSectionComponent,
         SettingsEpgSectionComponent,
         SettingsGeneralSectionComponent,

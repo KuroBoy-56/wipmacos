@@ -1669,6 +1669,32 @@
             "SERIES": "Series",
             "CHECKING": "Checking…",
             "SAVING": "Saving…"
+        },
+        "LIVE": {
+            "TITLE": "Live now",
+            "HT": "Half time",
+            "LIVE": "Live",
+            "CLOSE": "Close",
+            "PREF": "Favorite sport",
+            "PREF_HINT": "Live matches on Home show only this sport.",
+            "ALL": "All sports",
+            "SP": {
+                "Soccer": "Soccer",
+                "Basketball": "Basketball",
+                "American Football": "American football",
+                "Baseball": "Baseball",
+                "Ice Hockey": "Ice hockey",
+                "Tennis": "Tennis",
+                "Motorsport": "Motorsport",
+                "Fighting": "Martial arts",
+                "Boxing": "Boxing",
+                "Rugby": "Rugby",
+                "Volleyball": "Volleyball",
+                "Handball": "Handball",
+                "Golf": "Golf",
+                "Cricket": "Cricket",
+                "Esports": "Esports"
+            }
         }
     }
 }

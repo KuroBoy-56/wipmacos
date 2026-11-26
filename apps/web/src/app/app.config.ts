@@ -47,6 +47,9 @@ import { shouldEnableServiceWorker } from './services/runtime-config';
 import { provideWorkspaceShellActions } from './services/workspace-shell-actions.service';
 import { PanelTenantService } from './panel-login/panel-tenant.service';
 import { PanelErrorHandler } from './services/panel-error-reporter';
+import { NF_HOME_LIVE, NfHomeLive } from '@iptvnator/services';
+import { LiveSportsRowComponent } from './sports/live-sports-row.component';
+import { LiveSportsService } from './sports/live-sports.service';
 
 // AoT requires an exported function for factories
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
@@ -69,6 +72,14 @@ export const appConfig: ApplicationConfig = {
         // runtime errors also go to the panel («Errores de las apps»)
         { provide: ErrorHandler, useClass: PanelErrorHandler },
         provideRouter(routes, withComponentInputBinding()),
+        // «En vivo ahora» en Inicio, en el lugar de Plataformas (solo con perfiles y una clave de pago de TheSportsDB)
+        {
+            provide: NF_HOME_LIVE,
+            useFactory: (): NfHomeLive => {
+                const live = inject(LiveSportsService);
+                return { enabled: live.enabled, component: LiveSportsRowComponent, attach: () => live.attach() };
+            },
+        },
         // distributor branding before the first screen + background guardian
         provideAppInitializer(() => inject(PanelTenantService).start()),
         provideAnimations(),

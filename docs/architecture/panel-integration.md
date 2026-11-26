@@ -740,6 +740,41 @@ of the top bar. It mirrors the web player's sports page:
 `{events, sports, match, tz, tables, fixtures}` (the requests live in
 `libs/services/src/lib/panel-sync/panel-sports.api.ts`).
 
+### "En vivo ahora" on Home (live scores)
+
+On Home (`NfHomeComponent`) the platform tiles give way to a row of matches
+being played now, with score and minute, as on Android:
+
+- Shown only when profiles are on for the line (`ProfilesService.needed()`), a
+  profile that is not the kids one is chosen and the distributor did not turn
+  Deportes off (`features.sports`). Otherwise Home keeps the platforms.
+- `api/sports_live.php` (`PanelSyncService.fetchSportsLive`) answers
+  `{enabled, ttl, events, sports, match, chan}`. `enabled: false` = the panel has
+  no paid TheSportsDB key for this client: the owner's own for the owner, the
+  distributor's own (`tenants.sports_key`) for a distributor — never the owner's
+  for a distributor, and a free key (`123` / `3`) or one TheSportsDB rejects
+  turns the row off. Events: `{id, sp, lg, li, lb, ev, h, a, hb, ab, hs, as, st,
+  pr, s, tv?}` (`hs`/`as` score, `st` status, `pr` minute or period).
+- `LiveSportsService` (`apps/web/src/app/sports/live-sports.service.ts`) asks
+  every `ttl` seconds (30) only while Home is open (`attach`), runs every match
+  through `SportsDataService.matchEvents` with the payload's `match` rules
+  (broadcast channels by name, the panel guide `api/sports_epg.php`, then teams /
+  event name) and keeps only matches with an exact channel of the client's list
+  (`liveCards`): a match the client cannot watch does not show.
+- The hook is the `NF_HOME_LIVE` token (`libs/services/src/lib/nf-home-live.ts`),
+  provided in `app.config.ts`, so the xtream feature lib does not depend on the
+  app. `LiveSportsRowComponent` draws each card over the sport's field in SVG
+  (`LiveFieldComponent`: soccer, basketball, american football, baseball, hockey,
+  tennis / volleyball) with a gradient for big competitions (Champions blue,
+  Libertadores gold…, `competitionTheme`), badges, score, minute and the channel.
+  A card opens the Deportes menu with only the client's channels plus search by
+  team / typed (`sportsMenu(…, iptv = true)`); the channel plays in TV en vivo and
+  Back returns to Home with the focus on that card. Arrows on mouse hover
+  (`app-hscroll`).
+- Settings › «Deporte preferido» (`SettingsLiveSportsSectionComponent`, only while
+  the row exists) keeps one sport per line and profile
+  (`localStorage mpx:live_sport|<line>|<profile>`).
+
 ### Tablas, Selecciones, Equipos
 
 Tabs above the agenda (as Roku, Vega and Android), shown when the panel offers
