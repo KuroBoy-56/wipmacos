@@ -1694,7 +1694,9 @@
                 "Golf": "Golf",
                 "Cricket": "Cricket",
                 "Esports": "Esports"
-            }
+            },
+            "PLAT_CARDS": "Show platform cards",
+            "PLAT_CARDS_HINT": "Platforms (Netflix, Disney+…) come back on Home, below «Live now»."
         },
         "ALERTS": {
             "M30": "The match starts in 30 minutes",

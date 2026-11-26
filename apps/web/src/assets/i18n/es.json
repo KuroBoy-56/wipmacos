@@ -1694,7 +1694,9 @@
                 "Golf": "Golf",
                 "Cricket": "Críquet",
                 "Esports": "Esports"
-            }
+            },
+            "PLAT_CARDS": "Habilitar tarjetas de plataformas",
+            "PLAT_CARDS_HINT": "Las plataformas (Netflix, Disney+…) vuelven en Inicio, debajo de «En vivo ahora»."
         },
         "ALERTS": {
             "M30": "El partido empieza en 30 minutos",

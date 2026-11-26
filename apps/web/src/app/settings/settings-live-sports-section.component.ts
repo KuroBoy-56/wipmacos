@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { FavTeam, MatchAlertsService, PanelSportsFixtures } from '@iptvnator/services';
+import { FavTeam, MatchAlertsService, PanelBrandingService, PanelSportsFixtures } from '@iptvnator/services';
 import { LiveSportsService } from '../sports/live-sports.service';
 import { LIVE_SPORT_CHOICES } from '../sports/live-sports.util';
 import { fixtureTeams } from './settings-live-sports.util';
@@ -28,6 +28,14 @@ import { fixtureTeams } from './settings-live-sports.util';
                     }
                 </select>
                 <p class="note">{{ 'MPX.LIVE.PREF_HINT' | translate }}</p>
+
+                @if (platformsOn()) {
+                    <label class="plat">
+                        <input type="checkbox" [checked]="live.platformCards()" (change)="live.setPlatformCards($any($event.target).checked)" />
+                        <span>{{ 'MPX.LIVE.PLAT_CARDS' | translate }}</span>
+                    </label>
+                    <p class="note">{{ 'MPX.LIVE.PLAT_CARDS_HINT' | translate }}</p>
+                }
 
                 <h3 class="teams-title">{{ 'MPX.ALERTS.TEAMS' | translate }}</h3>
                 <p class="note">{{ 'MPX.ALERTS.TEAMS_HINT' | translate }}</p>
@@ -107,6 +115,8 @@ import { fixtureTeams } from './settings-live-sports.util';
         .team span { flex: 1; }
         .pick { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
         .pick label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; opacity: 0.9; }
+        .plat { display: flex; align-items: center; gap: 10px; margin-top: 14px; cursor: pointer; }
+        .plat input { width: 18px; height: 18px; accent-color: var(--nf-red, #e50914); }
     `,
 })
 export class SettingsLiveSportsSectionComponent {
@@ -114,6 +124,8 @@ export class SettingsLiveSportsSectionComponent {
     protected readonly alerts = inject(MatchAlertsService);
     private readonly translate = inject(TranslateService);
     protected readonly sports = LIVE_SPORT_CHOICES;
+    /** «Habilitar tarjetas de plataformas» solo si el distribuidor tiene las plataformas */
+    protected readonly platformsOn = inject(PanelBrandingService).platforms;
 
     protected readonly adding = signal(false);
     /** undefined = cargando, null = el panel no tiene los próximos partidos */

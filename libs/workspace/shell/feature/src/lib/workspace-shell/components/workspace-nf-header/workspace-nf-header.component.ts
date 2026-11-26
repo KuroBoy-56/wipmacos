@@ -72,7 +72,7 @@ export class WorkspaceNfHeaderComponent {
     /** Perfiles del panel (solo con los perfiles encendidos por el dueño): el avatar a la izquierda y el logo a la derecha. */
     protected readonly profiles = inject(ProfilesService);
     /** campanita de avisos de partidos: con Deportes y nunca en el perfil infantil */
-    protected readonly bellOn = computed(() => this.branding.features().sports !== false && !this.profiles.kids());
+    protected readonly bellOn = computed(() => this.branding.features().sports !== false && !!this.profiles.profile() && !this.profiles.kids());
     private readonly kids = inject(KidsFilterService);
     protected readonly prof = computed(() => this.profiles.needed() && !!this.profiles.profile());
     private readonly url = toSignal(
