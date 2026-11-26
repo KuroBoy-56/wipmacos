@@ -37,6 +37,8 @@ export interface SportsTvOption {
     n: string;
     c: string;
     ch: SportsChannelTarget | null;
+    /** not from the agenda: where its home team / league is usually broadcast (panel "tvh") */
+    usual?: boolean;
 }
 
 /** What the card and its menu show (webOS / Vega / Roku): best = first broadcast channel, else the guide, else teams. */
@@ -46,6 +48,8 @@ export interface SportsEventChannels {
     epg: SportsChannelTarget[];
     teams: SportsChannelTarget | null;
     best: SportsChannelTarget | null;
+    /** best is only a usual channel (no broadcast, guide or team match): the Home live row leaves it out */
+    guess?: boolean;
 }
 
 export interface SportsChannelsMap {
@@ -92,14 +96,18 @@ export class SportsDataService {
         const byId = new Map(streams.map((x) => [String(x.stream_id), x]));
         const guide = await this.epgMap(streams, categories);
         for (const ev of events) {
-            const tv = (ev.tv ?? []).map((t) => {
+            // without the agenda's channels, the usual ones of its home team / league (last resort)
+            const usual = !ev.tv?.length;
+            const tv: SportsTvOption[] = ((usual ? ev.tvh : ev.tv) ?? []).map((t) => {
                 const st = findChannelByName(t.n, streams);
-                return { n: t.n, c: t.c ?? '', ch: st ? target(st) : null };
+                return { n: t.n, c: t.c ?? '', ch: st ? target(st) : null, ...(usual ? { usual: true } : {}) };
             });
             const byTeams = findSportsChannel(ev, streams, categories, rules);
             const teams = byTeams && !byTeams.partial ? { ...byTeams, playlistId } : null;
             const epg = (guide[String(ev.id)] ?? []).map((id) => byId.get(id)).filter((x): x is SportsLiveStream => !!x).map(target);
-            byEvent[String(ev.id)] = { tv, epg, teams, best: tv.find((t) => t.ch)?.ch ?? epg[0] ?? teams };
+            const sure = (usual ? null : tv.find((t) => t.ch)?.ch) ?? epg[0] ?? teams;
+            const guess = sure ? null : (tv.find((t) => t.ch)?.ch ?? null);
+            byEvent[String(ev.id)] = { tv, epg, teams, best: sure ?? guess, ...(guess ? { guess: true } : {}) };
         }
         const folder = findSportsChannel({ h: '', a: '', lg: '', ev: '' }, streams, categories, rules); // no team or name: only the folder
         return { byEvent, folder: folder ? { ...folder, playlistId } : null };

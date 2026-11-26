@@ -878,7 +878,18 @@ matcher's index is built once per channel list): `tv[].ch` per broadcast channel
 The card shows that channel in green ("Buscando…" / "Sin canal" otherwise).
 `channelKey` drops quality and country tags, reads "M+" as Movistar and glues a
 number to the word before it, so "ESPN 2" finds "MX: ESPN 2 HD" and never "ESPN"
-or "ESPN 3"; the last try matches glued names ("La Liga Hypermotion").
+or "ESPN 3"; the last try matches glued names ("La Liga Hypermotion"). A bare
+name is its first channel ("ESPN" finds "ESPN 1", "DAZN" finds "DAZN 1"). Since
+the panel of 26 Nov the agenda's names come without the country ("ESPN 2
+Honduras" → `{n: "ESPN 2", c: "Honduras"}`).
+
+**Usual channels (`tvh`).** An event without `tv` may carry `tvh: [{n, c}]`: where
+its home team's matches (else its league's) were broadcast in the last 60 days,
+learned by the panel from earlier `tv` lists (no extra TheSportsDB request). The
+matcher uses them **last** (after the guide and the teams): they fill `tv` with
+`usual: true` (the menu adds "suele transmitirlo") and, when one of them ends up as
+`best`, the match is marked `guess: true` — the Home live row ("En vivo ahora")
+leaves those out, it only shows exact channels.
 
 **Ver canales** opens the webOS menu (`sports-menu.util.ts`): **Ver el evento
 (canal automático)**, each broadcast channel ("en tu lista: X" in green, or "no

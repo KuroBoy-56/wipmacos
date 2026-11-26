@@ -2,19 +2,21 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
+    ElementRef,
     inject,
     linkedSignal,
     signal,
+    viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { filter as rxFilter } from 'rxjs';
 import { NfCardComponent } from './nf-card.component';
 import { injectNfCatalog } from './nf-catalog';
-import { UiText } from '@iptvnator/shared/interfaces';
 import { PanelBrandingService } from '@iptvnator/services';
-import { NfHeroService, nfCssUrl } from './nf-hero.service';
-import { nfFindTag, nfNorm, nfTagItems, nfTitleNorm } from './nf-filters';
+import { NF_GENRES, NF_PLATFORMS, NfTag, nfAvailable, nfNorm, nfTagItems, nfTitleNorm } from './nf-filters';
 import { NfItem, nfLink, newestFirst, topRated } from './nf-item';
 import { NfNearEndDirective } from './nf-near-end.directive';
 import { NfTitleSearchComponent } from './nf-title-search.component';
@@ -25,125 +27,19 @@ type ExploreSort = 'recent' | 'rating' | 'az';
 const PAGE = 120;
 /** Un solo Collator: localeCompare(…, 'es') crea uno por comparación y congela A–Z con catálogos grandes. */
 const TITLE_COLLATOR = new Intl.Collator('es');
+/** La lupa de la barra (y Ctrl+F) abre Explorar con esto en el estado de la navegación: el cursor va a «Filtrar por título». */
+const NF_FOCUS_FILTER = 'nfFocusFilter';
 
-/** "Ver todo", platforms, genres and categories as a poster grid (web player browse.php). */
+/**
+ * Explorar, igual al web player en horizontal (browse.php): título y subtítulo sobre el degradado del color, la cápsula
+ * Todo / Películas / Series, el orden (Agregados recientemente / A - Z / Mejor valorados), «Filtrar por título…», el
+ * total, los géneros, las plataformas, el divisor y la cuadrícula de pósters.
+ */
 @Component({
     selector: 'app-nf-explore',
     standalone: true,
-    imports: [
-        NfCardComponent,
-        NfNearEndDirective,
-        NfTitleSearchComponent,
-        RouterLink,
-        TranslatePipe,
-    ],
-    template: `
-        <div class="nf-page">
-            <header class="nf-browse-head" [style.--accent]="accent()">
-                @if (backdrop()) {
-                    <div class="nf-browse-bg" [style.background-image]="backdrop()"></div>
-                }
-                <h1>
-                    @if (tag()?.img; as img) {
-                        <img [src]="img" alt="" />
-                    }
-                    {{ headingText() }}
-                </h1>
-                <p>{{ subtitle() | translate }}</p>
-                @if (platform()) {
-                    <app-nf-title-search
-                        [label]="headingText()"
-                        [(value)]="filter"
-                    />
-                }
-            </header>
-
-            <div class="nf-filterbar">
-                <div class="row1">
-                    @if (!category()) {
-                        <div
-                            class="nf-seg"
-                            role="group"
-                            [attr.aria-label]="'MPX.NF.TYPE' | translate"
-                        >
-                            @for (t of types; track t.key) {
-                                <button
-                                    type="button"
-                                    [class.active]="type() === t.key"
-                                    (click)="set({ type: t.key })"
-                                >
-                                    {{ t.label | translate }}
-                                </button>
-                            }
-                        </div>
-                    }
-                    <select
-                        class="nf-select"
-                        [attr.aria-label]="'MPX.NF.SORT' | translate"
-                        [value]="sort()"
-                        (change)="set({ sort: $any($event.target).value })"
-                    >
-                        <option value="recent">
-                            {{ 'MPX.NF.RECENTLY_ADDED' | translate }}
-                        </option>
-                        <option value="rating">
-                            {{ 'MPX.NF.TOP_RATED' | translate }}
-                        </option>
-                        <option value="az">A – Z</option>
-                    </select>
-                    @if (!platform()) {
-                        <input
-                            class="nf-input"
-                            type="search"
-                            [placeholder]="'MPX.NF.FILTER_TITLE' | translate"
-                            [value]="filter()"
-                            (input)="filter.set($any($event.target).value)"
-                        />
-                    }
-                    <span class="nf-count">{{
-                        'MPX.NF.TITLES_COUNT'
-                            | translate: { count: results().length }
-                    }}</span>
-                </div>
-            </div>
-
-            @if (catalog.ready()) {
-                @if (results().length) {
-                    <div class="nf-grid">
-                        @for (item of shown(); track item.type + item.id) {
-                            <a
-                                nfCard
-                                [item]="item"
-                                [routerLink]="link(item)"
-                            ></a>
-                        }
-                    </div>
-                    @if (shown().length < results().length) {
-                        @for (step of [shown().length]; track step) {
-                            <div
-                                class="nf-grid-status"
-                                (nfNearEnd)="limit.set(limit() + page)"
-                            >
-                                {{ 'MPX.COMMON.LOADING_MORE' | translate }}
-                            </div>
-                        }
-                    }
-                } @else {
-                    <p class="nf-empty">
-                        {{ 'MPX.NF.NO_RESULTS' | translate }}
-                    </p>
-                }
-            } @else {
-                <p class="nf-grid-status">
-                    {{
-                        (catalog.loading()
-                            ? 'MPX.NF.LOADING_CATALOG'
-                            : 'MPX.NF.NO_CONTENT') | translate
-                    }}
-                </p>
-            }
-        </div>
-    `,
+    imports: [NfCardComponent, NfNearEndDirective, NfTitleSearchComponent, RouterLink, TranslatePipe],
+    templateUrl: './nf-explore.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NfExploreComponent {
@@ -151,12 +47,7 @@ export class NfExploreComponent {
     private readonly route = inject(ActivatedRoute);
     private readonly translate = inject(TranslateService);
     private readonly branding = inject(PanelBrandingService);
-    private readonly lastBackdrop = inject(NfHeroService).lastBackdrop;
-    /** El último banner queda de fondo al recorrer plataformas y géneros. */
-    protected readonly backdrop = computed(() => {
-        const url = this.lastBackdrop();
-        return url ? nfCssUrl(url) : '';
-    });
+    private readonly filterInput = viewChild<ElementRef<HTMLInputElement>>('filterInput');
     protected readonly catalog = injectNfCatalog([]);
     protected readonly page = PAGE;
     protected readonly types: { key: ExploreType; label: string }[] = [
@@ -165,9 +56,7 @@ export class NfExploreComponent {
         { key: 'series', label: 'MPX.NAV.SERIES' },
     ];
 
-    private readonly params = toSignal(this.route.queryParamMap, {
-        requireSync: true,
-    });
+    private readonly params = toSignal(this.route.queryParamMap, { requireSync: true });
     protected readonly type = computed<ExploreType>(() => {
         const t = this.params().get('type');
         return t === 'movie' || t === 'series' ? t : 'all';
@@ -177,73 +66,70 @@ export class NfExploreComponent {
         return s === 'rating' || s === 'az' ? s : 'recent';
     });
     /** ?platform= solo cuenta si el distribuidor separa por plataformas. */
-    private readonly platformKey = computed(() =>
-        this.branding.platforms() ? this.params().get('platform') : null
-    );
-    protected readonly tag = computed(() =>
-        nfFindTag(this.platformKey() ?? this.params().get('genre'))
+    protected readonly platformTag = computed<NfTag | null>(() => {
+        const key = this.branding.platforms() ? this.params().get('platform') : null;
+        return NF_PLATFORMS.find((p) => p.key === key) ?? null;
+    });
+    protected readonly genreTag = computed<NfTag | null>(
+        () => NF_GENRES.find((g) => g.key === this.params().get('genre')) ?? null
     );
     /** Platform page (Netflix, Disney+…): the name filter is the top-right magnifier. */
-    protected readonly platform = computed(
-        () => !!this.platformKey() && !this.category()
-    );
+    protected readonly platform = computed(() => !!this.platformTag() && !this.category());
     protected readonly category = computed(() => {
         const id = this.params().get('category');
         if (!id) return null;
-        const list =
-            this.type() === 'series'
-                ? this.catalog.seriesCategories()
-                : this.catalog.movieCategories();
-        return (
-            list.find((c) => c.id === id) ?? {
-                id,
-                name: this.translate.instant('MPX.NF.CATEGORY'),
-            }
-        );
+        const list = this.type() === 'series' ? this.catalog.seriesCategories() : this.catalog.movieCategories();
+        return list.find((c) => c.id === id) ?? { id, name: this.translate.instant('MPX.NF.CATEGORY') };
     });
-    protected readonly filter = linkedSignal(
-        () => this.params().get('q') ?? ''
-    );
+    protected readonly filter = linkedSignal(() => this.params().get('q') ?? '');
     protected readonly limit = signal(PAGE);
 
-    /** Category names are shown as the server sends them; tags and the rest are translated. */
-    protected readonly heading = computed<UiText & { raw?: string }>(() => {
-        const category = this.category();
-        if (category) return { key: '', raw: category.name };
-        const label = this.tag()?.label;
-        if (label) return { key: label };
-        const q = this.params().get('q');
-        if (q) return { key: 'MPX.NF.RESULTS_FOR', params: { q } };
-        return {
-            key:
-                this.type() === 'series'
-                    ? 'MPX.NAV.SERIES'
-                    : this.type() === 'movie'
-                      ? 'MPX.NAV.MOVIES'
-                      : 'MPX.NAV.EXPLORE',
-        };
+    private readonly typeCategories = computed(() => {
+        const type = this.type();
+        return [
+            ...(type !== 'series' ? this.catalog.movieCategories() : []),
+            ...(type !== 'movie' ? this.catalog.seriesCategories() : []),
+        ];
     });
-    private readonly lang = toSignal(this.translate.onLangChange, {
-        initialValue: null,
+    /** Los géneros que tienen alguna carpeta en el tipo elegido (y el elegido, aunque no tenga). */
+    protected readonly genres = computed(() => {
+        const list = nfAvailable(NF_GENRES, this.typeCategories());
+        const g = this.genreTag();
+        return g && !list.includes(g) ? [...list, g] : list;
     });
+    protected readonly platforms = computed(() =>
+        this.branding.platforms()
+            ? nfAvailable(NF_PLATFORMS, [...this.catalog.movieCategories(), ...this.catalog.seriesCategories()])
+            : []
+    );
+
+    private readonly lang = toSignal(this.translate.onLangChange, { initialValue: null });
+    /** Category names are shown as the server sends them; the rest are translated (web: «Explorar» con cualquier tipo). */
     protected readonly headingText = computed(() => {
         this.lang();
-        const h = this.heading();
-        return h.raw ?? this.translate.instant(h.key, h.params);
+        const category = this.category();
+        if (category) return category.name;
+        const tag = this.platformTag() ?? this.genreTag();
+        if (tag) return this.translate.instant(tag.label);
+        const q = this.params().get('q');
+        return this.translate.instant(q ? 'MPX.NF.RESULTS_FOR' : 'MPX.NAV.EXPLORE', q ? { q } : undefined);
     });
-    protected readonly subtitle = computed(() =>
-        this.sort() === 'rating'
-            ? 'MPX.NF.SORT_RATING'
-            : this.sort() === 'az'
-              ? 'MPX.NF.SORT_AZ'
-              : 'MPX.NF.SORT_RECENT'
-    );
-    protected readonly accent = computed(() => {
-        const color = this.tag()?.color;
-        return color ? color + '66' : null;
+    protected readonly subtitle = computed((): { key: string; params?: Record<string, string> } => {
+        this.lang();
+        const category = this.category();
+        if (category)
+            return { key: this.type() === 'series' ? 'MPX.NF.EX_SUB_CAT_SERIES' : 'MPX.NF.EX_SUB_CAT_MOVIES', params: { c: category.name } };
+        const p = this.platformTag();
+        if (p) return { key: 'MPX.NF.EX_SUB_PLATFORM', params: { p: this.translate.instant(p.label) } };
+        const g = this.genreTag();
+        if (g) return { key: 'MPX.NF.EX_SUB_GENRE', params: { g: String(this.translate.instant(g.label)).toLowerCase() } };
+        if (this.params().get('q')) return { key: 'MPX.NF.EX_SUB_SEARCH' };
+        return { key: 'MPX.NF.EX_SUB_ALL' };
     });
+    /** El color de la plataforma (o el rojo de siempre) sobre el título, como el web player. */
+    protected readonly accent = computed(() => (this.platformTag()?.color ?? '#e50914') + '55');
 
-    /** Tipo, categoría/etiqueta y orden; el filtro por título va aparte (no reordena al teclear). */
+    /** Tipo, categoría / plataforma / género y orden; el filtro por título va aparte (no reordena al teclear). */
     private readonly sorted = computed<NfItem[]>(() => {
         const type = this.type();
         let items: NfItem[] = [
@@ -251,22 +137,17 @@ export class NfExploreComponent {
             ...(type !== 'movie' ? this.catalog.series() : []),
         ];
         const category = this.category();
-        const tag = this.tag();
         if (category) items = items.filter((i) => i.categoryId === category.id);
-        else if (tag) {
-            const categories = [
-                ...(type !== 'series' ? this.catalog.movieCategories() : []),
-                ...(type !== 'movie' ? this.catalog.seriesCategories() : []),
-            ];
-            items = nfTagItems(items, categories, tag);
+        else {
+            for (const tag of [this.platformTag(), this.genreTag()]) {
+                if (tag) items = nfTagItems(items, this.typeCategories(), tag);
+            }
         }
         switch (this.sort()) {
             case 'rating':
                 return topRated(items);
             case 'az':
-                return [...items].sort((a, b) =>
-                    TITLE_COLLATOR.compare(a.title, b.title)
-                );
+                return [...items].sort((a, b) => TITLE_COLLATOR.compare(a.title, b.title));
             default:
                 return newestFirst(items);
         }
@@ -276,20 +157,38 @@ export class NfExploreComponent {
         const items = this.sorted();
         return q ? items.filter((i) => nfTitleNorm(i).includes(q)) : items;
     });
-    protected readonly shown = computed(() =>
-        this.results().slice(0, this.limit())
-    );
+    protected readonly shown = computed(() => this.results().slice(0, this.limit()));
+    /** «4.812 títulos»: el número con los separadores del idioma de la app. */
+    protected readonly countText = computed(() => {
+        this.lang();
+        return this.results().length.toLocaleString(this.translate.currentLang || 'es');
+    });
+
+    constructor() {
+        // la lupa de la barra o Ctrl+F: el cursor en «Filtrar por título» (también si Explorar ya estaba abierto)
+        this.router.events
+            .pipe(
+                rxFilter((e) => e instanceof NavigationEnd),
+                takeUntilDestroyed(inject(DestroyRef))
+            )
+            .subscribe(() => {
+                if (!history.state?.[NF_FOCUS_FILTER]) return;
+                setTimeout(() => this.filterInput()?.nativeElement.focus());
+            });
+    }
 
     protected link(item: NfItem): string[] {
         return nfLink(this.catalog.playlistId(), item);
     }
 
-    protected set(change: Record<string, string>): void {
+    protected set(change: Record<string, string | null>): void {
         this.limit.set(PAGE);
-        void this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: change,
-            queryParamsHandling: 'merge',
-        });
+        void this.router.navigate([], { relativeTo: this.route, queryParams: change, queryParamsHandling: 'merge' });
+    }
+
+    /** Como los botones de plataforma del web player: la página de esa plataforma, desde cero. */
+    protected openPlatform(key: string): void {
+        this.limit.set(PAGE);
+        void this.router.navigate([], { relativeTo: this.route, queryParams: { platform: key } });
     }
 }
