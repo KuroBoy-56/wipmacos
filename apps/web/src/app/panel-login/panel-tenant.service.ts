@@ -14,6 +14,7 @@ import {
     PanelTenantErrorCode,
     readTenantCache,
     readTenantCode,
+    applyOwnerProfilesTheme,
     saveTenantCode,
     saveTenantSkip,
     tenantExpiredMessage,
@@ -106,6 +107,7 @@ export class PanelTenantService {
                 return 'wiped';
             }
             saveTenantCode(res.cache);
+            applyOwnerProfilesTheme(null); // el distribuidor pinta los perfiles con su paleta
             this.retryMessage.set(null);
             return 'ok';
         }
@@ -131,6 +133,7 @@ export class PanelTenantService {
         if (res.status !== 'ok') return res.message;
         if (isTenantExpired(res.cache)) return tenantExpiredMessage(res.cache, currentAppLanguage());
         saveTenantCode(res.cache);
+        applyOwnerProfilesTheme(null); // el distribuidor pinta los perfiles con su paleta
         this.notice.set(null);
         this.retryMessage.set(null);
         return null;

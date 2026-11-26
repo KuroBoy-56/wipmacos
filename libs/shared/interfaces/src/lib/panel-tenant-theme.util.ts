@@ -131,3 +131,36 @@ export function applyTenantTheme(palette: PanelTenantPalette | null, doc: Tenant
         // Storage unavailable: the colours apply once Angular starts.
     }
 }
+
+const OWNER_PF_ID = 'panel-owner-profiles';
+/** también lo lee assets/panel-branding-boot.js */
+export const OWNER_PROFILES_CSS_KEY = 'panel_owner_pf_css';
+
+/** «¿Quién está viendo?» con Omitir: solo las variables --pf-* con los colores del dueño; el resto de la app no cambia. */
+export function buildOwnerProfilesCss(palette: PanelTenantPalette | null): string {
+    if (!palette) return '';
+    const t = deriveTenantTheme(palette);
+    return `html:root { --pf-bg: ${t.bg}; --pf-bg-rgb: ${rgb(t.bg).join(',')}; --pf-card: ${t.surface}; --pf-focus: ${t.focus}; --pf-on: ${t.accent}; }`;
+}
+
+/** Pinta (o quita, con null) los colores del dueño en la pantalla de perfiles y los recuerda para el próximo arranque. */
+export function applyOwnerProfilesTheme(palette: PanelTenantPalette | null, doc: TenantDocument | undefined = tenantGlobals().document): void {
+    const css = buildOwnerProfilesCss(palette);
+    let style = (doc?.getElementById(OWNER_PF_ID) ?? null) as TenantStyleNode | null;
+    if (!css) style?.remove();
+    else {
+        if (!style && doc) {
+            style = doc.createElement('style') as TenantStyleNode;
+            style.id = OWNER_PF_ID;
+            doc.head.appendChild(style);
+        }
+        if (style) style.textContent = css;
+    }
+    try {
+        const storage = tenantStorage();
+        if (css) storage.setItem(OWNER_PROFILES_CSS_KEY, css);
+        else storage.removeItem(OWNER_PROFILES_CSS_KEY);
+    } catch {
+        // sin almacenamiento: vale para esta vez
+    }
+}

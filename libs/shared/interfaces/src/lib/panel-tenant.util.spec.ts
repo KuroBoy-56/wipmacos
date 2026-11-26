@@ -7,6 +7,7 @@ import {
     isTenantExpired,
     panelTenantFields,
     parseTenantConfig,
+    parseTenantPalette,
     readTenantCache,
     readTenantChoice,
     readTenantFeatures,
@@ -19,7 +20,7 @@ import {
     panelAppId,
     PANEL_APP_ID,
 } from './panel-tenant.util';
-import { buildTenantThemeCss, deriveTenantTheme, onAccentColor } from './panel-tenant-theme.util';
+import { buildOwnerProfilesCss, buildTenantThemeCss, deriveTenantTheme, onAccentColor } from './panel-tenant-theme.util';
 
 const CONFIG = {
     status: 'ok',
@@ -140,6 +141,16 @@ describe('panel tenant theme', () => {
         expect(css).toContain('--nf-focus: #1E88E5;');
         expect(css).toContain('--nf-bg: #0B1220;');
         expect(css).toContain('body.dark-theme');
+    });
+
+    it('owner colours (Omitir) repaint only the profiles screen', () => {
+        expect(buildOwnerProfilesCss(null)).toBe('');
+        const css = buildOwnerProfilesCss(parseTenantPalette({ accent: '#d4af37', bg: '#1a1200', surface: '#2a1f00', text: '#ffffff' }));
+        expect(css).toContain('--pf-bg: #1A1200;');
+        expect(css).toContain('--pf-bg-rgb: 26,18,0;');
+        expect(css).toContain('--pf-on: #D4AF37;');
+        expect(css).not.toContain('--nf-');
+        expect(parseTenantPalette({ accent: 'red' })).toBeNull();
     });
 });
 
