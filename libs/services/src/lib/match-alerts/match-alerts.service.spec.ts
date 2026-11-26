@@ -8,11 +8,13 @@ import { MatchAlertsService } from './match-alerts.service';
 describe('MatchAlertsService (avisos de partidos)', () => {
     const MIN = 60_000;
     let notes: { title: string; body?: string }[];
-    function setup(focus: boolean, events: object[] = []) {
+    let cloud: jest.Mock;
+    function setup(focus: boolean, events: object[] = [], profile: object | null = { id: 'p1' }) {
         localStorage.clear();
         localStorage.setItem('session_user', 'juan');
         localStorage.setItem('session_server', 'http://srv.example');
         notes = [];
+        cloud = jest.fn().mockResolvedValue({ success: true, enabled: true });
         (globalThis as unknown as { Notification: unknown }).Notification = Object.assign(
             function (this: unknown, title: string, o?: { body?: string }) { notes.push({ title, body: o?.body }); },
             { permission: 'granted', requestPermission: jest.fn() }
@@ -20,8 +22,8 @@ describe('MatchAlertsService (avisos de partidos)', () => {
         jest.spyOn(document, 'hasFocus').mockReturnValue(focus);
         TestBed.configureTestingModule({
             providers: [
-                { provide: PanelSyncService, useValue: { fetchSportsFixtures: jest.fn().mockResolvedValue({ on: true, partial: false, leagues: {}, events }) } },
-                { provide: ProfilesService, useValue: { profile: signal({ id: 'p1' }), kids: signal(false) } },
+                { provide: PanelSyncService, useValue: { fetchSportsFixtures: jest.fn().mockResolvedValue({ on: true, partial: false, leagues: {}, events }), alertsRequest: cloud } },
+                { provide: ProfilesService, useValue: { profile: signal(profile), kids: signal(false) } },
                 { provide: TranslateService, useValue: { instant: (k: string) => k } },
             ],
         });
@@ -62,5 +64,28 @@ describe('MatchAlertsService (avisos de partidos)', () => {
         expect(svc.bell()).toHaveLength(1);
         svc.toggle({ id: '9' });
         expect(svc.isMarked('9')).toBe(false);
+    });
+
+    it('marks go to the cloud and what the phone or TV marked comes back (only with profiles)', async () => {
+        const s0 = Date.now() + 60 * MIN;
+        const svc = setup(false);
+        svc.toggle({ id: '9', h: 'Boca', a: 'River', s: s0 / 1000 });
+        expect(cloud).toHaveBeenCalledWith('event', expect.objectContaining({ id: '9', on: true, event: expect.objectContaining({ t: 'Boca vs River', s: s0 }) }));
+        cloud.mockResolvedValue({ success: true, enabled: true, teams: [{ n: 'Alianza Lima', l: '', b: '', lg: '1', sp: 'Soccer' }], events: { '77': { t: 'TV mark', s: s0 } } });
+        await svc.pull();
+        expect(svc.teams().map((t) => t.n)).toEqual(['Alianza Lima']);
+        expect(svc.isMarked('77')).toBe(true);
+        expect(svc.isMarked('9')).toBe(false);
+        await svc.tick(s0 - 30 * MIN);
+        expect(notes.map((n) => n.title)).toEqual(['TV mark']);
+    });
+
+    it('without profiles there are no alerts at all', async () => {
+        const s0 = Date.now() + 60 * MIN;
+        const svc = setup(false, [], null);
+        expect(svc.toggle({ id: '9', h: 'Boca', a: 'River', s: s0 / 1000 })).toBe(false);
+        expect(cloud).not.toHaveBeenCalled();
+        await svc.tick(s0);
+        expect(notes).toHaveLength(0);
     });
 });

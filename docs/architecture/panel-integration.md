@@ -778,6 +778,15 @@ being played now, with score and minute, as on Android:
 - Settings › «Deporte preferido» (`SettingsLiveSportsSectionComponent`, only while
   the row exists) keeps one sport per line and profile
   (`localStorage mpx:live_sport|<line>|<profile>`).
+- Settings › «Habilitar tarjetas de plataformas» (same card, only when the
+  distributor has platforms, `PanelBrandingService.platforms`): the platform tiles
+  come back on Home below the live row (`localStorage mpx:plat_cards|<line>|<profile>`,
+  `LiveSportsService.platformCards`, `NfHomeLive.platformCards`).
+- Deportes page background (only with a chosen non-kids profile: `<html data-prof>`
+  set by `ProfilesService`): `apps/web/src/app/sports/sports-bg.webp` (3840×2160,
+  original stadium art with track, pitch, court, hoop and balls, no people) under a
+  vertical gradient of `--nf-bg` (58 % → 100 %) and a faint `--nf-red` glow on top,
+  so it follows the distributor or owner colours and never hurts legibility.
 
 ### Match alerts and the bell
 
@@ -790,6 +799,15 @@ being played now, with score and minute, as on Android:
 - `MatchAlertsService` warns 30 min, 10 min and at kick-off; all alerts go to the
   header bell for 24 h, and a system notification shows only when the window has no
   focus. Desktop has no OS alarms: with the app closed nothing is warned.
+- Cloud (`api/alerts.php` of the panel, per line and profile, only with profiles):
+  `setTeams` / `toggle` send `set_teams` / `event` (`PanelSyncService.alertsRequest`,
+  with `profile`); `pull()` (5 s after start and every 10 min) replaces the local
+  teams and marked matches with the panel's, so a match marked on the TV or the
+  phone also warns here, and the phone app (which has OS alarms) warns in its
+  notification bar for what was marked here. A change the panel did not get leaves
+  `mpx:alerts_dirty|…` and the next `pull()` first sends everything local.
+- All of it (bell, held click, alerts, cloud) needs a chosen profile that is not the
+  kids one (`MatchAlertsService.on`).
 
 ### Tablas, Selecciones, Equipos
 

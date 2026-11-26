@@ -54,6 +54,27 @@ export class LiveSportsService {
 
     readonly cards = computed(() => (this.enabled() ? liveCards(this.live()?.events ?? [], this.map(), this.pref()) : []));
 
+    private readonly platKey = computed(() => `mpx:plat_cards|${lineKey(sessionCredentials())}|${this.profiles.profile()?.id ?? ''}`);
+    /** Ajustes › Habilitar tarjetas de plataformas: con la fila en vivo, las plataformas vuelven debajo (por línea y perfil) */
+    readonly platformCards = computed(() => {
+        this.prefTick();
+        try {
+            return this.branding.platforms() && localStorage.getItem(this.platKey()) === '1';
+        } catch {
+            return false;
+        }
+    });
+
+    setPlatformCards(on: boolean): void {
+        try {
+            if (on) localStorage.setItem(this.platKey(), '1');
+            else localStorage.removeItem(this.platKey());
+        } catch {
+            /* sin almacenamiento: queda para esta vez */
+        }
+        this.prefTick.update((n) => n + 1);
+    }
+
     setPref(sport: string): void {
         try {
             if (sport) localStorage.setItem(this.prefKey(), sport);

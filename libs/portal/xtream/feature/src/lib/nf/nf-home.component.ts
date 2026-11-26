@@ -46,7 +46,9 @@ const PLATFORM_ROWS = 5;
             <!-- partidos en vivo (perfiles activos y clave de pago de TheSportsDB en el panel): en el lugar de las plataformas -->
             @if (live?.enabled()) {
                 <ng-container *ngComponentOutlet="live!.component" />
-            } @else if (platforms().length) {
+            }
+            <!-- con la fila en vivo, las plataformas solo vuelven (debajo) si se activaron en Ajustes -->
+            @if (platforms().length && (!live?.enabled() || live?.platformCards?.())) {
                 <app-hscroll class="nf-plat-wrap">
                 <nav
                     class="nf-platforms"

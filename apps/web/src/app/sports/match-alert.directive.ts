@@ -86,7 +86,8 @@ export class MatchAlertDirective {
     }
 
     protected down(ev: PointerEvent): void {
-        if (ev.button !== 0) return;
+        // sin perfiles no hay avisos (todo lo nuevo de Deportes va con los perfiles)
+        if (ev.button !== 0 || !this.alerts.on()) return;
         this.held = false;
         this.start = { x: ev.clientX, y: ev.clientY };
         this.cancel();
@@ -107,6 +108,7 @@ export class MatchAlertDirective {
     }
 
     protected context(ev: MouseEvent): void {
+        if (!this.alerts.on()) return;
         ev.preventDefault();
         this.cancel();
         this.open();

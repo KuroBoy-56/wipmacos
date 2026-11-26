@@ -6,6 +6,22 @@
     background: var(--nf-bg, #141414);
 }
 
+// con perfiles: estadio de noche (sports-bg.webp, 4K, sin personas) bajo un degradado del color de la app
+// (el del distribuidor o el del dueño): arriba se ve, abajo se funde con el fondo y nunca tapa lo que se lee
+:host-context(html[data-prof]) {
+    background:
+        radial-gradient(ellipse 80% 45% at 50% 0%, color-mix(in srgb, var(--nf-red, #e50914) 16%, transparent), transparent 70%),
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--nf-bg, #141414) 58%, transparent) 0%,
+            color-mix(in srgb, var(--nf-bg, #141414) 78%, transparent) 35%,
+            color-mix(in srgb, var(--nf-bg, #141414) 92%, transparent) 70%,
+            var(--nf-bg, #141414) 100%
+        ),
+        url('./sports-bg.webp') center top / cover no-repeat fixed,
+        var(--nf-bg, #141414);
+}
+
 .sp {
     --sp-line: rgba(255, 255, 255, 0.08);
     --sp-card: #1c1c1c;

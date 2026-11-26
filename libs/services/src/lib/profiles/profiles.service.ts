@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { isSessionDemo, loadKidsRules, rememberKidsRules, tenantStorageSuffix } from '@iptvnator/shared/interfaces';
 import { lineKey } from '../panel-sync/panel-progress.client';
 import { onPanelProfileGone, setPanelProfile } from '../panel-sync/panel-profile';
@@ -60,6 +60,8 @@ export class ProfilesService {
     readonly kids = computed(() => this.needed() && !!this.profile()?.kids);
 
     constructor() {
+        // <html data-prof>: hay un perfil elegido que no es el infantil (la página Deportes pone el fondo de estadio)
+        effect(() => document.documentElement.toggleAttribute('data-prof', !!this.profile() && !this.kids()));
         onPanelProfileGone(() => {
             this.forget();
             this.gone.update((n) => n + 1);
