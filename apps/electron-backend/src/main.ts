@@ -144,6 +144,9 @@ Main.initialize();
 Main.bootstrapApp();
 
 app.whenReady().then(async () => {
+    // Windows: las notificaciones del sistema (avisos de partidos) necesitan el mismo id que el acceso directo del
+    // instalador (appId de electron-builder.json); el paquete de Microsoft Store ya trae el suyo
+    if (process.platform === 'win32' && !process.windowsStore) app.setAppUserModelId('com.fourgray.iptvnator');
     // 0 = accept, -2 = reject, -3 = Chromium's own verification result
     session.defaultSession.setCertificateVerifyProc((request, callback) => {
         if (request.errorCode === 0) return callback(-3);

@@ -468,3 +468,17 @@
         &:hover, &:focus-visible { background: var(--nf-red, #e50914); outline: none; small { color: #fff; } }
     }
 }
+
+// aviso activado (clic sostenido o clic derecho en la tarjeta, match-alert.directive.ts): campanita arriba a la derecha
+.sp-card.has-alert {
+    position: relative;
+
+    &::after {
+        content: '🔔';
+        position: absolute;
+        top: -8px;
+        right: -6px;
+        font-size: 16px;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+    }
+}

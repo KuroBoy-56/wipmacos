@@ -1695,6 +1695,34 @@
                 "Cricket": "Cricket",
                 "Esports": "Esports"
             }
+        },
+        "ALERTS": {
+            "M30": "The match starts in 30 minutes",
+            "M10": "About to start: 10 minutes to go",
+            "LIVE": "It has started! The match is live",
+            "TEAMS": "Favorite teams",
+            "TEAMS_HINT": "We remind you 30 and 10 minutes before every match and when it starts.",
+            "ADD": "Add team",
+            "SPORT": "Sport",
+            "LEAGUE": "League",
+            "NATIONS": "National teams",
+            "CLUBS": "Leagues and cups",
+            "TEAM": "Team",
+            "CHOOSE": "Choose…",
+            "NO_TEAMS": "No upcoming matches in this league",
+            "NO_DATA": "No upcoming matches yet. Try again in a few minutes.",
+            "LOADING": "Loading…",
+            "REMOVE": "Remove",
+            "NOTIFY_ON": "Turn on notifications for this event",
+            "NOTIFY_OFF": "Turn off notifications for this event",
+            "ON_TOAST": "We will remind you 30 and 10 minutes before and when it starts",
+            "OFF_TOAST": "Alert removed",
+            "BELL": "Notifications",
+            "BELL_EMPTY": "No notifications in the last 24 hours",
+            "NOW": "now",
+            "MIN_AGO": "{{n}} min ago",
+            "H_AGO": "{{n}} h ago",
+            "CLOSE": "Close"
         }
     }
 }

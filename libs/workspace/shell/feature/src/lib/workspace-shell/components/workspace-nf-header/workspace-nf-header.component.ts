@@ -1,3 +1,4 @@
+import { NfBellComponent } from './nf-bell.component';
 import { PROF_HERE } from './prof-here';
 import {
     ChangeDetectionStrategy,
@@ -40,7 +41,7 @@ interface NfNavLink {
 @Component({
     selector: 'app-workspace-nf-header',
     standalone: true,
-    imports: [MatIcon, NgTemplateOutlet, RouterLink, RouterLinkActive, TranslatePipe],
+    imports: [MatIcon, NfBellComponent, NgTemplateOutlet, RouterLink, RouterLinkActive, TranslatePipe],
     templateUrl: './workspace-nf-header.component.html',
     host: {
         class: 'nf-header',
@@ -70,6 +71,8 @@ export class WorkspaceNfHeaderComponent {
     protected readonly branding = inject(PanelBrandingService);
     /** Perfiles del panel (solo con los perfiles encendidos por el dueño): el avatar a la izquierda y el logo a la derecha. */
     protected readonly profiles = inject(ProfilesService);
+    /** campanita de avisos de partidos: con Deportes y nunca en el perfil infantil */
+    protected readonly bellOn = computed(() => this.branding.features().sports !== false && !this.profiles.kids());
     private readonly kids = inject(KidsFilterService);
     protected readonly prof = computed(() => this.profiles.needed() && !!this.profiles.profile());
     private readonly url = toSignal(

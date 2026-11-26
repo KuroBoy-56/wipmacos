@@ -17,6 +17,7 @@ import { Router } from '@angular/router';
 import { DEFAULT_SPORTS_MATCH_RULES, PanelSportMeta, PanelSyncService } from '@iptvnator/services';
 import { buildXtreamNavigationTarget } from '@iptvnator/portal/shared/util';
 import { SportsChannelsMap, SportsChannelTarget, SportsDataService } from './sports-data.service';
+import { MatchAlertDirective } from './match-alert.directive';
 import { ownedChannels, SportsMenuOpt, sportsMenu } from './sports-menu.util';
 import { SportsTab } from './sports-extra.util';
 import { SportsFixturesState } from './sports-fixtures.state';
@@ -51,7 +52,7 @@ interface SportChip {
     selector: 'app-sports',
     templateUrl: './sports.component.html',
     styleUrl: './sports.component.scss',
-    imports: [HScrollComponent, NgTemplateOutlet, TranslatePipe, SportsTablesComponent],
+    imports: [HScrollComponent, MatchAlertDirective, NgTemplateOutlet, TranslatePipe, SportsTablesComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SportsComponent implements OnInit {
@@ -62,7 +63,6 @@ export class SportsComponent implements OnInit {
     private readonly lang = toSignal(this.translate.onLangChange.pipe(map((e) => e.lang)), {
         initialValue: this.translate.currentLang || this.translate.defaultLang,
     });
-
     readonly loading = signal(true);
     readonly events = signal<SportsCard[]>([]);
     /** Sports of the panel agenda (its labels come in the app language). */

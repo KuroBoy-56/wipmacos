@@ -154,6 +154,11 @@
         </div>
     }
 
+    <!-- avisos de partidos (24 h); el perfil infantil y un distribuidor sin Deportes no la tienen -->
+    @if (bellOn()) {
+        <app-nf-bell />
+    }
+
     <div class="nf-clock" aria-hidden="true">
         <div class="t">{{ time() }}</div>
         <div class="d">{{ date() }}</div>
