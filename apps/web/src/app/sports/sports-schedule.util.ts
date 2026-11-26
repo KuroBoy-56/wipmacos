@@ -106,6 +106,21 @@ export function groupByLeague(
     return [...groups.values()];
 }
 
+/**
+ * Hoy (0) / Mañana (1) / Finalizados (2, solo con perfiles: finTab). Con Finalizados, Hoy deja solo los que se juegan y
+ * los que no empiezan; Finalizados son los de hoy (zona del panel) ya terminados, el último primero: a las 00:00 se vacía.
+ */
+export function eventsForDay(
+    events: SportsCard[],
+    dayKeys: string[],
+    day: 0 | 1 | 2,
+    status: (e: SportsCard) => SportsEventStatus,
+    finTab: boolean
+): SportsCard[] {
+    if (day === 2) return events.filter((e) => e.dayKey === dayKeys[0] && status(e) === 'fin').sort((a, b) => b.start - a.start);
+    return events.filter((e) => e.dayKey === dayKeys[day] && !(finTab && day === 0 && status(e) === 'fin'));
+}
+
 export function sportCounts(events: SportsCard[], dayKey: string): Record<string, number> {
     const counts: Record<string, number> = {};
     for (const e of events) {

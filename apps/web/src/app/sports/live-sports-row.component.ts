@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { buildXtreamNavigationTarget } from '@iptvnator/portal/shared/util';
 import { LiveFieldComponent } from './live-field.component';
+import { MatchAlertDirective } from './match-alert.directive';
 import { LiveSportsService } from './live-sports.service';
 import { clockText, competitionTheme, LiveCard, score } from './live-sports.util';
 import { SportsChannelTarget, SportsDataService } from './sports-data.service';
@@ -14,7 +15,8 @@ import { SportsMenuOpt, sportsMenu } from './sports-menu.util';
 type LiveMenu = { card: LiveCard; title: string; sub: string; opts: SportsMenuOpt[]; typing?: string };
 
 /**
- * «En vivo ahora» en Inicio (en el lugar de Plataformas), como Android: tarjetas con la cancha del deporte (y el color
+ * «En vivo ahora» en Inicio (en el lugar de Plataformas), como Android: hasta 20 partidos (los que se juegan y los
+ * próximos, con su hora) y al final «Ir a Deportes»; tarjetas con la cancha del deporte (y el color
  * del torneo si es uno grande), escudos, marcador, minuto y el canal exacto de la lista del cliente. Al pulsar, el menú
  * de canales de Deportes (solo los que tiene el cliente, y buscar); Atrás desde el reproductor vuelve aquí con el foco
  * en el mismo partido. Flechas a los lados con el mouse (app-hscroll).
@@ -22,7 +24,7 @@ type LiveMenu = { card: LiveCard; title: string; sub: string; opts: SportsMenuOp
 @Component({
     selector: 'app-live-sports-row',
     standalone: true,
-    imports: [HScrollComponent, LiveFieldComponent, NgTemplateOutlet, TranslatePipe],
+    imports: [HScrollComponent, LiveFieldComponent, MatchAlertDirective, NgTemplateOutlet, TranslatePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './live-sports-row.component.html',
     styleUrl: './live-sports-row.component.scss',
@@ -56,7 +58,18 @@ export class LiveSportsRowComponent {
     }
 
     protected clock(c: LiveCard): string {
+        if (c.e.soon) return `${this.translate.instant('MPX.LIVE.STARTS')} ${this.hour(c.e.s)}`;
         return clockText(c.e, this.translate.instant('MPX.LIVE.HT')) || this.translate.instant('MPX.LIVE.LIVE');
+    }
+
+    /** hora de inicio de un próximo (la del equipo, como las TV) */
+    private hour(s?: number): string {
+        if (!s) return '';
+        return new Intl.DateTimeFormat(this.translate.currentLang || 'es', { hour: 'numeric', minute: '2-digit' }).format(new Date(s * 1000));
+    }
+
+    protected goSports(): void {
+        void this.router.navigate(['/workspace/sports']);
     }
 
     protected theme(c: LiveCard): string {
@@ -64,7 +77,7 @@ export class LiveSportsRowComponent {
     }
 
     protected label(c: LiveCard): string {
-        const what = c.e.h || c.e.a ? `${c.e.h} ${score(c.e.hs)} - ${score(c.e.as)} ${c.e.a}` : c.e.ev || c.e.lg;
+        const what = c.e.h || c.e.a ? (c.e.soon ? `${c.e.h} vs ${c.e.a}` : `${c.e.h} ${score(c.e.hs)} - ${score(c.e.as)} ${c.e.a}`) : c.e.ev || c.e.lg;
         return `${what}, ${this.clock(c)}, ${c.ch.best?.name ?? ''}`;
     }
 
@@ -81,7 +94,7 @@ export class LiveSportsRowComponent {
     protected open(card: LiveCard): void {
         const e = card.e;
         const tr = (key: string, params?: Record<string, string>) => this.translate.instant(key, params);
-        const title = e.h && e.a ? `${e.h} ${score(e.hs)} - ${score(e.as)} ${e.a}` : e.ev || e.lg;
+        const title = e.h && e.a ? (e.soon ? `${e.h} vs ${e.a}` : `${e.h} ${score(e.hs)} - ${score(e.as)} ${e.a}`) : e.ev || e.lg;
         this.menu.set({ card, title, sub: this.clock(card) + (e.lg ? `  ·  ${e.lg}` : ''), opts: sportsMenu(e, card.ch, true, tr) });
     }
 

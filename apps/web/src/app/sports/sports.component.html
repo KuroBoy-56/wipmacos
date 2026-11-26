@@ -39,6 +39,11 @@
             <div class="sp-days" role="tablist" [attr.aria-label]="'MPX.SPORTS.DAY' | translate">
                 <button type="button" role="tab" [class.on]="day() === 0" (click)="selectDay(0)">{{ 'MPX.SPORTS.TODAY' | translate }}</button>
                 <button type="button" role="tab" [class.on]="day() === 1" (click)="selectDay(1)">{{ 'MPX.SPORTS.TOMORROW' | translate }}</button>
+                @if (finTab()) {
+                    <button type="button" role="tab" class="sp-fin-tab" data-test-id="sports-finished-tab" [class.on]="day() === 2" (click)="selectDay(2)">
+                        {{ 'MPX.SPORTS.FINISHED_TAB' | translate }}
+                    </button>
+                }
             </div>
             <div class="sp-search">
                 <input
@@ -98,7 +103,9 @@
                 </div>
             </section>
         } @empty {
-            @if (!showLiveRow()) {
+            @if (day() === 2 && !query().trim()) {
+                <div class="sp-empty">{{ 'MPX.SPORTS.FINISHED_EMPTY' | translate }}</div>
+            } @else if (!showLiveRow()) {
                 <div class="sp-empty">
                     <b>{{ 'MPX.SPORTS.NO_MATCHES' | translate }}</b>
                     {{ 'MPX.SPORTS.NO_MATCHES_HINT' | translate }}
