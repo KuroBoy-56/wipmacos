@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
+    applyOwnerProfilesTheme,
     currentAppLanguage,
     ElectronBridgeApi,
     isResellerCode,
@@ -13,6 +14,7 @@ import {
     PanelTenantErrorCode,
     notifyTenantError,
     parseTenantConfig,
+    parseTenantPalette,
     readTenantCode,
     saveParentalPin,
     tenantErrorCode,
@@ -226,12 +228,14 @@ export class PanelLoginService {
      */
     async demoAvailable(): Promise<boolean | null> {
         try {
-            const res = await this.request<{ status?: string; features?: { demo?: unknown; review?: unknown } }>('features');
+            const res = await this.request<{ status?: string; features?: { demo?: unknown; review?: unknown; palette?: unknown } }>('features');
             // sin la llave del panel no hay Autodemo
             if (res.code === 'NO_MASTER_KEY') return false;
             const f = res.ok && res.data?.status === 'ok' ? res.data.features : undefined;
             // tema de prueba (Pantalla Falsa del panel): solo con Omitir
             this.reviewOffered = f?.review === true && !readTenantCode();
+            // pantalla de perfiles: con distribuidor ya la pinta su paleta; con Omitir, los colores del dueño (si los puso)
+            if (f) applyOwnerProfilesTheme(readTenantCode() ? null : parseTenantPalette(f.palette));
             const demo = f?.demo;
             return typeof demo === 'boolean' ? demo : null;
         } catch {
