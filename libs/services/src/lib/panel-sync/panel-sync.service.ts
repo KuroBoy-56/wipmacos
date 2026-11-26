@@ -21,8 +21,8 @@ import {
     SyncProgressTree,
     SyncUserCredentials,
 } from './panel-sync.types';
-import { PanelSportsAgenda, PanelSportsFixtures, PanelSportsTables, PanelSportsTeam } from './panel-sports.types';
-import { sportsAgenda, sportsEpg, sportsFixtures, sportsTables, sportsTeam } from './panel-sports.api';
+import { PanelSportsAgenda, PanelSportsFixtures, PanelSportsLive, PanelSportsTables, PanelSportsTeam } from './panel-sports.types';
+import { sportsAgenda, sportsEpg, sportsFixtures, sportsLive, sportsTables, sportsTeam } from './panel-sports.api';
 import { SportsEpgChannel } from './sports-epg';
 import { lookupSeriesInfo } from './series-info.lookup';
 import { getSessionPassword, isSessionDemo } from '@iptvnator/shared/interfaces';
@@ -301,6 +301,11 @@ export class PanelSyncService {
     /** Sports agenda for today and tomorrow plus the channel-matching rules. */
     async fetchSportsAgenda(userIdObj?: SyncUserCredentials | null): Promise<PanelSportsAgenda | null> {
         return sportsAgenda(this.client, this.creds(userIdObj));
+    }
+
+    /** Live matches with score for the Home row (api/sports_live.php); null when the panel did not answer. */
+    async fetchSportsLive(userIdObj?: SyncUserCredentials | null): Promise<PanelSportsLive | null> {
+        return sportsLive(this.client, this.creds(userIdObj));
     }
 
     /** Standings (api/sports_tables.php); null when the panel did not answer. */

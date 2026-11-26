@@ -1669,6 +1669,32 @@
             "SERIES": "Série",
             "CHECKING": "Vérification…",
             "SAVING": "Enregistrement…"
+        },
+        "LIVE": {
+            "TITLE": "En direct",
+            "HT": "Mi-temps",
+            "LIVE": "En direct",
+            "CLOSE": "Fermer",
+            "PREF": "Sport préféré",
+            "PREF_HINT": "Les matchs en direct de l’Accueil ne montrent que ce sport.",
+            "ALL": "Tous les sports",
+            "SP": {
+                "Soccer": "Football",
+                "Basketball": "Basket-ball",
+                "American Football": "Football américain",
+                "Baseball": "Baseball",
+                "Ice Hockey": "Hockey sur glace",
+                "Tennis": "Tennis",
+                "Motorsport": "Sport automobile",
+                "Fighting": "Arts martiaux",
+                "Boxing": "Boxe",
+                "Rugby": "Rugby",
+                "Volleyball": "Volley-ball",
+                "Handball": "Handball",
+                "Golf": "Golf",
+                "Cricket": "Cricket",
+                "Esports": "Esports"
+            }
         }
     }
 }

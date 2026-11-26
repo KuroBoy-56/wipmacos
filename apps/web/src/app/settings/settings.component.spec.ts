@@ -57,6 +57,8 @@ import { ElectronServiceStub } from '../services/electron.service.stub';
 import { SettingsStore } from '../services/settings-store.service';
 import { SettingsService } from '../services/settings.service';
 import { SettingsSectionScrollDirective } from './settings-section-scroll.directive';
+import { XtreamStore } from '@iptvnator/portal/xtream/data-access';
+import { LiveSportsService } from '../sports/live-sports.service';
 
 const DEFAULT_DASHBOARD_RAILS = {
     hero: true,
@@ -231,6 +233,9 @@ describe('SettingsComponent', () => {
                     provide: NgxIndexedDBService,
                     useValue: {},
                 },
+                // «Control parental» (categorías de la línea) y «Deporte preferido» (fila en vivo de Inicio)
+                MockProvider(XtreamStore),
+                MockProvider(LiveSportsService, { enabled: signal(false), pref: signal(''), ensure: jest.fn() }),
                 MockProvider(PlaylistsService, {
                     getAllData: jest.fn().mockReturnValue(of([])),
                     removeAll: jest.fn(),

@@ -165,3 +165,25 @@ export interface SportsChannelMatch {
     /** No exact channel: this is the first event category instead. */
     partial: boolean;
 }
+
+/**
+ * A match being played now (api/sports_live.php): the agenda's fields plus the score's moment. pr = minute or period as
+ * TheSportsDB gives it ("67", "Q3 5:21", "HT"); s = start in seconds when the agenda knows it.
+ */
+export interface PanelLiveEvent extends PanelSportsEvent {
+    pr: string;
+    li?: string;
+    s?: number;
+}
+
+/**
+ * Live matches for the Home row. enabled false = the panel has no paid TheSportsDB key for this client (the owner's
+ * or the distributor's own): no row. ttl = seconds until asking again (30).
+ */
+export interface PanelSportsLive {
+    enabled: boolean;
+    ttl: number;
+    events: PanelLiveEvent[];
+    match?: SportsMatchRules;
+    chan: 'all' | 'iptv';
+}

@@ -1,0 +1,77 @@
+@if (live.cards(); as cards) {
+    @if (cards.length) {
+        <section class="lv" aria-labelledby="lv-title" data-test-id="live-sports-row">
+            <h2 class="nf-row-title lv-title" id="lv-title"><span class="lv-dot" aria-hidden="true"></span>{{ 'MPX.LIVE.TITLE' | translate }}</h2>
+            <app-hscroll>
+                <div class="lv-row">
+                    @for (c of cards; track c.e.id) {
+                        <button type="button" class="lv-card" [attr.data-id]="c.e.id" [attr.aria-label]="label(c)" (click)="open(c)">
+                            <app-live-field [sport]="c.e.sp" />
+                            @if (theme(c); as th) {
+                                <span class="lv-theme" [style.background]="th"></span>
+                            }
+                            <span class="lv-scrim"></span>
+                            <span class="lv-body">
+                                <span class="lv-top">
+                                    <span class="lv-lg">{{ c.e.lg }}</span>
+                                    <span class="lv-clock"><i></i>{{ clock(c) }}</span>
+                                </span>
+                                @if (c.e.h || c.e.a) {
+                                    <span class="lv-mid">
+                                        <ng-container *ngTemplateOutlet="team; context: { name: c.e.h, src: c.e.hb }" />
+                                        <span class="lv-score">{{ score(c.e.hs) }}<small>-</small>{{ score(c.e.as) }}</span>
+                                        <ng-container *ngTemplateOutlet="team; context: { name: c.e.a, src: c.e.ab }" />
+                                    </span>
+                                } @else {
+                                    <!-- carrera, golf…: sin equipos ni marcador, el nombre del evento -->
+                                    <span class="lv-evname">{{ c.e.ev || c.e.lg }}</span>
+                                }
+                                <span class="lv-ch">▶ {{ c.ch.best?.name }}</span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            </app-hscroll>
+        </section>
+    }
+}
+
+<ng-template #team let-name="name" let-src="src">
+    <span class="lv-team">
+        <span class="lv-badge">
+            @if (src) {
+                <img [src]="src + '/small'" alt="" loading="lazy" (error)="badgeError($any($event.target))" />
+                <b hidden>{{ initial(name) }}</b>
+            } @else {
+                <b>{{ initial(name) }}</b>
+            }
+        </span>
+        <span class="lv-name">{{ name }}</span>
+    </span>
+</ng-template>
+
+@if (menu(); as mn) {
+    <div class="lv-back" (click)="close()" (keydown.escape)="close()">
+        <div class="lv-menu" role="dialog" aria-modal="true" [attr.aria-label]="mn.title" (click)="$event.stopPropagation()">
+            <h3>{{ mn.title }}</h3>
+            @if (mn.sub) {
+                <p class="lv-sub">{{ mn.sub }}</p>
+            }
+            @if (mn.typing !== undefined) {
+                <input #q type="search" inputmode="search" enterkeyhint="search" [value]="mn.typing"
+                    [attr.aria-label]="'MPX.SPORTS.TYPE_SEARCH' | translate" (keydown.enter)="find(q.value)" />
+            }
+            <div class="lv-opts" role="menu">
+                @for (o of mn.opts; track $index) {
+                    <button type="button" role="menuitem" [class.primary]="o.act.kind === 'auto'" [class.green]="o.green" (click)="run(o)">
+                        <b>{{ o.title }}</b>
+                        @if (o.sub) {
+                            <small>{{ o.sub }}</small>
+                        }
+                    </button>
+                }
+            </div>
+            <button type="button" class="lv-close" (click)="close()">{{ 'MPX.LIVE.CLOSE' | translate }}</button>
+        </div>
+    </div>
+}

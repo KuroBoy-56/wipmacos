@@ -1669,6 +1669,32 @@
             "SERIES": "Série",
             "CHECKING": "Verificando…",
             "SAVING": "Salvando…"
+        },
+        "LIVE": {
+            "TITLE": "Ao vivo agora",
+            "HT": "Intervalo",
+            "LIVE": "Ao vivo",
+            "CLOSE": "Fechar",
+            "PREF": "Esporte preferido",
+            "PREF_HINT": "As partidas ao vivo do Início mostram só este esporte.",
+            "ALL": "Todos os esportes",
+            "SP": {
+                "Soccer": "Futebol",
+                "Basketball": "Basquete",
+                "American Football": "Futebol americano",
+                "Baseball": "Beisebol",
+                "Ice Hockey": "Hóquei no gelo",
+                "Tennis": "Tênis",
+                "Motorsport": "Automobilismo",
+                "Fighting": "Artes marciais",
+                "Boxing": "Boxe",
+                "Rugby": "Rúgbi",
+                "Volleyball": "Vôlei",
+                "Handball": "Handebol",
+                "Golf": "Golfe",
+                "Cricket": "Críquete",
+                "Esports": "Esports"
+            }
         }
     }
 }
