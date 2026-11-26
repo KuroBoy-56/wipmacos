@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { PanelSyncService } from '../panel-sync/panel-sync.service';
 import { ProfilesService } from '../profiles/profiles.service';
-import { MatchAlertsService } from './match-alerts.service';
+import { alertTooLate, MatchAlertsService } from './match-alerts.service';
 
 describe('MatchAlertsService (avisos de partidos)', () => {
     const MIN = 60_000;
@@ -78,6 +78,17 @@ describe('MatchAlertsService (avisos de partidos)', () => {
         expect(svc.isMarked('9')).toBe(false);
         await svc.tick(s0 - 30 * MIN);
         expect(notes.map((n) => n.title)).toEqual(['TV mark']);
+    });
+
+    it('an alert can only be turned on more than 5 minutes before kick-off (turning it off always works)', () => {
+        const svc = setup(false);
+        expect(svc.toggle({ id: '5', h: 'A', a: 'B', s: (Date.now() + 4 * MIN) / 1000 })).toBe(false);
+        expect(svc.isMarked('5')).toBe(false);
+        expect(cloud).not.toHaveBeenCalled();
+        expect(alertTooLate({ s: (Date.now() + 6 * MIN) / 1000 })).toBe(false);
+        expect(alertTooLate({ s: (Date.now() - MIN) / 1000 })).toBe(true);
+        expect(svc.toggle({ id: '6', h: 'A', a: 'B', s: (Date.now() + 6 * MIN) / 1000 })).toBe(true);
+        expect(svc.isMarked('6')).toBe(true);
     });
 
     it('without profiles there are no alerts at all', async () => {

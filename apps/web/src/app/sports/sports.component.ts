@@ -1,20 +1,12 @@
 import { HScrollComponent } from '@iptvnator/ui/components';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    inject,
-    OnInit,
-    signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router } from '@angular/router';
-import { DEFAULT_SPORTS_MATCH_RULES, PanelSportMeta, PanelSyncService } from '@iptvnator/services';
+import { DEFAULT_SPORTS_MATCH_RULES, PanelSportMeta, PanelSyncService, ProfilesService } from '@iptvnator/services';
 import { buildXtreamNavigationTarget } from '@iptvnator/portal/shared/util';
 import { SportsChannelsMap, SportsChannelTarget, SportsDataService } from './sports-data.service';
 import { MatchAlertDirective } from './match-alert.directive';
@@ -24,6 +16,7 @@ import { SportsFixturesState } from './sports-fixtures.state';
 import { SportsTablesComponent } from './sports-tables.component';
 import {
     DEFAULT_SPORTS_META,
+    eventsForDay,
     groupByLeague,
     hasScore,
     matchesSportsQuery,
@@ -76,7 +69,10 @@ export class SportsComponent implements OnInit {
         }
         return { ...local, ...this.panelMeta() };
     });
-    readonly day = signal<0 | 1>(0);
+    /** Hoy / Mañana / Finalizados (este último solo con perfiles) */
+    readonly day = signal<0 | 1 | 2>(0);
+    private readonly profiles = inject(ProfilesService);
+    readonly finTab = computed(() => this.profiles.needed() && !!this.profiles.profile());
     readonly sport = signal('');
     readonly query = signal('');
     readonly now = signal(Date.now());
@@ -133,7 +129,7 @@ export class SportsComponent implements OnInit {
     });
 
     readonly chips = computed<SportChip[]>(() => {
-        const counts = sportCounts(this.events(), this.dayKeys()[this.day()]);
+        const counts = sportCounts(this.dayEvents(), this.dayKeys()[this.day() === 1 ? 1 : 0]);
         const meta = this.meta();
         return Object.keys(meta)
             .filter((k) => counts[k])
@@ -152,12 +148,12 @@ export class SportsComponent implements OnInit {
         () => this.liveEvents().length > 0 && this.day() === 0 && !this.query().trim()
     );
 
+    readonly dayEvents = computed(() => eventsForDay(this.events(), this.dayKeys(), this.day(), (e) => this.status(e), this.finTab()));
+
     readonly groups = computed(() => {
-        const key = this.dayKeys()[this.day()];
         const hideLive = this.showLiveRow();
-        const list = this.events().filter(
+        const list = this.dayEvents().filter(
             (e) =>
-                e.dayKey === key &&
                 (!this.sport() || e.sp === this.sport()) &&
                 matchesSportsQuery(e, this.query()) &&
                 !(hideLive && this.status(e) === 'live')
@@ -189,8 +185,7 @@ export class SportsComponent implements OnInit {
             });
         }
         // Nothing left today: open tomorrow, like the web player.
-        const today = this.dayKeys()[0];
-        if (this.events().length && !this.events().some((e) => e.dayKey === today)) {
+        if (this.events().length && !eventsForDay(this.events(), this.dayKeys(), 0, (e) => this.status(e), this.finTab()).length) {
             this.day.set(1);
         }
         this.loading.set(false);
@@ -236,7 +231,7 @@ export class SportsComponent implements OnInit {
         this.queryTimer = setTimeout(() => this.fixtures.query.set(value.trim()), 250);
     }
 
-    selectDay(day: 0 | 1): void {
+    selectDay(day: 0 | 1 | 2): void {
         this.day.set(day);
         this.sport.set('');
     }

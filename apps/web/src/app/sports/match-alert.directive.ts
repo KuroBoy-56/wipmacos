@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angu
 import { MatIcon } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { AlertableEvent, eventTitle, MatchAlertsService } from '@iptvnator/services';
+import { AlertableEvent, alertTooLate, eventTitle, MatchAlertsService } from '@iptvnator/services';
 
 const HOLD_MS = 600;
 
@@ -17,16 +17,20 @@ const HOLD_MS = 600;
     template: `
         <h2 mat-dialog-title>{{ title }}</h2>
         <mat-dialog-content>
-            <button mat-flat-button type="button" class="toggle" (click)="toggle()" cdkFocusInitial>
-                <mat-icon>{{ on ? 'notifications_off' : 'notifications_active' }}</mat-icon>
-                {{ (on ? 'MPX.ALERTS.NOTIFY_OFF' : 'MPX.ALERTS.NOTIFY_ON') | translate }}
-            </button>
+            @if (late) {
+                <p class="late"><mat-icon>schedule</mat-icon>{{ 'MPX.ALERTS.TOO_LATE' | translate }}</p>
+            } @else {
+                <button mat-flat-button type="button" class="toggle" (click)="toggle()" cdkFocusInitial>
+                    <mat-icon>{{ on ? 'notifications_off' : 'notifications_active' }}</mat-icon>
+                    {{ (on ? 'MPX.ALERTS.NOTIFY_OFF' : 'MPX.ALERTS.NOTIFY_ON') | translate }}
+                </button>
+            }
         </mat-dialog-content>
         <mat-dialog-actions align="end">
             <button mat-button type="button" mat-dialog-close>{{ 'MPX.ALERTS.CLOSE' | translate }}</button>
         </mat-dialog-actions>
     `,
-    styles: `.toggle { width: 100%; justify-content: flex-start; }`,
+    styles: `.toggle { width: 100%; justify-content: flex-start; } .late { display: flex; gap: 10px; align-items: center; margin: 0; }`,
 })
 export class MatchAlertDialogComponent {
     private readonly e = inject<AlertableEvent>(MAT_DIALOG_DATA);
@@ -36,6 +40,8 @@ export class MatchAlertDialogComponent {
     private readonly translate = inject(TranslateService);
     protected readonly title = eventTitle(this.e);
     protected readonly on = this.alerts.isMarked(String(this.e.id));
+    /** empieza en 5 minutos o menos (o ya empezó): no se puede activar, solo se explica */
+    protected readonly late = !this.on && alertTooLate(this.e);
 
     protected toggle(): void {
         const now = this.alerts.toggle(this.e);

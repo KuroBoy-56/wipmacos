@@ -59,6 +59,13 @@ export function eventStart(e: { s?: number; ts?: string }): number {
     return e.s ? e.s * 1000 : Date.parse(e.ts ?? '') || 0;
 }
 
+/** activar el aviso solo vale si faltan más de 5 minutos para que empiece (el panel responde 409 too_late si no) */
+export const ALERT_MIN_AHEAD_MS = 5 * 60_000;
+
+export function alertTooLate(e: { s?: number; ts?: string }, now = Date.now()): boolean {
+    return eventStart(e) <= now + ALERT_MIN_AHEAD_MS;
+}
+
 export function eventTitle(e: { h?: string; a?: string; ev?: string; lg?: string }): string {
     return e.h && e.a ? `${e.h} vs ${e.a}` : e.ev || e.lg || '';
 }
@@ -130,6 +137,8 @@ export class MatchAlertsService {
         if (!this.on()) return false;
         const m = this.marked();
         const on = !(e.id in m);
+        // uno que empieza en 5 minutos o menos (o ya empezó) no se puede marcar; quitarlo, siempre
+        if (on && alertTooLate(e)) return false;
         if (on) m[e.id] = { t: eventTitle(e), s: eventStart(e) };
         else delete m[e.id];
         write(this.key('alert_events'), m);

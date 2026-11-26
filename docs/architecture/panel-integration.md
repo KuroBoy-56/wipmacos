@@ -731,7 +731,10 @@ Esc or Enter close it. Failures show nothing.
 Route `/workspace/sports` (`apps/web/src/app/sports/`) is the "Deportes" link
 of the top bar. It mirrors the web player's sports page:
 
-- Day tabs: Hoy / Mañana.
+- Day tabs: Hoy / Mañana and, with a chosen profile (profiles on), **Finalizados**:
+  today's ended events (panel time zone, latest first), emptied at 00:00 there;
+  with it Hoy keeps only the live and not-yet-started ones (`eventsForDay` in
+  `sports-schedule.util.ts`). Without profiles Hoy is as before.
 - Sport chips with emoji and counts.
 - A search box.
 - League and team badges.
@@ -746,8 +749,10 @@ of the top bar. It mirrors the web player's sports page:
 
 ### "En vivo ahora" on Home (live scores)
 
-On Home (`NfHomeComponent`) the platform tiles give way to a row of matches
-being played now, with score and minute, as on Android:
+On Home (`NfHomeComponent`) the platform tiles give way to a row of up to 20
+matches (`LIVE_ROW_MAX`): the ones being played now, with score and minute, then
+the next ones with their start hour, and at the end an «Ir a Deportes» card over
+the stadium art. A match leaves the row when it ends (the panel stops sending it):
 
 - Shown only when profiles are on for the line (`ProfilesService.needed()`), a
   profile that is not the kids one is chosen and the distributor did not turn
@@ -758,7 +763,11 @@ being played now, with score and minute, as on Android:
   distributor's own (`tenants.sports_key`) for a distributor — never the owner's
   for a distributor, and a free key (`123` / `3`) or one TheSportsDB rejects
   turns the row off. Events: `{id, sp, lg, li, lb, ev, h, a, hb, ab, hs, as, st,
-  pr, s, tv?}` (`hs`/`as` score, `st` status, `pr` minute or period).
+  pr, s, tv?, soon?}` (`hs`/`as` score, `st` status, `pr` minute or period).
+  The app sends `next=1`: the panel adds the agenda's next matches of the
+  following 24 h (`soon: true`, no score); a `soon` one that started over 5 min
+  ago and the livescore does not carry drops out (`liveCards`). Holding the click
+  on a card also opens the match alert dialog.
 - `LiveSportsService` (`apps/web/src/app/sports/live-sports.service.ts`) asks
   every `ttl` seconds (30) only while Home is open (`attach`), runs every match
   through `SportsDataService.matchEvents` with the payload's `match` rules
@@ -796,6 +805,9 @@ being played now, with score and minute, as on Android:
   their translated name (`hn` / `an`) as the label and the provider name to match.
 - Deportes: holding the click (600 ms) or right-clicking a card opens «Activar
   notificaciones para este evento» (`MatchAlertDirective`); a marked card shows a bell.
+- An alert can only be turned on more than 5 minutes before kick-off
+  (`alertTooLate`): the dialog then only explains it (`MPX.ALERTS.TOO_LATE`) and
+  the panel answers 409 `too_late` too; turning one off always works.
 - `MatchAlertsService` warns 30 min, 10 min and at kick-off; all alerts go to the
   header bell for 24 h, and a system notification shows only when the window has no
   focus. Desktop has no OS alarms: with the app closed nothing is warned.

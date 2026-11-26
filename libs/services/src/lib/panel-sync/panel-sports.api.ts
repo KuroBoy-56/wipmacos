@@ -30,13 +30,14 @@ export async function sportsAgenda(client: PanelProgressClient, creds: SyncUserC
 
 /** Live matches with score for the Home row (api/sports_live.php); null when the panel did not answer. */
 export async function sportsLive(client: PanelProgressClient, creds: SyncUserCredentials): Promise<PanelSportsLive | null> {
-    const body = await client.postJson<Partial<PanelSportsLive>>('sports_live.php', creds, {});
+    // next=1: además de los que se juegan, los próximos de las 24 h siguientes (soon: true) para la fila de 20 de Inicio
+    const body = await client.postJson<Partial<PanelSportsLive>>('sports_live.php', creds, { next: 1 });
     if (!body || typeof body.enabled !== 'boolean') return null;
     const ttl = Math.min(3600, Math.max(15, Number(body.ttl) || 30));
     if (!body.enabled) return { enabled: false, ttl, events: [], chan: 'all' };
     const events = (Array.isArray(body.events) ? body.events : [])
         .filter((e): e is PanelLiveEvent => !!e && !!e.id && !!(e.h || e.a || e.ev))
-        .map((e) => ({ ...e, ts: e.ts ?? '', v: e.v ?? '', th: e.th ?? '', pp: false, lb: e.lb ?? '', ev: e.ev ?? '', pr: String(e.pr ?? '') }));
+        .map((e) => ({ ...e, ts: e.ts ?? '', v: e.v ?? '', th: e.th ?? '', pp: false, lb: e.lb ?? '', ev: e.ev ?? '', pr: String(e.pr ?? ''), soon: e.soon === true }));
     return { enabled: true, ttl, events, match: body.match, chan: body.chan === 'iptv' ? 'iptv' : 'all' };
 }
 

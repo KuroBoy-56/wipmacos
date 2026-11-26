@@ -1482,7 +1482,9 @@
             "SPORT_FIGHTING": "Fighting",
             "SPORT_MOTORSPORT": "Motorsport",
             "SPORT_TENNIS": "Tennis",
-            "SPORT_ICE_HOCKEY": "Ice hockey"
+            "SPORT_ICE_HOCKEY": "Ice hockey",
+            "FINISHED_TAB": "Finished",
+            "FINISHED_EMPTY": "No event has finished today yet. Today’s events show here once they end (cleared at 00:00)."
         },
         "NF": {
             "SERIES_ONE": "Series",
@@ -1696,7 +1698,10 @@
                 "Esports": "Esports"
             },
             "PLAT_CARDS": "Show platform cards",
-            "PLAT_CARDS_HINT": "Platforms (Netflix, Disney+…) come back on Home, below «Live now»."
+            "PLAT_CARDS_HINT": "Platforms (Netflix, Disney+…) come back on Home, below «Live now».",
+            "STARTS": "Starts",
+            "GO_SPORTS": "Go to Sports",
+            "GO_SPORTS_SUB": "The full schedule for today and tomorrow"
         },
         "ALERTS": {
             "M30": "The match starts in 30 minutes",
@@ -1724,7 +1729,8 @@
             "NOW": "now",
             "MIN_AGO": "{{n}} min ago",
             "H_AGO": "{{n}} h ago",
-            "CLOSE": "Close"
+            "CLOSE": "Close",
+            "TOO_LATE": "Alerts can only be turned on for matches that start in more than 5 minutes."
         }
     }
 }

@@ -71,15 +71,23 @@ export function score(v: string | number | null | undefined): string {
  * The row's cards: the preferred sport only (Ajustes; '' = all) and only matches with a real channel of the client's
  * IPTV server (the one that broadcasts it, the panel guide's or by teams): without one the match does not show.
  */
-export function liveCards(events: readonly PanelLiveEvent[], map: SportsChannelsMap | null, pref: string): LiveCard[] {
+/** tarjetas de la fila de Inicio: en vivo y próximos */
+export const LIVE_ROW_MAX = 20;
+
+export function liveCards(events: readonly PanelLiveEvent[], map: SportsChannelsMap | null, pref: string, now = Date.now()): LiveCard[] {
     if (!map) return [];
     const out: LiveCard[] = [];
     for (const e of events) {
         if (pref && e.sp !== pref) continue;
+        // un próximo que ya empezó hace más de 5 min y el livescore no trae: fuera hasta la próxima respuesta
+        if (e.soon && e.s && e.s * 1000 < now - 5 * 60_000) continue;
         const ch = map.byEvent[String(e.id)];
         if (ch?.best) out.push({ e, ch });
     }
-    return out;
+    // en vivo primero, después los próximos por hora; como mucho LIVE_ROW_MAX (al final va «Ir a Deportes»)
+    return out
+        .sort((x, y) => Number(!!x.e.soon) - Number(!!y.e.soon) || (x.e.s || 9e12) - (y.e.s || 9e12))
+        .slice(0, LIVE_ROW_MAX);
 }
 
 /** Sports for Ajustes › Deporte preferido (TheSportsDB names; the label is MPX.LIVE.SP.<key>). */

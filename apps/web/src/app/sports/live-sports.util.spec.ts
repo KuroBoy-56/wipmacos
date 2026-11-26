@@ -1,5 +1,5 @@
 import { PanelLiveEvent } from '@iptvnator/services';
-import { clockText, competitionTheme, fieldKind, liveCards, score } from './live-sports.util';
+import { clockText, competitionTheme, fieldKind, LIVE_ROW_MAX, liveCards, score } from './live-sports.util';
 import { SportsChannelsMap } from './sports-data.service';
 
 const ev = (id: string, sp: string): PanelLiveEvent =>
@@ -20,6 +20,24 @@ describe('live sports row', () => {
         expect(liveCards(events, map, '').map((c) => c.e.id)).toEqual(['1', '3']);
         expect(liveCards(events, map, 'Basketball').map((c) => c.e.id)).toEqual(['3']);
         expect(liveCards(events, null, '')).toEqual([]);
+    });
+
+    it('live first, then the next ones by hour, at most 20 (then «Ir a Deportes»)', () => {
+        const now = Date.now();
+        const byEvent: SportsChannelsMap['byEvent'] = {};
+        const events: PanelLiveEvent[] = [];
+        for (let i = 0; i < 30; i++) {
+            byEvent[String(i)] = { tv: [], epg: [], teams: null, best: ch(String(i)) };
+            events.push({ ...ev(String(i), 'Soccer'), soon: i >= 2, s: Math.round(now / 1000) + (i >= 2 ? 3600 * (30 - i) : -600) });
+        }
+        // uno que «empezaba» hace 10 min y el livescore no trae: fuera
+        byEvent['old'] = { tv: [], epg: [], teams: null, best: ch('99') };
+        events.push({ ...ev('old', 'Soccer'), soon: true, s: Math.round(now / 1000) - 600 });
+        const cards = liveCards(events, { byEvent, folder: null }, '', now);
+        expect(cards).toHaveLength(LIVE_ROW_MAX);
+        expect(cards.slice(0, 2).map((c) => c.e.id)).toEqual(['0', '1']);
+        expect(cards[2].e.id).toBe('29');
+        expect(cards.some((c) => c.e.id === 'old')).toBe(false);
     });
 
     it('writes the moment of the match', () => {
