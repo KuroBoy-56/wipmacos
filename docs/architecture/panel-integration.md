@@ -739,6 +739,12 @@ of the top bar. It mirrors the web player's sports page:
   today's ended events (panel time zone, latest first), emptied at 00:00 there;
   with it Hoy keeps only the live and not-yet-started ones (`eventsForDay` in
   `sports-schedule.util.ts`). Without profiles Hoy is as before.
+- Hours: every event carries `s` (UTC seconds; the panel reads TheSportsDB's
+  zone-less dates as UTC with `sp_utc_ts`). Since the panel of 27 Nov there is no
+  `tz` / `tzo` / `o`: match hours and Hoy / Mañana / Finalizados use the computer's
+  time zone, so a viewer in another country than the panel never sees a shifted
+  hour ("11:00" of the panel being 04:00 there). A `tz` / `tzo` / `o` an older
+  panel still sends is ignored (`sportsDayKey` is always the computer's day).
 - Sport chips with emoji and counts.
 - A search box.
 - League and team badges.
@@ -801,6 +807,16 @@ event name and its poster (`th`), no score:
   the panel gives in `api/sports.php` `sports` (the agenda's and every one the
   distributor has on), so the panel's own names show for the ones outside
   `LIVE_SPORT_CHOICES`.
+- Settings › «Ligas favoritas» (same card, under «Deporte preferido»): several
+  leagues at once (`localStorage mpx:live_lg|<line>|<profile>`, `[{id, n, b, sp}]`;
+  none = all). The list (`leagueChoices`) joins the agenda's leagues (`li`, `lg`,
+  `lb`; with how many matches they have today, computer time zone) and the
+  21-day fixtures leagues, only the favorite sport's when one is chosen, the ones
+  playing today first, each with its badge; the chosen ones always stay listed.
+  With some chosen, the Home row keeps only matches whose `li` is one of them
+  (`liveCards(…, leagues)`); choosing a sport drops the other sports' leagues.
+  Same rule and storage idea in Roku, webOS/Tizen/VIDAA/Vega, Android and the
+  web player.
 - Settings › «Habilitar tarjetas de plataformas» (same card, only when the
   distributor has platforms, `PanelBrandingService.platforms`): the platform tiles
   come back on Home below the live row (`localStorage mpx:plat_cards|<line>|<profile>`,

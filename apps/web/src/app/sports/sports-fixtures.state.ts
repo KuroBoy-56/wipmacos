@@ -22,7 +22,6 @@ export class SportsFixturesState {
     constructor(
         private readonly panel: PanelSyncService,
         private readonly ctx: {
-            tz: () => string | undefined;
             alias: () => Record<string, string>;
             minutes: (sport: string) => number;
             now: () => number;
@@ -46,10 +45,10 @@ export class SportsFixturesState {
         const fx = this.data();
         const q = this.query();
         if (!fx || !q) return [];
-        return toSportsCards(searchTeamMatches(fx, q, this.ctx.alias(), this.ctx.minutes, this.ctx.now()), this.ctx.tz());
+        return toSportsCards(searchTeamMatches(fx, q, this.ctx.alias(), this.ctx.minutes, this.ctx.now()));
     });
 
-    readonly nationCards = computed<SportsCard[]>(() => toSportsCards(this.nations()?.events ?? [], this.ctx.tz()));
+    readonly nationCards = computed<SportsCard[]>(() => toSportsCards(this.nations()?.events ?? []));
 
     /** Loads once (the tab can open many times); while the panel is building it, asks again every 25 s. */
     async load(alive: () => boolean): Promise<void> {

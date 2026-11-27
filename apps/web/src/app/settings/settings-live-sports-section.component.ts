@@ -4,8 +4,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FavTeam, MatchAlertsService, PanelBrandingService, PanelSportsFixtures } from '@iptvnator/services';
 import { LiveSportsService } from '../sports/live-sports.service';
 import { SportsDataService } from '../sports/sports-data.service';
-import { LIVE_SPORT_CHOICES } from '../sports/live-sports.util';
-import { fixtureTeams } from './settings-live-sports.util';
+import { FavLeague, LIVE_SPORT_CHOICES } from '../sports/live-sports.util';
+import { fixtureTeams, LeagueChoice, leagueChoices } from './settings-live-sports.util';
 
 /**
  * Ajustes › «Deporte preferido» (la fila «En vivo ahora» de Inicio muestra solo ese deporte; sin elegir, todos) y
@@ -22,13 +22,50 @@ import { fixtureTeams } from './settings-live-sports.util';
         @if (live.enabled()) {
             <section class="settings-live" data-test-id="settings-live-sports">
                 <h3><label for="live-pref">{{ 'MPX.LIVE.PREF' | translate }}</label></h3>
-                <select id="live-pref" [value]="live.pref()" (change)="live.setPref($any($event.target).value)">
+                <select id="live-pref" [value]="live.pref()" (change)="live.setPref($any($event.target).value); lgOpen.set(false)">
                     <option value="" [selected]="!live.pref()">{{ 'MPX.LIVE.ALL' | translate }}</option>
                     @for (s of sports(); track s) {
                         <option [value]="s" [selected]="live.pref() === s">{{ sportLabel(s) }}</option>
                     }
                 </select>
                 <p class="note">{{ 'MPX.LIVE.PREF_HINT' | translate }}</p>
+
+                <h3 class="teams-title">{{ 'MPX.LIVE.LEAGUES' | translate }}</h3>
+                <p class="note">
+                    <strong>{{ leaguesText() }}</strong> · {{ 'MPX.LIVE.LEAGUES_HINT' | translate }}
+                </p>
+                @if (!lgOpen()) {
+                    <button mat-stroked-button type="button" data-test-id="pick-leagues" (click)="openLeagues()">{{ 'MPX.LIVE.LEAGUES_PICK' | translate }}</button>
+                } @else if (lgList() === undefined) {
+                    <p class="note">{{ 'MPX.ALERTS.LOADING' | translate }}</p>
+                } @else {
+                    <div class="lg-list">
+                        <label class="plat">
+                            <input type="checkbox" [checked]="!live.leagues().length" (change)="live.setLeagues([])" />
+                            <span>{{ 'MPX.LIVE.LEAGUES_ALL' | translate }}</span>
+                        </label>
+                        @for (l of lgList(); track l.id) {
+                            <label class="plat" data-test-id="league">
+                                <input type="checkbox" [checked]="chosen().has(l.id)" (change)="toggle(l)" />
+                                @if (l.b) {
+                                    <img [src]="l.b + '/tiny'" alt="" loading="lazy" />
+                                }
+                                <span>
+                                    {{ l.n }}
+                                    @if (!live.pref()) {
+                                        <small>· {{ sportLabel(l.sp) }}</small>
+                                    }
+                                    @if (l.today) {
+                                        <small class="today">· {{ 'MPX.LIVE.LEAGUES_TODAY' | translate: { n: l.today } }}</small>
+                                    }
+                                </span>
+                            </label>
+                        } @empty {
+                            <p class="note">{{ 'MPX.LIVE.LEAGUES_NONE' | translate }}</p>
+                        }
+                    </div>
+                    <button mat-button type="button" (click)="lgOpen.set(false)">{{ 'MPX.LIVE.CLOSE' | translate }}</button>
+                }
 
                 @if (platformsOn()) {
                     <label class="plat">
@@ -118,6 +155,11 @@ import { fixtureTeams } from './settings-live-sports.util';
         .pick label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; opacity: 0.9; }
         .plat { display: flex; align-items: center; gap: 10px; margin-top: 14px; cursor: pointer; }
         .plat input { width: 18px; height: 18px; accent-color: var(--nf-red, #e50914); }
+        .lg-list { max-height: 320px; overflow-y: auto; margin: 6px 0; padding-right: 6px; }
+        .lg-list .plat { margin-top: 8px; }
+        .lg-list img { width: 22px; height: 22px; object-fit: contain; }
+        .lg-list small { opacity: 0.65; }
+        .lg-list .today { color: var(--nf-red, #e50914); opacity: 1; }
     `,
 })
 export class SettingsLiveSportsSectionComponent {
@@ -156,9 +198,20 @@ export class SettingsLiveSportsSectionComponent {
         return fx && this.league() ? fixtureTeams(fx, this.league()) : [];
     });
 
+    /** Ligas favoritas: lista abierta; undefined = cargando */
+    protected readonly lgOpen = signal(false);
+    protected readonly lgList = signal<LeagueChoice[] | undefined>(undefined);
+    protected readonly chosen = computed(() => new Set(this.live.leagues().map((l) => l.id)));
+    protected readonly leaguesText = computed(() => {
+        const l = this.live.leagues();
+        if (!l.length) return this.translate.instant('MPX.LIVE.LEAGUES_ALL');
+        return l.length === 1 ? l[0].n : this.translate.instant('MPX.LIVE.LEAGUES_N', { n: l.length });
+    });
+    private readonly data = inject(SportsDataService);
+
     constructor() {
         void this.live.ensure();
-        void inject(SportsDataService)
+        void this.data
             .loadAgenda()
             .then((a) => a?.sports && this.apiSports.set(a.sports))
             .catch(() => undefined);
@@ -166,6 +219,18 @@ export class SettingsLiveSportsSectionComponent {
 
     protected sportLabel(sp: string): string {
         return LIVE_SPORT_CHOICES.includes(sp) ? this.translate.instant('MPX.LIVE.SP.' + sp) : this.apiSports()[sp]?.label || sp;
+    }
+
+    protected async openLeagues(): Promise<void> {
+        this.lgOpen.set(true);
+        this.lgList.set(undefined);
+        const [ag, fx] = await Promise.all([this.data.loadAgenda().catch(() => null), this.alerts.fixtures(true).catch(() => null)]);
+        this.lgList.set(leagueChoices(ag?.events ?? [], fx?.on ? fx.leagues : undefined, this.live.leagues(), this.live.pref()));
+    }
+
+    protected toggle(l: FavLeague): void {
+        const cur = this.live.leagues();
+        this.live.setLeagues(cur.some((x) => x.id === l.id) ? cur.filter((x) => x.id !== l.id) : [...cur, { id: l.id, n: l.n, b: l.b, sp: l.sp }]);
     }
 
     protected async startAdd(): Promise<void> {

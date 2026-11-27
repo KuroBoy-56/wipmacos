@@ -40,11 +40,9 @@ describe('sports schedule utils', () => {
         expect(toSportsCards([{ ...base, ts: 'nope' }])).toEqual([]);
     });
 
-    it('uses the panel time zone for the day key', () => {
-        // 2026-10-04 18:00 UTC is already the 5th in Tokyo and still the 4th in Panama
-        expect(toSportsCards([base], 'Asia/Tokyo')[0].dayKey).toBe('2026-10-05');
-        expect(toSportsCards([{ ...base, ts: '2026-10-05T02:00:00Z' }], 'America/Panama')[0].dayKey).toBe('2026-10-04');
-        expect(sportsDayKey(new Date(start), 'Not/AZone')).toBe(sportsDayKey(new Date(start)));
+    it('ignores the panel time zone: the day key is always the computer one', () => {
+        const late = { ...base, ts: '2026-10-05T02:00:00Z' };
+        expect(toSportsCards([late])[0].dayKey).toBe(sportsDayKey(new Date(Date.parse(late.ts))));
     });
 
     it('derives soon, live, final and postponed states', () => {

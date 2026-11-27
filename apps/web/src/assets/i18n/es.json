@@ -1690,6 +1690,13 @@
             "CLOSE": "Cerrar",
             "PREF": "Deporte preferido",
             "PREF_HINT": "Los partidos en vivo de Inicio muestran solo este deporte.",
+            "LEAGUES": "Ligas favoritas",
+            "LEAGUES_HINT": "«En vivo ahora» de Inicio muestra solo los partidos de las ligas que elijas.",
+            "LEAGUES_PICK": "Elegir ligas",
+            "LEAGUES_ALL": "Todas las ligas",
+            "LEAGUES_N": "{{n}} ligas",
+            "LEAGUES_TODAY": "{{n}} hoy",
+            "LEAGUES_NONE": "El panel todavía no tiene ligas para elegir.",
             "ALL": "Todos los deportes",
             "SP": {
                 "Soccer": "Fútbol",

@@ -1690,6 +1690,13 @@
             "CLOSE": "Close",
             "PREF": "Favorite sport",
             "PREF_HINT": "Live matches on Home show only this sport.",
+            "LEAGUES": "Favorite leagues",
+            "LEAGUES_HINT": "«Live now» on Home shows only matches from the leagues you pick.",
+            "LEAGUES_PICK": "Choose leagues",
+            "LEAGUES_ALL": "All leagues",
+            "LEAGUES_N": "{{n}} leagues",
+            "LEAGUES_TODAY": "{{n}} today",
+            "LEAGUES_NONE": "There are no leagues to pick yet.",
             "ALL": "All sports",
             "SP": {
                 "Soccer": "Soccer",
