@@ -112,6 +112,11 @@
     font-size: 11.5px;
     font-weight: 700;
     white-space: nowrap;
+    // fits its text ("Descanso", "Alargue · 105'") on one line, never wider than 60 % of the card
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
 
     i {
         width: 6px;
