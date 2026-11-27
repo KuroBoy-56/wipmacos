@@ -186,14 +186,23 @@ const CHANNEL_NOISE = new Set([
     'latam', 'latin', 'latino', 'latina', 'lat', 'america', 'es', 'esp', 'spain', 'espana', 'uk', 'gb', 'int', 'intl', 'international',
     'br', 'bra', 'brasil', 'brazil', 'pt', 'portugal', 'ca', 'can', 'canada', 'fr', 'france', 'it', 'italy', 'de', 'germany',
     'nl', 'netherlands', 'au', 'australia', 'nz', 'zealand', 'new', 'ie', 'ireland', 'en', 'network', 'net',
+    'hdr', 'fd', '2160', '2160p', '1080i', 'fullhd', 'east', 'west', 'eastern', 'western', 'eng', 'english', 'raw', 'dual',
 ]);
+
+// numbers written as words ("ESPN Two", "Canal Dos") become digits, so they glue like "ESPN 2"
+const NUM_WORDS: Record<string, string> = {
+    one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', ten: '10', eleven: '11', twelve: '12',
+    uno: '1', dos: '2', tres: '3', cuatro: '4', cinco: '5', seis: '6', siete: '7', ocho: '8', nueve: '9', diez: '10',
+};
 
 /** Words that identify a channel; a number sticks to the word before it ("ESPN 2" -> ["espn2"]). */
 export function channelKey(name: string): string[] {
     const out: string[] = [];
-    for (let t of normalizeSportsText(name).split(' ')) {
+    // "ESPN+", "Star+", "M+": the + is "plus" (normalizing dropped it and "ESPN+" found the "ESPN" channel)
+    for (let t of normalizeSportsText(name.replace(/\+/g, ' plus ')).split(' ')) {
         // "M+ LaLiga" (Movistar Plus) arrives as "m laliga"
         if (t === 'm') t = 'movistar';
+        t = NUM_WORDS[t] || t;
         if (!t || CHANNEL_NOISE.has(t)) continue;
         if (/^\d+$/.test(t) && out.length && !/^\d+$/.test(out[out.length - 1])) out[out.length - 1] += t;
         else out.push(t);
@@ -244,9 +253,60 @@ export function findChannelByName(tvName: string, streams: readonly SportsLiveSt
             }
         }
     }
+    if (!best && !exact) best = fuzzyChannel(q, idx.items);
     if (best) return (best as IndexedStream).st;
     // a bare name is its first channel ("ESPN" = "ESPN 1", "DAZN" = "DAZN 1")
-    return /\d$/.test(qc) ? null : findChannelByName(`${tvName} 1`, streams);
+    if (!/\d$/.test(qc) && !tvName.endsWith(' 1')) {
+        const first = findChannelByName(`${tvName} 1`, streams);
+        if (first) return first;
+    }
+    // "Movistar+ LaLiga" in a list that calls it "Movistar LaLiga": without the plus
+    return tvName.includes('+') ? findChannelByName(tvName.replace(/\+/g, ' '), streams) : null;
+}
+
+/**
+ * Last resort, as the IPTV channel matchers do (Stream-Mapparr): Levenshtein similarity of the sorted words
+ * ("TyC Sport" = "TyC Sports"). Only channels sharing half of the words, with the same numbers ("ESPN 2" is never
+ * "ESPN 3" or "ESPN"), stricter on short names (≤ 4 letters 95 %, ≤ 8 90 %, else 86 %).
+ */
+function fuzzyChannel(q: string[], items: readonly IndexedStream[]): IndexedStream | null {
+    const qLen = q.join('').length;
+    if (qLen < 3) return null;
+    const qs = [...q].sort().join(' ');
+    const qDig = keyDigits(q);
+    const need = Math.ceil(q.length / 2);
+    const thr = qLen <= 4 ? 0.95 : qLen <= 8 ? 0.9 : 0.86;
+    let best: IndexedStream | null = null;
+    let bestR = 0;
+    for (const it of items) {
+        if (!it.key.length || keyDigits(it.key) !== qDig) continue;
+        const shared = q.filter((t) => it.key.includes(t) || (t.length >= 4 && it.key.includes(t.slice(0, -1)))).length;
+        if (shared < need && q.length > 1) continue;
+        const r = channelSimilarity(qs, [...it.key].sort().join(' '));
+        if (r >= thr && r > bestR) {
+            best = it;
+            bestR = r;
+        }
+    }
+    return best;
+}
+
+/** the numbers of a channel name, in order ("espn2" -> "2", "fox sports 1 hd" -> "1") */
+const keyDigits = (words: string[]) => words.join(' ').replace(/[^0-9]+/g, ' ').trim();
+
+/** 1 - Levenshtein distance / longer length (rapidfuzz's normalized ratio) */
+export function channelSimilarity(a: string, b: string): number {
+    if (!a || !b) return 0;
+    if (a === b) return 1;
+    const mx = Math.max(a.length, b.length);
+    if (Math.abs(a.length - b.length) > mx * 0.15) return 0;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+        const cur = [i];
+        for (let j = 1; j <= b.length; j++) cur.push(Math.min(prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1), prev[j] + 1, cur[j - 1] + 1));
+        prev = cur;
+    }
+    return 1 - prev[b.length] / mx;
 }
 
 /** First broadcast channel of the match the client has, else the team / event-name match. */

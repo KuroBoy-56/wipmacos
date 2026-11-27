@@ -894,8 +894,13 @@ matcher's index is built once per channel list): `tv[].ch` per broadcast channel
 `api/sports_epg.php`), `teams` (`findSportsChannel`, panel `match` rules) and
 `best` = first broadcast channel the client has, else the guide's, else teams.
 The card shows that channel in green ("Buscando…" / "Sin canal" otherwise).
-`channelKey` drops quality and country tags, reads "M+" as Movistar and glues a
-number to the word before it, so "ESPN 2" finds "MX: ESPN 2 HD" and never "ESPN"
+`channelKey` drops quality and country tags (also HDR, FD, 2160p, 1080i, Full HD,
+East/West, ENG, RAW), reads "M+" as Movistar, "+" as "plus" ("ESPN+" is not
+"ESPN"; "Movistar+ LaLiga" retries as "Movistar LaLiga"), number words as digits
+("ESPN Two") and glues a number to the word before it; when nothing else matches,
+`fuzzyChannel` takes the Levenshtein ratio of the sorted words (as IPTV channel
+matchers like Stream-Mapparr do) with the same numbers and a stricter threshold for
+short names ("TyC Sport" = "TyC Sports"). So "ESPN 2" finds "MX: ESPN 2 HD" and never "ESPN"
 or "ESPN 3"; the last try matches glued names ("La Liga Hypermotion"). A bare
 name is its first channel ("ESPN" finds "ESPN 1", "DAZN" finds "DAZN 1"). Since
 the panel of 26 Nov the agenda's names come without the country ("ESPN 2
