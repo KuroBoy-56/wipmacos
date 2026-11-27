@@ -44,7 +44,7 @@ const PLATFORM_ROWS = 5;
             />
 
             <!-- con la fila en vivo (después del Top 10), las plataformas solo van (en su lugar de siempre) si se activaron en Ajustes -->
-            @if (platforms().length && (!live?.enabled() || live?.platformCards?.())) {
+            @if (platforms().length && !hidePlatforms()) {
                 <app-hscroll class="nf-plat-wrap">
                 <nav
                     class="nf-platforms"
@@ -164,6 +164,12 @@ export class NfHomeComponent {
 
     /** la fila de partidos en vivo que pone la app (NF_HOME_LIVE); se pregunta solo mientras Inicio está abierto */
     protected readonly live = inject(NF_HOME_LIVE, { optional: true });
+    /** con la fila en vivo las plataformas no van (salvo el ajuste); antes de la respuesta del panel, lo de la última vez */
+    protected readonly hidePlatforms = computed(() => {
+        const l = this.live;
+        if (!l) return false;
+        return l.hidesPlatforms ? l.hidesPlatforms() : l.enabled() && !l.platformCards?.();
+    });
 
     constructor() {
         void this.weekTop.load();

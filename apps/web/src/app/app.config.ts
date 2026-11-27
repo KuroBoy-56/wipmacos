@@ -77,7 +77,7 @@ export const appConfig: ApplicationConfig = {
             provide: NF_HOME_LIVE,
             useFactory: (): NfHomeLive => {
                 const live = inject(LiveSportsService);
-                return { enabled: live.enabled, platformCards: live.platformCards, component: LiveSportsRowComponent, attach: () => live.attach() };
+                return { enabled: live.enabled, platformCards: live.platformCards, hidesPlatforms: live.hidesPlatforms, component: LiveSportsRowComponent, attach: () => live.attach() };
             },
         },
         // distributor branding before the first screen + background guardian

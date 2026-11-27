@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FavTeam, MatchAlertsService, PanelBrandingService, PanelSportsFixtures } from '@iptvnator/services';
 import { LiveSportsService } from '../sports/live-sports.service';
+import { SportsDataService } from '../sports/sports-data.service';
 import { LIVE_SPORT_CHOICES } from '../sports/live-sports.util';
 import { fixtureTeams } from './settings-live-sports.util';
 
@@ -23,8 +24,8 @@ import { fixtureTeams } from './settings-live-sports.util';
                 <h3><label for="live-pref">{{ 'MPX.LIVE.PREF' | translate }}</label></h3>
                 <select id="live-pref" [value]="live.pref()" (change)="live.setPref($any($event.target).value)">
                     <option value="" [selected]="!live.pref()">{{ 'MPX.LIVE.ALL' | translate }}</option>
-                    @for (s of sports; track s) {
-                        <option [value]="s" [selected]="live.pref() === s">{{ 'MPX.LIVE.SP.' + s | translate }}</option>
+                    @for (s of sports(); track s) {
+                        <option [value]="s" [selected]="live.pref() === s">{{ sportLabel(s) }}</option>
                     }
                 </select>
                 <p class="note">{{ 'MPX.LIVE.PREF_HINT' | translate }}</p>
@@ -123,7 +124,11 @@ export class SettingsLiveSportsSectionComponent {
     protected readonly live = inject(LiveSportsService);
     protected readonly alerts = inject(MatchAlertsService);
     private readonly translate = inject(TranslateService);
-    protected readonly sports = LIVE_SPORT_CHOICES;
+    /** todas las disciplinas que da el panel (api/sports.php: las de la agenda y todas las encendidas), por nombre */
+    private readonly apiSports = signal<Record<string, { label: string }>>({});
+    protected readonly sports = computed(() =>
+        [...new Set([...Object.keys(this.apiSports()), ...LIVE_SPORT_CHOICES])].sort((a, b) => this.sportLabel(a).localeCompare(this.sportLabel(b)))
+    );
     /** «Habilitar tarjetas de plataformas» solo si el distribuidor tiene las plataformas */
     protected readonly platformsOn = inject(PanelBrandingService).platforms;
 
@@ -153,10 +158,14 @@ export class SettingsLiveSportsSectionComponent {
 
     constructor() {
         void this.live.ensure();
+        void inject(SportsDataService)
+            .loadAgenda()
+            .then((a) => a?.sports && this.apiSports.set(a.sports))
+            .catch(() => undefined);
     }
 
     protected sportLabel(sp: string): string {
-        return LIVE_SPORT_CHOICES.includes(sp) ? this.translate.instant('MPX.LIVE.SP.' + sp) : sp;
+        return LIVE_SPORT_CHOICES.includes(sp) ? this.translate.instant('MPX.LIVE.SP.' + sp) : this.apiSports()[sp]?.label || sp;
     }
 
     protected async startAdd(): Promise<void> {
