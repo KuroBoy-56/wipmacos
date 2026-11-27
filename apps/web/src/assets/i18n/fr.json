@@ -1690,6 +1690,13 @@
             "CLOSE": "Fermer",
             "PREF": "Sport préféré",
             "PREF_HINT": "Les matchs en direct de l’Accueil ne montrent que ce sport.",
+            "LEAGUES": "Ligues favorites",
+            "LEAGUES_HINT": "« En direct » sur l’Accueil n’affiche que les matchs des ligues choisies.",
+            "LEAGUES_PICK": "Choisir les ligues",
+            "LEAGUES_ALL": "Toutes les ligues",
+            "LEAGUES_N": "{{n}} ligues",
+            "LEAGUES_TODAY": "{{n}} aujourd’hui",
+            "LEAGUES_NONE": "Aucune ligue à choisir pour l’instant.",
             "ALL": "Tous les sports",
             "SP": {
                 "Soccer": "Football",

@@ -8,7 +8,7 @@ import {
     sessionCredentials,
 } from '@iptvnator/services';
 import { SportsChannelsMap, SportsDataService } from './sports-data.service';
-import { liveCards } from './live-sports.util';
+import { FavLeague, liveCards } from './live-sports.util';
 
 /**
  * «En vivo ahora» de Inicio (en el lugar de Plataformas), como Android: partidos que se están jugando con su marcador
@@ -52,7 +52,21 @@ export class LiveSportsService {
         }
     });
 
-    readonly cards = computed(() => (this.enabled() ? liveCards(this.live()?.events ?? [], this.map(), this.pref()) : []));
+    private readonly leaguesKey = computed(() => `mpx:live_lg|${lineKey(sessionCredentials())}|${this.profiles.profile()?.id ?? ''}`);
+    /** Ajustes › Ligas favoritas, por línea y perfil ([] = todas) */
+    readonly leagues = computed<FavLeague[]>(() => {
+        this.prefTick();
+        try {
+            const j = JSON.parse(localStorage.getItem(this.leaguesKey()) || '[]');
+            return Array.isArray(j) ? j.filter((x) => x && typeof x.id === 'string' && x.id) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    readonly cards = computed(() =>
+        this.enabled() ? liveCards(this.live()?.events ?? [], this.map(), this.pref(), Date.now(), new Set(this.leagues().map((l) => l.id))) : []
+    );
 
     private readonly platKey = computed(() => `mpx:plat_cards|${lineKey(sessionCredentials())}|${this.profiles.profile()?.id ?? ''}`);
     /** Ajustes › Habilitar tarjetas de plataformas: con la fila en vivo, las plataformas vuelven debajo (por línea y perfil) */
@@ -91,7 +105,19 @@ export class LiveSportsService {
         this.prefTick.update((n) => n + 1);
     }
 
+    setLeagues(list: FavLeague[]): void {
+        try {
+            if (list.length) localStorage.setItem(this.leaguesKey(), JSON.stringify(list.map(({ id, n, b, sp }) => ({ id, n, b, sp }))));
+            else localStorage.removeItem(this.leaguesKey());
+        } catch {
+            /* sin almacenamiento: queda para esta vez */
+        }
+        this.prefTick.update((n) => n + 1);
+    }
+
     setPref(sport: string): void {
+        // las ligas favoritas de otra disciplina ya no tienen sentido
+        if (sport) this.setLeagues(this.leagues().filter((l) => l.sp === sport));
         try {
             if (sport) localStorage.setItem(this.prefKey(), sport);
             else localStorage.removeItem(this.prefKey());

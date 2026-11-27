@@ -29,32 +29,20 @@ export interface SportsLeagueGroup {
     items: SportsCard[];
 }
 
-/** The panel zone when the runtime knows it, else undefined (= the device zone, as with an old panel). */
-export function sportsZone(tz?: string): string | undefined {
-    if (!tz) return undefined;
-    try {
-        new Intl.DateTimeFormat('en', { timeZone: tz });
-        return tz;
-    } catch {
-        return undefined;
-    }
-}
-
-/** Calendar day of `date` in the panel time zone (api/sports.php "tz"); the device zone without it. */
-export function sportsDayKey(date: Date, tz?: string): string {
-    const zone = sportsZone(tz);
-    if (zone) {
-        return new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-    }
+/**
+ * Calendar day of `date` in the computer's time zone. The panel sends only `s` / UTC `ts`; the `tz` / `tzo` an old
+ * panel may still send are ignored, so a viewer in another country than the panel never sees a shifted hour.
+ */
+export function sportsDayKey(date: Date): string {
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-export function toSportsCards(events: PanelSportsEvent[], tz?: string): SportsCard[] {
+export function toSportsCards(events: PanelSportsEvent[]): SportsCard[] {
     return events
         .map((e) => {
             let start = Date.parse(e.ts);
             if (Number.isNaN(start)) start = Date.parse(String(e.ts).replace(' ', 'T'));
-            return { ...e, start, dayKey: Number.isNaN(start) ? '' : sportsDayKey(new Date(start), tz) };
+            return { ...e, start, dayKey: Number.isNaN(start) ? '' : sportsDayKey(new Date(start)) };
         })
         .filter((e) => e.dayKey !== '');
 }
