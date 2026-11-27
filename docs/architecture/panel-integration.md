@@ -793,11 +793,18 @@ event name and its poster (`th`), no score:
   (`app-hscroll`).
 - Settings › «Deporte preferido» (`SettingsLiveSportsSectionComponent`, only while
   the row exists) keeps one sport per line and profile
-  (`localStorage mpx:live_sport|<line>|<profile>`).
+  (`localStorage mpx:live_sport|<line>|<profile>`). The list is every discipline
+  the panel gives in `api/sports.php` `sports` (the agenda's and every one the
+  distributor has on), so the panel's own names show for the ones outside
+  `LIVE_SPORT_CHOICES`.
 - Settings › «Habilitar tarjetas de plataformas» (same card, only when the
   distributor has platforms, `PanelBrandingService.platforms`): the platform tiles
   come back on Home below the live row (`localStorage mpx:plat_cards|<line>|<profile>`,
-  `LiveSportsService.platformCards`, `NfHomeLive.platformCards`).
+  `LiveSportsService.platformCards`, `NfHomeLive.platformCards`). Without it the
+  tiles stay hidden from the first frame: until `api/sports_live.php` answers,
+  `LiveSportsService.hidesPlatforms` (`NfHomeLive.hidesPlatforms`) uses what the
+  panel said last time for the line (`localStorage mpx:live_avail|<line>`, hidden
+  when unknown), so the tiles never show and then vanish when the row arrives.
 - Deportes page background (only with a chosen non-kids profile: `<html data-prof>`
   set by `ProfilesService`): `apps/web/src/app/sports/sports-bg.webp` (3840×2160,
   original stadium art with track, pitch, court, hoop and balls, no people) under a

@@ -16,7 +16,7 @@ describe('LiveSportsService (fila «En vivo ahora»)', () => {
                     provide: ProfilesService,
                     useValue: { needed: signal(opts.needed), profile, kids: computed(() => !!opts.kids) },
                 },
-                { provide: PanelBrandingService, useValue: { features: signal({ sports: opts.sports ?? true }) } },
+                { provide: PanelBrandingService, useValue: { features: signal({ sports: opts.sports ?? true }), platforms: signal(true) } },
             ],
         });
         return { svc: TestBed.inject(LiveSportsService), fetchSportsLive, profile };
@@ -62,5 +62,22 @@ describe('LiveSportsService (fila «En vivo ahora»)', () => {
         expect(svc.pref()).toBe('Basketball');
         svc.setPref('');
         expect(svc.pref()).toBe('');
+    });
+
+    it('platforms never flash in: hidden until the panel answers, back only without live matches or with the setting', async () => {
+        const first = setup({ needed: true, enabled: false });
+        expect(first.svc.hidesPlatforms()).toBe(true);
+        const detach = first.svc.attach();
+        await new Promise((r) => setTimeout(r));
+        expect(first.svc.hidesPlatforms()).toBe(false);
+        detach();
+        TestBed.resetTestingModule();
+        // next start, before the answer: what the panel said last time for this line
+        const next = setup({ needed: true });
+        expect(next.svc.hidesPlatforms()).toBe(false);
+        await next.svc.ensure();
+        expect(next.svc.hidesPlatforms()).toBe(true);
+        next.svc.setPlatformCards(true);
+        expect(next.svc.hidesPlatforms()).toBe(false);
     });
 });
