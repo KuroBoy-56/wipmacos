@@ -732,9 +732,15 @@ Route `/workspace/sports` (`apps/web/src/app/sports/`) is the "Deportes" link
 of the top bar. It mirrors the web player's sports page:
 
 - Day tabs: Hoy / Mañana and, with a chosen profile (profiles on), **Finalizados**:
-  today's ended events (panel time zone, latest first), emptied at 00:00 there;
+  today's ended events (the computer's time zone, latest first), emptied at 00:00 there;
   with it Hoy keeps only the live and not-yet-started ones (`eventsForDay` in
   `sports-schedule.util.ts`). Without profiles Hoy is as before.
+- Hours: every event carries `s` (UTC seconds; the panel reads TheSportsDB's
+  zone-less dates as UTC with `sp_utc_ts`). Since the panel of 27 Nov there is no
+  `tz` / `tzo` / `o`: match hours and Hoy / Mañana / Finalizados use the computer's
+  time zone, so a viewer in another country than the panel never sees a shifted
+  hour ("11:00" of the panel being 04:00 there). `sportsZone` still honours a `tz`
+  an older panel sends.
 - Sport chips with emoji and counts.
 - A search box.
 - League and team badges.
