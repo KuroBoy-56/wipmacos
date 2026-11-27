@@ -753,10 +753,17 @@ of the top bar. It mirrors the web player's sports page:
 
 ### "En vivo ahora" on Home (live scores)
 
-On Home (`NfHomeComponent`) the platform tiles give way to a row of up to 20
-matches (`LIVE_ROW_MAX`): the ones being played now, with score and minute, then
-the next ones with their start hour, and at the end an «Ir a Deportes» card over
-the stadium art. A match leaves the row when it ends (the panel stops sending it):
+On Home (`NfHomeComponent`), right after the Top 10, a row of up to 20 matches
+(`LIVE_ROW_MAX`): the ones being played now, with score and minute, then the next
+ones with their start hour, and at the end an «Ir a Deportes» card over the
+stadium art. The platform tiles keep their usual place above; with live matches
+they only show when «Habilitar tarjetas de plataformas» is on. A match leaves the
+row when it ends (the panel stops sending it). The panel already writes `pr` for
+the card («67'», «Descanso», «3.er cuarto», «Penales») and asks
+`livescore/{idLeague}` for agenda leagues that `livescore/all` (capped at 500)
+left out. Events without two teams or of a sport without a score (`isSoloEvent`:
+fights, boxing, WWE, motorsport, golf, cycling, athletics) show the sport, the
+event name and its poster (`th`), no score:
 
 - Shown only when profiles are on for the line (`ProfilesService.needed()`), a
   profile that is not the kids one is chosen and the distributor did not turn

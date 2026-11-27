@@ -7,6 +7,19 @@ export interface LiveCard {
     ch: SportsEventChannels;
 }
 
+/** disciplinas sin equipos ni marcador (peleas, boxeo, WWE, carreras, golf…): la tarjeta va con el evento y su póster */
+const SOLO_SPORTS = new Set(['fighting', 'boxing', 'wrestling', 'mma', 'motorsport', 'golf', 'cycling', 'athletics']);
+
+/** sin dos equipos o de una disciplina sin marcador: la disciplina, el nombre del evento y su póster (como las TV) */
+export function isSoloEvent(e: Pick<PanelLiveEvent, 'h' | 'a' | 'sp'>): boolean {
+    return !e.h || !e.a || SOLO_SPORTS.has((e.sp || '').toLowerCase());
+}
+
+/** el nombre del evento sin equipos (el de la agenda, o los dos nombres, o la liga) */
+export function soloName(e: Pick<PanelLiveEvent, 'h' | 'a' | 'ev' | 'lg'>): string {
+    return e.ev || [e.h, e.a].filter(Boolean).join(' vs ') || e.lg;
+}
+
 /** Field drawn behind the card, by sport (same groups as Android). '' = a dark gradient. */
 export function fieldKind(sport: string): string {
     switch ((sport || '').toLowerCase()) {

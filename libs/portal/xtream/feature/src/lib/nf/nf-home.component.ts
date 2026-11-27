@@ -43,11 +43,7 @@ const PLATFORM_ROWS = 5;
                 [kicker]="'MPX.NF.FEATURED' | translate"
             />
 
-            <!-- partidos en vivo (perfiles activos y clave de pago de TheSportsDB en el panel): en el lugar de las plataformas -->
-            @if (live?.enabled()) {
-                <ng-container *ngComponentOutlet="live!.component" />
-            }
-            <!-- con la fila en vivo, las plataformas solo vuelven (debajo) si se activaron en Ajustes -->
+            <!-- con la fila en vivo (después del Top 10), las plataformas solo van (en su lugar de siempre) si se activaron en Ajustes -->
             @if (platforms().length && (!live?.enabled() || live?.platformCards?.())) {
                 <app-hscroll class="nf-plat-wrap">
                 <nav
@@ -109,6 +105,10 @@ const PLATFORM_ROWS = 5;
                             [moreQuery]="row.query ?? null"
                             [variant]="row.variant ?? ''"
                         />
+                        <!-- partidos en vivo (perfiles activos y clave de pago de TheSportsDB en el panel): después del Top 10 -->
+                        @if (row.key === 'top' && live?.enabled()) {
+                            <ng-container *ngComponentOutlet="live!.component" />
+                        }
                     }
                 } @else if (catalog.loading()) {
                     <app-nf-row
