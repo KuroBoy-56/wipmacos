@@ -1535,6 +1535,8 @@
             "SORT_RATING": "Os mais bem avaliados",
             "SORT_AZ": "Em ordem alfabética",
             "SORT_RECENT": "Mais recentes primeiro",
+            "EX_SORT_RECENT": "Adicionados recentemente",
+            "EX_SORT_RATING": "Mais bem avaliados",
             "EMPTY_MY_LIST": "Você ainda não adicionou títulos à Minha lista.",
             "EMPTY_CONTINUE": "Você não tem nada pendente para assistir.",
             "SEE_ALL": "Ver tudo",

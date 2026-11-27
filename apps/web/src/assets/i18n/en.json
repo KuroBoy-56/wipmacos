@@ -1535,6 +1535,8 @@
             "SORT_RATING": "Top rated first",
             "SORT_AZ": "In alphabetical order",
             "SORT_RECENT": "Newest first",
+            "EX_SORT_RECENT": "Recently added",
+            "EX_SORT_RATING": "Top rated",
             "EMPTY_MY_LIST": "You have not added titles to My list yet.",
             "EMPTY_CONTINUE": "You have nothing left to watch.",
             "SEE_ALL": "See all",

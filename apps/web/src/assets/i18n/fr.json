@@ -1535,6 +1535,8 @@
             "SORT_RATING": "Les mieux notés",
             "SORT_AZ": "Par ordre alphabétique",
             "SORT_RECENT": "Les plus récents d'abord",
+            "EX_SORT_RECENT": "Ajouts récents",
+            "EX_SORT_RATING": "Les mieux notés",
             "EMPTY_MY_LIST": "Vous n'avez encore rien ajouté à Ma liste.",
             "EMPTY_CONTINUE": "Vous n'avez rien en cours.",
             "SEE_ALL": "Tout voir",
