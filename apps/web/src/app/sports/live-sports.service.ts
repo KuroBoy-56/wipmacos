@@ -65,6 +65,22 @@ export class LiveSportsService {
         }
     });
 
+    private readonly availKey = computed(() => `mpx:live_avail|${lineKey(sessionCredentials())}`);
+    /**
+     * con perfiles y partidos en vivo del panel, Inicio no muestra las plataformas (salvo «Habilitar tarjetas de
+     * plataformas»). Mientras el panel no contesta vale lo de la última vez para esta línea: no aparecen y se van.
+     */
+    readonly hidesPlatforms = computed(() => {
+        if (!this.gated() || this.platformCards()) return false;
+        const l = this.live();
+        if (l) return l.enabled;
+        try {
+            return localStorage.getItem(this.availKey()) !== '0';
+        } catch {
+            return true;
+        }
+    });
+
     setPlatformCards(on: boolean): void {
         try {
             if (on) localStorage.setItem(this.platKey(), '1');
@@ -113,6 +129,11 @@ export class LiveSportsService {
             // sin respuesta del panel: lo último que se tenía
             if (res) {
                 this.live.set(res);
+                try {
+                    localStorage.setItem(this.availKey(), res.enabled ? '1' : '0');
+                } catch {
+                    /* sin almacenamiento */
+                }
                 ttl = res.ttl;
                 if (res.enabled && res.events.length) {
                     const map = await this.data.matchEvents(res.events, res.match).catch(() => null);

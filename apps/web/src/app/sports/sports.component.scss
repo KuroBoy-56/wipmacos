@@ -24,8 +24,9 @@
 
 .sp {
     --sp-line: rgba(255, 255, 255, 0.08);
-    --sp-card: #1c1c1c;
-    --sp-card2: #232323;
+    // un poco translúcidas: se ve el estadio de fondo sin perder la lectura (como las TV)
+    --sp-card: rgba(28, 28, 28, 0.82);
+    --sp-card2: rgba(35, 35, 35, 0.9);
     --sp-live: var(--nf-red, #e50914);
     --sp-mute: #9a9a9a;
     padding: 24px var(--nf-pad, 4%) 48px;

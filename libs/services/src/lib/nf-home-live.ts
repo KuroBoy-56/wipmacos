@@ -9,6 +9,8 @@ export interface NfHomeLive {
     readonly enabled: Signal<boolean>;
     /** Ajustes › Habilitar tarjetas de plataformas: con la fila en vivo, las plataformas van debajo de ella */
     readonly platformCards?: Signal<boolean>;
+    /** Inicio no muestra las plataformas (perfiles + partidos en vivo, sin el ajuste); antes de la respuesta, lo último */
+    readonly hidesPlatforms?: Signal<boolean>;
     readonly component: Type<unknown>;
     attach(): () => void;
 }
