@@ -45,6 +45,16 @@
                     </optgroup>
                 }
             </select>
+            <!-- el orden, como el web player: solo estas tres (el que llega desde «Ver todo» queda elegido) -->
+            <select
+                class="nf-select"
+                [attr.aria-label]="'MPX.NF.SORT' | translate"
+                (change)="set({ sort: $any($event.target).value === 'recent' ? null : $any($event.target).value })"
+            >
+                @for (o of sorts; track o.key) {
+                    <option [value]="o.key" [selected]="sort() === o.key">{{ o.label | translate }}</option>
+                }
+            </select>
             @if (!platform()) {
                 <input
                     #filterInput
