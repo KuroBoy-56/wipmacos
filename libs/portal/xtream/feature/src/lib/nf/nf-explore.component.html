@@ -23,15 +23,27 @@
                     }
                 </div>
             }
+            <!-- «Categorías»: las carpetas del servidor IPTV (como el selector de Películas / Series del web player) -->
             <select
                 class="nf-select"
-                [attr.aria-label]="'MPX.NF.SORT' | translate"
-                [value]="sort()"
-                (change)="set({ sort: $any($event.target).value })"
+                [attr.aria-label]="'MPX.NF.CATEGORIES' | translate"
+                (change)="pickCategory($any($event.target).value)"
             >
-                <option value="recent">{{ 'MPX.NF.EX_RECENT' | translate }}</option>
-                <option value="az">A - Z</option>
-                <option value="rating">{{ 'MPX.NF.EX_RATED' | translate }}</option>
+                <option value="" [selected]="!category()">{{ 'MPX.NF.CATEGORIES' | translate }}</option>
+                @if (type() !== 'series') {
+                    <optgroup [label]="'MPX.NAV.MOVIES' | translate">
+                        @for (c of catalog.movieCategories(); track c.id) {
+                            <option [value]="'movie|' + c.id" [selected]="category()?.id === c.id && type() !== 'series'">{{ c.name }}</option>
+                        }
+                    </optgroup>
+                }
+                @if (type() !== 'movie') {
+                    <optgroup [label]="'MPX.NAV.SERIES' | translate">
+                        @for (c of catalog.seriesCategories(); track c.id) {
+                            <option [value]="'series|' + c.id" [selected]="category()?.id === c.id && type() === 'series'">{{ c.name }}</option>
+                        }
+                    </optgroup>
+                }
             </select>
             @if (!platform()) {
                 <input

@@ -9,13 +9,15 @@ interface Entering {
     at: number;
 }
 
-const MIN_MS = 900;
-const MAX_MS = 20_000;
+// al menos 5 s (como las TV): Inicio, «En vivo ahora» y Explorar se arman detrás; si el catálogo todavía carga, hasta
+// que termine (como mucho 15 s)
+const MIN_MS = 5_000;
+const MAX_MS = 15_000;
 
 /**
  * Al elegir un perfil (como Android y Netflix): su avatar va al centro con el circulito debajo mientras en segundo
- * plano se arma Inicio (catálogo y, en el perfil infantil, el filtro). Se quita cuando el catálogo está listo
- * (o a los 20 s), y nunca antes de que termine el movimiento.
+ * plano se arma Inicio (catálogo y, en el perfil infantil, el filtro). Se quita cuando el catálogo está listo y pasaron
+ * al menos 5 s (o a los 15 s).
  */
 @Injectable({ providedIn: 'root' })
 export class ProfileEnterService {

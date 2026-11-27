@@ -17,7 +17,7 @@
                                     <span class="lv-lg">{{ c.e.lg }}</span>
                                     <span class="lv-clock" [class.soon]="c.e.soon"><i></i>{{ clock(c) }}</span>
                                 </span>
-                                @if (c.e.h || c.e.a) {
+                                @if (!solo(c)) {
                                     <span class="lv-mid">
                                         <ng-container *ngTemplateOutlet="team; context: { name: c.e.h, src: c.e.hb }" />
                                         @if (c.e.soon) {
@@ -28,8 +28,16 @@
                                         <ng-container *ngTemplateOutlet="team; context: { name: c.e.a, src: c.e.ab }" />
                                     </span>
                                 } @else {
-                                    <!-- carrera, golf…: sin equipos ni marcador, el nombre del evento -->
-                                    <span class="lv-evname">{{ c.e.ev || c.e.lg }}</span>
+                                    <!-- peleas, boxeo, WWE, carreras, golf: la disciplina, el evento y su póster, sin marcador -->
+                                    <span class="lv-solo" [class.center]="!c.e.th">
+                                        @if (c.e.th) {
+                                            <img class="lv-solo-poster" [src]="c.e.th" alt="" loading="lazy" (error)="$any($event.target).remove()" />
+                                        }
+                                        <span class="lv-solo-text">
+                                            <b>{{ sportLabel(c.e.sp) }}</b>
+                                            <span>{{ soloName(c) }}</span>
+                                        </span>
+                                    </span>
                                 }
                                 <span class="lv-ch">▶ {{ c.ch.best?.name }}</span>
                             </span>

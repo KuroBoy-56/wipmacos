@@ -1,5 +1,5 @@
 import { PanelLiveEvent } from '@iptvnator/services';
-import { clockText, competitionTheme, fieldKind, LIVE_ROW_MAX, liveCards, score } from './live-sports.util';
+import { clockText, competitionTheme, fieldKind, isSoloEvent, LIVE_ROW_MAX, liveCards, score, soloName } from './live-sports.util';
 import { SportsChannelsMap } from './sports-data.service';
 
 const ev = (id: string, sp: string): PanelLiveEvent =>
@@ -56,5 +56,20 @@ describe('live sports row', () => {
         expect(competitionTheme('Liga MX')).toBe('');
         expect(score('')).toBe('0');
         expect(score(2)).toBe('2');
+    });
+});
+
+describe('isSoloEvent / soloName', () => {
+    it('peleas, boxeo, WWE y carreras van como evento (aunque traigan dos nombres), los partidos con equipos no', () => {
+        expect(isSoloEvent({ h: 'Canelo', a: 'Crawford', sp: 'Boxing' })).toBe(true);
+        expect(isSoloEvent({ h: '', a: '', sp: 'Fighting' })).toBe(true);
+        expect(isSoloEvent({ h: 'Real Madrid', a: '', sp: 'Soccer' })).toBe(true);
+        expect(isSoloEvent({ h: 'Real Madrid', a: 'Barcelona', sp: 'Soccer' })).toBe(false);
+        expect(isSoloEvent({ h: 'Lakers', a: 'Celtics', sp: 'Basketball' })).toBe(false);
+    });
+    it('el nombre: el del evento, o los dos nombres, o la liga', () => {
+        expect(soloName({ h: 'Canelo', a: 'Crawford', ev: 'Canelo vs Crawford', lg: 'WBC' })).toBe('Canelo vs Crawford');
+        expect(soloName({ h: 'Canelo', a: 'Crawford', ev: '', lg: 'WBC' })).toBe('Canelo vs Crawford');
+        expect(soloName({ h: '', a: '', ev: '', lg: 'UFC' })).toBe('UFC');
     });
 });

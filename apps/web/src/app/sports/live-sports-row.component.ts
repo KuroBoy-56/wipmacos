@@ -8,7 +8,7 @@ import { buildXtreamNavigationTarget } from '@iptvnator/portal/shared/util';
 import { LiveFieldComponent } from './live-field.component';
 import { MatchAlertDirective } from './match-alert.directive';
 import { LiveSportsService } from './live-sports.service';
-import { clockText, competitionTheme, LiveCard, score } from './live-sports.util';
+import { clockText, competitionTheme, isSoloEvent, LiveCard, score, soloName } from './live-sports.util';
 import { SportsChannelTarget, SportsDataService } from './sports-data.service';
 import { SportsMenuOpt, sportsMenu } from './sports-menu.util';
 
@@ -76,8 +76,25 @@ export class LiveSportsRowComponent {
         return competitionTheme(c.e.lg);
     }
 
+    protected solo(c: LiveCard): boolean {
+        return isSoloEvent(c.e);
+    }
+
+    protected soloName(c: LiveCard): string {
+        return soloName(c.e);
+    }
+
+    /** la disciplina en el idioma de la app (MPX.LIVE.SP.<nombre de TheSportsDB>; si no está, el nombre tal cual) */
+    protected sportLabel(sp: string): string {
+        const key = 'MPX.LIVE.SP.' + sp;
+        const t = this.translate.instant(key);
+        return t && t !== key ? t : sp;
+    }
+
     protected label(c: LiveCard): string {
-        const what = c.e.h || c.e.a ? (c.e.soon ? `${c.e.h} vs ${c.e.a}` : `${c.e.h} ${score(c.e.hs)} - ${score(c.e.as)} ${c.e.a}`) : c.e.ev || c.e.lg;
+        const what = this.solo(c)
+            ? `${this.sportLabel(c.e.sp)}: ${soloName(c.e)}`
+            : c.e.soon ? `${c.e.h} vs ${c.e.a}` : `${c.e.h} ${score(c.e.hs)} - ${score(c.e.as)} ${c.e.a}`;
         return `${what}, ${this.clock(c)}, ${c.ch.best?.name ?? ''}`;
     }
 
@@ -94,7 +111,7 @@ export class LiveSportsRowComponent {
     protected open(card: LiveCard): void {
         const e = card.e;
         const tr = (key: string, params?: Record<string, string>) => this.translate.instant(key, params);
-        const title = e.h && e.a ? (e.soon ? `${e.h} vs ${e.a}` : `${e.h} ${score(e.hs)} - ${score(e.as)} ${e.a}`) : e.ev || e.lg;
+        const title = !isSoloEvent(e) ? (e.soon ? `${e.h} vs ${e.a}` : `${e.h} ${score(e.hs)} - ${score(e.as)} ${e.a}`) : soloName(e);
         this.menu.set({ card, title, sub: this.clock(card) + (e.lg ? `  ·  ${e.lg}` : ''), opts: sportsMenu(e, card.ch, true, tr) });
     }
 

@@ -186,6 +186,16 @@ export class NfExploreComponent {
         void this.router.navigate([], { relativeTo: this.route, queryParams: change, queryParamsHandling: 'merge' });
     }
 
+    /** «Categorías»: una carpeta del servidor ("movie|id" / "series|id") o todas ("") */
+    protected pickCategory(v: string): void {
+        if (!v) {
+            this.set({ category: null, type: null });
+            return;
+        }
+        const [kind, id] = [v.slice(0, v.indexOf('|')), v.slice(v.indexOf('|') + 1)];
+        this.set({ type: kind === 'series' ? 'series' : 'movie', category: id, genre: null, platform: null, sort: null });
+    }
+
     /** Como los botones de plataforma del web player: la página de esa plataforma, desde cero. */
     protected openPlatform(key: string): void {
         this.limit.set(PAGE);
