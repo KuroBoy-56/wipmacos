@@ -23,7 +23,6 @@ import {
     SportsCard,
     sportCounts,
     sportsDayKey,
-    sportsZone,
     sportsEventStatus,
     SportsEventStatus,
     toSportsCards,
@@ -88,14 +87,11 @@ export class SportsComponent implements OnInit {
     readonly menus = signal<Record<string, SportsMenu>>({});
     /** Panel Deportes "solo IPTV": each match shows only the client's channels. */
     private readonly iptv = signal(false);
-    /** Panel time zone (api/sports.php "tz"): hours and Today/Tomorrow follow the panel, not the computer. */
-    private readonly tz = signal<string | undefined>(undefined);
     private readonly timeFormat = computed(
         () =>
             new Intl.DateTimeFormat(this.lang() || 'es', {
                 hour: 'numeric',
                 minute: '2-digit',
-                timeZone: sportsZone(this.tz()),
             })
     );
     private queryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -114,18 +110,17 @@ export class SportsComponent implements OnInit {
         return list.length > 1 ? list : [];
     });
     readonly fixtures = new SportsFixturesState(inject(PanelSyncService), {
-        tz: () => this.tz(),
         alias: () => this.alias(),
         minutes: (sp) => this.meta()[sp]?.minutes || 120,
         now: () => this.now(),
     });
     private readonly dateFormat = computed(
-        () => new Intl.DateTimeFormat(this.lang() || 'es', { weekday: 'short', day: 'numeric', month: 'short', timeZone: sportsZone(this.tz()) })
+        () => new Intl.DateTimeFormat(this.lang() || 'es', { weekday: 'short', day: 'numeric', month: 'short' })
     );
 
     readonly dayKeys = computed(() => {
         const now = this.now();
-        return [sportsDayKey(new Date(now), this.tz()), sportsDayKey(new Date(now + 86_400_000), this.tz())];
+        return [sportsDayKey(new Date(now)), sportsDayKey(new Date(now + 86_400_000))];
     });
 
     readonly chips = computed<SportChip[]>(() => {
@@ -174,8 +169,7 @@ export class SportsComponent implements OnInit {
         const agenda = await this.data.loadAgenda();
         if (agenda) {
             this.panelMeta.set(agenda.sports ?? {});
-            this.tz.set(agenda.tz);
-            this.events.set(toSportsCards(agenda.events, agenda.tz));
+            this.events.set(toSportsCards(agenda.events));
             this.alias.set(agenda.match?.alias ?? DEFAULT_SPORTS_MATCH_RULES.alias);
             this.iptv.set(agenda.chan === 'iptv');
             this.extra.set({

@@ -87,11 +87,26 @@ export function score(v: string | number | null | undefined): string {
 /** tarjetas de la fila de Inicio: en vivo y próximos */
 export const LIVE_ROW_MAX = 20;
 
-export function liveCards(events: readonly PanelLiveEvent[], map: SportsChannelsMap | null, pref: string, now = Date.now()): LiveCard[] {
+/** Ajustes › Ligas favoritas: TheSportsDB id, name, badge and sport (per line and profile; none = all). */
+export interface FavLeague {
+    id: string;
+    n: string;
+    b?: string;
+    sp: string;
+}
+
+export function liveCards(
+    events: readonly PanelLiveEvent[],
+    map: SportsChannelsMap | null,
+    pref: string,
+    now = Date.now(),
+    leagues: ReadonlySet<string> = new Set()
+): LiveCard[] {
     if (!map) return [];
     const out: LiveCard[] = [];
     for (const e of events) {
         if (pref && e.sp !== pref) continue;
+        if (leagues.size && !leagues.has(String(e.li ?? ''))) continue;
         // un próximo que ya empezó hace más de 5 min y el livescore no trae: fuera hasta la próxima respuesta
         if (e.soon && e.s && e.s * 1000 < now - 5 * 60_000) continue;
         const ch = map.byEvent[String(e.id)];

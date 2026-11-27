@@ -28,6 +28,8 @@ export interface PanelSportsEvent {
     tv?: PanelSportsTv[];
     /** Without tv: where its home team's (else its league's) matches were broadcast in the last 60 days. */
     tvh?: PanelSportsTv[];
+    /** TheSportsDB league id (Ajustes › Ligas favoritas). */
+    li?: string;
 }
 
 /** A broadcast channel of a match: name and country, e.g. { n: 'ESPN 2', c: 'México' }. */
@@ -65,8 +67,6 @@ export interface PanelSportsAgenda {
     events: PanelSportsEvent[];
     sports: Record<string, PanelSportMeta>;
     match: SportsMatchRules;
-    /** Panel time zone (the distributor's or the owner's, IANA name): match hours and Today/Tomorrow use it. */
-    tz?: string;
     /** Standings tab (api/sports_tables.php): on, and the version of the panel's JSON. */
     tables?: { on: boolean; t?: number };
     /** Teams / National teams tabs (api/sports_fixtures.php): on, version and whether national teams are chosen. */

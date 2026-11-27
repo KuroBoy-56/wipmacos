@@ -1,6 +1,7 @@
 import { PanelLiveEvent } from '@iptvnator/services';
 import { clockText, competitionTheme, fieldKind, isSoloEvent, LIVE_ROW_MAX, liveCards, score, soloName } from './live-sports.util';
 import { SportsChannelsMap } from './sports-data.service';
+import { leagueChoices } from '../settings/settings-live-sports.util';
 
 const ev = (id: string, sp: string): PanelLiveEvent =>
     ({ id, sp, lg: '', lb: '', ev: '', h: 'A', a: 'B', hb: '', ab: '', hs: '1', as: '0', ts: '', v: '', st: '2H', th: '', pp: false, pr: '67' });
@@ -20,6 +21,26 @@ describe('live sports row', () => {
         expect(liveCards(events, map, '').map((c) => c.e.id)).toEqual(['1', '3']);
         expect(liveCards(events, map, 'Basketball').map((c) => c.e.id)).toEqual(['3']);
         expect(liveCards(events, null, '')).toEqual([]);
+        // Ajustes › Ligas favoritas: solo esas ligas
+        const withLeague = [{ ...ev('1', 'Soccer'), li: '4328' }, { ...ev('3', 'Basketball'), li: '4387' }];
+        expect(liveCards(withLeague, map, '', Date.now(), new Set(['4387'])).map((c) => c.e.id)).toEqual(['3']);
+        expect(liveCards(withLeague, map, 'Soccer', Date.now(), new Set(['4387']))).toEqual([]);
+    });
+
+    it('Ligas favoritas: today first, then the 21-day ones, and the chosen ones even if gone', () => {
+        const now = Date.parse('2026-11-27T18:00:00Z');
+        const today = new Date(now).toISOString();
+        const base = { lb: '', ev: '', h: 'A', a: 'B', hb: '', ab: '', hs: null, as: null, v: '', st: '', th: '', pp: false };
+        const agenda = [
+            { ...base, id: '1', sp: 'Soccer', lg: 'Premier League', li: '4328', ts: today },
+            { ...base, id: '2', sp: 'Soccer', lg: 'Premier League', li: '4328', ts: today },
+            { ...base, id: '3', sp: 'Basketball', lg: 'NBA', li: '4387', ts: new Date(now + 3 * 86_400_000).toISOString() },
+            { ...base, id: '4', sp: 'Soccer', lg: 'Sin id', ts: today },
+        ];
+        const fx = { '4350': { n: 'Liga MX', b: '', sp: 'Soccer', c: '', rg: '', w: 0 }, '4328': { n: 'dup', b: '', sp: 'Soccer', c: '', rg: '', w: 0 } };
+        const out = leagueChoices(agenda, fx, [{ id: '9', n: 'Vieja', sp: 'Soccer' }], '', now);
+        expect(out.map((x) => `${x.n}:${x.today}`)).toEqual(['Premier League:2', 'NBA:0', 'Liga MX:0', 'Vieja:0']);
+        expect(leagueChoices(agenda, fx, [], 'Basketball', now).map((x) => x.n)).toEqual(['NBA']);
     });
 
     it('live first, then the next ones by hour, at most 20 (then «Ir a Deportes»)', () => {
