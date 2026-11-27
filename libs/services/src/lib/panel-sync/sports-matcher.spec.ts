@@ -2,6 +2,7 @@ import {
     channelKey,
     DEFAULT_SPORTS_MATCH_RULES,
     findChannelByName,
+    channelSimilarity,
     findSportsChannel,
     findSportsChannelForEvent,
     normalizeSportsText,
@@ -132,6 +133,24 @@ describe('broadcast channel search', () => {
         expect(findChannelByName('DAZN', list)?.stream_id).toBe(13);
         expect(findChannelByName('ESPN 2', list)?.stream_id).toBe(12);
         expect(findChannelByName('ESPN 3', list)).toBeNull();
+    });
+
+    it('stronger matching: plus, number words, new tags and Levenshtein with the same numbers', () => {
+        const list = (names: string[]) => names.map((name, i) => ({ stream_id: i + 1, name, category_id: 1 }));
+        const id = (names: string[], q: string) => findChannelByName(q, list(names))?.stream_id ?? -1;
+        expect(id(['ESPN', 'ESPN+'], 'ESPN+')).toBe(2);
+        expect(id(['ESPN', 'ESPN+'], 'ESPN')).toBe(1);
+        expect(id(['MX: Movistar LaLiga FHD'], 'Movistar+ LaLiga')).toBe(1);
+        expect(id(['TyC Sports HD'], 'TyC Sport')).toBe(1);
+        expect(id(['Fox Sports Premium'], 'Fox Sport Premium')).toBe(1);
+        expect(id(['Fox Sports 1', 'Fox Sports 2'], 'Fox Sport')).toBe(1);
+        expect(id(['ESPN Two'], 'ESPN 2')).toBe(1);
+        expect(id(['US: ESPN Deportes East'], 'ESPN Deportes')).toBe(1);
+        expect(id(['|ES| DAZN LaLiga 2160p HDR'], 'DAZN LaLiga')).toBe(1);
+        expect(id(['Sky Sports F1 UHD'], 'Sky Sports 1')).toBe(-1);
+        expect(id(['ESPN 3'], 'ESPN 2')).toBe(-1);
+        expect(id(['Telemundo'], 'TUDN')).toBe(-1);
+        expect(channelSimilarity('sport tyc', 'sports tyc')).toBeCloseTo(0.9);
     });
 
     it('uses the usual channels (tvh) only after the agenda and the teams', () => {
