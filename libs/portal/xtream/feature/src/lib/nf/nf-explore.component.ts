@@ -32,7 +32,7 @@ const NF_FOCUS_FILTER = 'nfFocusFilter';
 
 /**
  * Explorar, igual al web player en horizontal (browse.php): título y subtítulo sobre el degradado del color, la cápsula
- * Todo / Películas / Series, el orden (Agregados recientemente / A - Z / Mejor valorados), «Filtrar por título…», el
+ * Todo / Películas / Series, «Categorías», el orden (Agregados recientemente / A - Z / Mejor valorados), «Filtrar por título…», el
  * total, los géneros, las plataformas, el divisor y la cuadrícula de pósters.
  */
 @Component({
@@ -54,6 +54,13 @@ export class NfExploreComponent {
         { key: 'all', label: 'MPX.NF.ALL' },
         { key: 'movie', label: 'MPX.NAV.MOVIES' },
         { key: 'series', label: 'MPX.NAV.SERIES' },
+    ];
+
+    /** Los tres órdenes del web player (browse.php): Agregados recientemente, A - Z y Mejor valorados. */
+    protected readonly sorts: { key: ExploreSort; label: string }[] = [
+        { key: 'recent', label: 'MPX.NF.EX_SORT_RECENT' },
+        { key: 'az', label: 'A - Z' },
+        { key: 'rating', label: 'MPX.NF.EX_SORT_RATING' },
     ];
 
     private readonly params = toSignal(this.route.queryParamMap, { requireSync: true });
