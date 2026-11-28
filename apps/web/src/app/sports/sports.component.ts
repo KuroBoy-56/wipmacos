@@ -195,7 +195,9 @@ export class SportsComponent implements OnInit {
         if (!this.alive) return;
         this.channels.set(map);
         // the panel guide was still arriving: the cards already show their channels; again with the guide when it lands
-        void this.data.guidePending()?.then(() => this.alive && this.matchChannels());
+        void this.data.guidePending()?.then(() => {
+            if (this.alive) void this.matchChannels();
+        });
         const e = this.pending;
         this.pending = null;
         if (e) void this.open(e);
