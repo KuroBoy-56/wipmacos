@@ -22,6 +22,8 @@ import { XTREAM_DATA_SOURCE } from '@iptvnator/portal/xtream/data-access';
 const LIVE_CACHE_MS = 30 * 60_000;
 /** la guía del panel se pregunta como mucho cada 10 min */
 const EPG_CACHE_MS = 10 * 60_000;
+// the panel guide can take a few seconds the first time: the channels never wait longer than this for it
+const EPG_WAIT_MS = 2_500;
 const SEARCH_NOISE = new Set(['club', 'united', 'city', 'real', 'deportivo', 'atletico', 'sporting', 'vs']);
 const SEARCH_SPORT_CAT = /sport|deport|event|ppv|futbol/;
 const DEFAULT_EVENT_CATEGORY = 'event|ppv|pay per view|deportes? en vivo|live sport|partidos? (de )?hoy';
@@ -141,17 +143,38 @@ export class SportsDataService {
     }
 
     /** api/sports_epg.php: partido -> canales del cliente que lo tienen en su programación a esa hora. */
+    private epgPending: Promise<Record<string, string[]>> | null = null;
+
+    /** the panel guide that was still arriving on the last match (null when there is none): match again when it lands */
+    guidePending(): Promise<unknown> | null {
+        return this.epgPending;
+    }
+
     private async epgMap(streams: SportsLiveStream[], categories: SportsLiveCategory[]): Promise<Record<string, string[]>> {
         if (this.epg && this.epg.streams === streams && Date.now() - this.epg.at < EPG_CACHE_MS) return this.epg.map;
-        let eventRe: RegExp | null = null;
-        try {
-            eventRe = new RegExp(this.agenda?.match?.eventCategory || DEFAULT_EVENT_CATEGORY, 'i');
-        } catch {
-            eventRe = null;
+        if (!this.epgPending) {
+            let eventRe: RegExp | null = null;
+            try {
+                eventRe = new RegExp(this.agenda?.match?.eventCategory || DEFAULT_EVENT_CATEGORY, 'i');
+            } catch {
+                eventRe = null;
+            }
+            this.epgPending = this.panelSync
+                .fetchSportsEpg(sportsEpgChannels(streams, categories, eventRe))
+                .catch(() => ({}))
+                .then((map) => {
+                    this.epg = { at: Date.now(), streams, map };
+                    this.epgPending = null;
+                    return map;
+                });
         }
-        const map = await this.panelSync.fetchSportsEpg(sportsEpgChannels(streams, categories, eventRe)).catch(() => ({}));
-        this.epg = { at: Date.now(), streams, map };
-        return map;
+        // at most EPG_WAIT_MS: after that the matches go without the guide (the broadcast and team channels show at
+        // once) and the guide keeps loading; Deportes matches again when it lands, the Home row on its next turn
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), EPG_WAIT_MS)));
+        const map = await Promise.race([this.epgPending, late]);
+        clearTimeout(timer);
+        return map ?? {};
     }
 
     /**

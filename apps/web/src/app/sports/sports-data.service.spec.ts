@@ -61,3 +61,50 @@ describe('SportsDataService.matchEvents (Roku flow)', () => {
         expect((await service.searchChannels('espn')).map((c) => c.streamId)).toEqual(['2']);
     });
 });
+
+describe('SportsDataService.matchEvents and a slow panel guide', () => {
+    it('never waits more than 2.5 s for the guide: the broadcast channels show at once and the guide comes later', async () => {
+        let land: (m: Record<string, string[]>) => void = () => undefined;
+        const fetchSportsEpg = jest.fn(() => new Promise<Record<string, string[]>>((r) => (land = r)));
+        TestBed.configureTestingModule({
+            providers: [
+                { provide: Store, useValue: { select: () => of([{ _id: 'pl', serverUrl: 'http://p', username: 'u' }]) } },
+                { provide: PanelSyncService, useValue: { fetchSportsEpg } },
+                { provide: XTREAM_DATA_SOURCE, useValue: { getAllCategories: async () => [] } },
+                { provide: ParentalControlService, useValue: { locked: () => true, blocked: () => new Set(), hiddenIds: () => new Set() } },
+            ],
+        });
+        const service = TestBed.inject(SportsDataService);
+        jest.spyOn(service as unknown as { fetchProviderLive: () => Promise<unknown> }, 'fetchProviderLive').mockResolvedValue({
+            streams: [
+                { stream_id: 2, name: 'MX: ESPN 2 HD', category_id: 1 },
+                { stream_id: 7, name: 'TUDN HD', category_id: 1 },
+            ],
+            categories: [{ category_id: 1, category_name: 'Deportes' }],
+        });
+        const base = { sp: 'Soccer', lg: '', lb: '', ev: '', hb: '', ab: '', hs: null, as: null, ts: '', v: '', st: '', th: '', pp: false };
+        const events = [
+            { ...base, id: 'a', h: 'Boca', a: 'River', tv: [{ n: 'ESPN 2', c: 'México' }] },
+            { ...base, id: 'g', h: 'Uno', a: 'Dos', tv: [] },
+        ];
+        jest.useFakeTimers();
+        try {
+            const first = service.matchEvents(events);
+            await jest.advanceTimersByTimeAsync(2600);
+            const map = await first;
+            expect(map?.byEvent['a'].best).toMatchObject({ streamId: '2' });
+            expect(map?.byEvent['g'].epg).toEqual([]);
+            const pending = service.guidePending();
+            expect(pending).not.toBeNull();
+            land({ g: ['7'] });
+            await pending;
+            const again = await service.matchEvents(events);
+            expect(again?.byEvent['g'].best).toMatchObject({ streamId: '7' });
+            expect(service.guidePending()).toBeNull();
+            expect(fetchSportsEpg).toHaveBeenCalledTimes(1);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+});
+
