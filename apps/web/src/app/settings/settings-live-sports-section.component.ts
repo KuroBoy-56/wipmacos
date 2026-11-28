@@ -34,7 +34,9 @@ import { fixtureTeams, LeagueChoice, leagueChoices } from './settings-live-sport
                 <p class="note">
                     <strong>{{ leaguesText() }}</strong> · {{ 'MPX.LIVE.LEAGUES_HINT' | translate }}
                 </p>
-                @if (!lgOpen()) {
+                @if (!live.pref()) {
+                    <p class="note" data-test-id="leagues-need-sport">{{ 'MPX.LIVE.LEAGUES_NEED_SPORT' | translate }}</p>
+                } @else if (!lgOpen()) {
                     <button mat-stroked-button type="button" data-test-id="pick-leagues" (click)="openLeagues()">{{ 'MPX.LIVE.LEAGUES_PICK' | translate }}</button>
                 } @else if (lgList() === undefined) {
                     <p class="note">{{ 'MPX.ALERTS.LOADING' | translate }}</p>
@@ -225,7 +227,7 @@ export class SettingsLiveSportsSectionComponent {
         this.lgOpen.set(true);
         this.lgList.set(undefined);
         const [ag, fx] = await Promise.all([this.data.loadAgenda().catch(() => null), this.alerts.fixtures(true).catch(() => null)]);
-        this.lgList.set(leagueChoices(ag?.events ?? [], fx?.on ? fx.leagues : undefined, this.live.leagues(), this.live.pref()));
+        this.lgList.set(leagueChoices(ag?.events ?? [], fx?.on ? fx.leagues : undefined, this.live.leagues(), this.live.pref(), Date.now(), ag?.cups ?? []));
     }
 
     protected toggle(l: FavLeague): void {
