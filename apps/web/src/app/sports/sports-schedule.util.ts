@@ -109,6 +109,17 @@ export function eventsForDay(
     return events.filter((e) => e.dayKey === dayKeys[day] && !(finTab && day === 0 && status(e) === 'fin'));
 }
 
+/**
+ * Ajustes › Deporte preferido y Eventos favoritos también ordenan Deportes: primero los de los eventos (ligas) favoritos,
+ * después los demás del deporte preferido y al final todo lo demás, cada grupo en su orden de siempre (no se quita nada).
+ */
+export function favoritesFirst<T extends Pick<PanelSportsEvent, 'sp' | 'li'>>(events: readonly T[], sport: string, leagues: ReadonlySet<string>): T[] {
+    if (!sport && !leagues.size) return [...events];
+    const sp = sport.toLowerCase();
+    const rank = (e: T) => (e.li && leagues.has(String(e.li)) ? 0 : sp && (e.sp ?? '').toLowerCase() === sp ? 1 : 2);
+    return events.map((e, i) => ({ e, i, r: rank(e) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.e);
+}
+
 export function sportCounts(events: SportsCard[], dayKey: string): Record<string, number> {
     const counts: Record<string, number> = {};
     for (const e of events) {
