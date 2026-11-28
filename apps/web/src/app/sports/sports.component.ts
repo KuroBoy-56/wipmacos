@@ -14,9 +14,11 @@ import { ownedChannels, SportsMenuOpt, sportsMenu } from './sports-menu.util';
 import { SportsTab } from './sports-extra.util';
 import { SportsFixturesState } from './sports-fixtures.state';
 import { SportsTablesComponent } from './sports-tables.component';
+import { LiveSportsService } from './live-sports.service';
 import {
     DEFAULT_SPORTS_META,
     eventsForDay,
+    favoritesFirst,
     groupByLeague,
     hasScore,
     matchesSportsQuery,
@@ -49,6 +51,7 @@ interface SportChip {
 })
 export class SportsComponent implements OnInit {
     private readonly data = inject(SportsDataService);
+    private readonly favLive = inject(LiveSportsService);
     private readonly router = inject(Router);
     private readonly snackBar = inject(MatSnackBar);
     private readonly translate = inject(TranslateService);
@@ -133,11 +136,12 @@ export class SportsComponent implements OnInit {
 
     readonly totalForDay = computed(() => this.chips().reduce((sum, c) => sum + c.count, 0));
 
-    readonly liveEvents = computed(() =>
-        this.events().filter(
-            (e) => this.status(e) === 'live' && (!this.sport() || e.sp === this.sport())
-        )
-    );
+    // los en vivo de los eventos favoritos primero, después los del deporte preferido y luego todo lo demás
+    readonly liveEvents = computed(() => {
+        const list = this.events().filter((e) => this.status(e) === 'live' && (!this.sport() || e.sp === this.sport()));
+        const fav = this.favLive.gated();
+        return favoritesFirst(list, fav ? this.favLive.pref() : '', new Set(fav ? this.favLive.leagues().map((l) => l.id) : []));
+    });
 
     readonly showLiveRow = computed(
         () => this.liveEvents().length > 0 && this.day() === 0 && !this.query().trim()
