@@ -22,7 +22,7 @@ import { NfNearEndDirective } from './nf-near-end.directive';
 import { NfTitleSearchComponent } from './nf-title-search.component';
 
 type ExploreType = 'all' | 'movie' | 'series';
-type ExploreSort = 'recent' | 'rating' | 'az';
+type ExploreSort = 'recent' | 'rating' | 'az' | 'za';
 
 const PAGE = 120;
 /** Un solo Collator: localeCompare(…, 'es') crea uno por comparación y congela A–Z con catálogos grandes. */
@@ -56,10 +56,11 @@ export class NfExploreComponent {
         { key: 'series', label: 'MPX.NAV.SERIES' },
     ];
 
-    /** Los tres órdenes del web player (browse.php): Agregados recientemente, A - Z y Mejor valorados. */
+    /** Los órdenes del web player (browse.php) más Z - A: Agregados recientemente, A - Z, Z - A y Mejor valorados. */
     protected readonly sorts: { key: ExploreSort; label: string }[] = [
         { key: 'recent', label: 'MPX.NF.EX_SORT_RECENT' },
         { key: 'az', label: 'A - Z' },
+        { key: 'za', label: 'Z - A' },
         { key: 'rating', label: 'MPX.NF.EX_SORT_RATING' },
     ];
 
@@ -70,7 +71,7 @@ export class NfExploreComponent {
     });
     protected readonly sort = computed<ExploreSort>(() => {
         const s = this.params().get('sort');
-        return s === 'rating' || s === 'az' ? s : 'recent';
+        return s === 'rating' || s === 'az' || s === 'za' ? s : 'recent';
     });
     /** ?platform= solo cuenta si el distribuidor separa por plataformas. */
     protected readonly platformTag = computed<NfTag | null>(() => {
@@ -155,6 +156,8 @@ export class NfExploreComponent {
                 return topRated(items);
             case 'az':
                 return [...items].sort((a, b) => TITLE_COLLATOR.compare(a.title, b.title));
+            case 'za':
+                return [...items].sort((a, b) => TITLE_COLLATOR.compare(b.title, a.title));
             default:
                 return newestFirst(items);
         }
@@ -191,16 +194,6 @@ export class NfExploreComponent {
     protected set(change: Record<string, string | null>): void {
         this.limit.set(PAGE);
         void this.router.navigate([], { relativeTo: this.route, queryParams: change, queryParamsHandling: 'merge' });
-    }
-
-    /** «Categorías»: una carpeta del servidor ("movie|id" / "series|id") o todas ("") */
-    protected pickCategory(v: string): void {
-        if (!v) {
-            this.set({ category: null, type: null });
-            return;
-        }
-        const [kind, id] = [v.slice(0, v.indexOf('|')), v.slice(v.indexOf('|') + 1)];
-        this.set({ type: kind === 'series' ? 'series' : 'movie', category: id, genre: null, platform: null, sort: null });
     }
 
     /** Como los botones de plataforma del web player: la página de esa plataforma, desde cero. */

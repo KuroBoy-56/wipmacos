@@ -73,6 +73,8 @@ export interface PanelSportsAgenda {
     fixtures?: { on: boolean; t?: number; nat?: boolean };
     /** Channels shown on each match (panel Deportes): all = the agenda's broadcast channels, iptv = only the client's. */
     chan?: 'all' | 'iptv';
+    /** International club cups and national-team tournaments (Champions, Libertadores, World Cup…) for «Eventos favoritos». */
+    cups?: { id: string; n: string; sp: string; rg?: string }[];
 }
 
 /** One row of a standings table (api/sports_tables.php). z: zone p/s/o/r; f: last results (W/D/L). */

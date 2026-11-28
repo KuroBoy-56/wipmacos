@@ -23,29 +23,8 @@
                     }
                 </div>
             }
-            <!-- «Categorías»: las carpetas del servidor IPTV (como el selector de Películas / Series del web player) -->
-            <select
-                class="nf-select"
-                [attr.aria-label]="'MPX.NF.CATEGORIES' | translate"
-                (change)="pickCategory($any($event.target).value)"
-            >
-                <option value="" [selected]="!category()">{{ 'MPX.NF.CATEGORIES' | translate }}</option>
-                @if (type() !== 'series') {
-                    <optgroup [label]="'MPX.NAV.MOVIES' | translate">
-                        @for (c of catalog.movieCategories(); track c.id) {
-                            <option [value]="'movie|' + c.id" [selected]="category()?.id === c.id && type() !== 'series'">{{ c.name }}</option>
-                        }
-                    </optgroup>
-                }
-                @if (type() !== 'movie') {
-                    <optgroup [label]="'MPX.NAV.SERIES' | translate">
-                        @for (c of catalog.seriesCategories(); track c.id) {
-                            <option [value]="'series|' + c.id" [selected]="category()?.id === c.id && type() === 'series'">{{ c.name }}</option>
-                        }
-                    </optgroup>
-                }
-            </select>
-            <!-- el orden, como el web player: solo estas tres (el que llega desde «Ver todo» queda elegido) -->
+            <!-- el orden: los tres del web player más Z - A (el que llega desde «Ver todo» queda elegido). Sin selector de
+                 categorías: una carpeta solo llega por su «Ver todo» (?category=) -->
             <select
                 class="nf-select"
                 [attr.aria-label]="'MPX.NF.SORT' | translate"
