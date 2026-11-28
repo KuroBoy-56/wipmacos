@@ -3,7 +3,7 @@ import { PanelSportMeta, PanelSportsEvent } from '@iptvnator/services';
 export type SportsEventStatus = 'live' | 'fin' | 'pp' | 'soon';
 
 /** Provider status texts that mean the match is over. */
-const FINISHED = /^(FT|AET|AOT|PEN|Match Finished|Finished|After Over Time|Final)$/i;
+const FINISHED = /^(FT|AET|AOT|AP|PEN|FT_PEN|FIN|Final|Final\/OT|Final OT|Ended|Finished|Match Finished|After Over Time|After Extra Time|After Penalties|AWD|WO|CANC|Cancelled|Canceled|ABD|Abandoned)$/i;
 const DEFAULT_MINUTES = 120;
 
 /** Built-in sports (label = translation key); the panel's `sports` map overrides them. */
