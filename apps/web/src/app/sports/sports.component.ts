@@ -194,6 +194,8 @@ export class SportsComponent implements OnInit {
         const map = await this.data.matchEvents(this.events()).catch(() => null);
         if (!this.alive) return;
         this.channels.set(map);
+        // the panel guide was still arriving: the cards already show their channels; again with the guide when it lands
+        void this.data.guidePending()?.then(() => this.alive && this.matchChannels());
         const e = this.pending;
         this.pending = null;
         if (e) void this.open(e);
