@@ -100,9 +100,9 @@ describe('buildSearchTitleVariants', () => {
             'de batman',
             'batman',
         ]);
-        expect(
-            buildSearchTitleVariants('English The Godfather', null)
-        ).toEqual(['english the godfather', 'the godfather']);
+        expect(buildSearchTitleVariants('English The Godfather', null)).toEqual(
+            ['english the godfather', 'the godfather']
+        );
     });
 
     it('keeps titles that merely look like prefixed ones as the primary variant', () => {
@@ -111,6 +111,18 @@ describe('buildSearchTitleVariants', () => {
         expect(buildSearchTitleVariants('It Follows', null)[0]).toBe(
             'it follows'
         );
+    });
+
+    it('adds the title cleaned like the panel, Roku and Android do', () => {
+        expect(
+            buildSearchTitleVariants('NETFLIX - Stranger Things S01', null)
+        ).toContain('stranger things');
+        expect(
+            buildSearchTitleVariants(
+                '|LAT| ★ Avengers: Endgame 2019 1080p',
+                null
+            )
+        ).toContain('avengers endgame');
     });
 
     it('deduplicates and drops empty values', () => {
