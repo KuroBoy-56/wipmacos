@@ -6,6 +6,7 @@ import {
     matchesSportsQuery,
     sportCounts,
     eventsForDay,
+    favoritesFirst,
     sportsDayKey,
     sportsEventStatus,
     toSportsCards,
@@ -86,5 +87,24 @@ describe('sports schedule utils', () => {
         expect(eventsForDay(list, keys, 0, st, false).map((e) => e.id)).toEqual(['a', 'b', 'c']);
         expect(eventsForDay(list, keys, 2, st, true).map((e) => e.id)).toEqual(['b', 'a']);
         expect(eventsForDay(list, keys, 1, st, true).map((e) => e.id)).toEqual(['d']);
+    });
+});
+
+describe('favoritesFirst (Ajustes › Deporte preferido y Eventos favoritos ordenan Deportes)', () => {
+    const ev = (id: string, sp: string, li: string) => ({ id, sp, li });
+    const list = [ev('nba', 'Basketball', '4387'), ev('liga', 'Soccer', '4335'), ev('buli', 'Soccer', '4331'), ev('f1', 'Motorsport', '4370'), ev('mls', 'Soccer', '4346')];
+
+    it('Todos: first the favorite events (Bundesliga), then the rest of the favorite sport, then everything else', () => {
+        expect(favoritesFirst(list, 'Soccer', new Set(['4331'])).map((e) => e.id)).toEqual(['buli', 'liga', 'mls', 'nba', 'f1']);
+    });
+
+    it('only a favorite sport: its events first, the rest in their usual order; nothing is removed', () => {
+        expect(favoritesFirst(list, 'soccer', new Set()).map((e) => e.id)).toEqual(['liga', 'buli', 'mls', 'nba', 'f1']);
+        expect(favoritesFirst(list, '', new Set()).map((e) => e.id)).toEqual(list.map((e) => e.id));
+    });
+
+    it('the Fútbol chip: the favorite events first and then the other matches', () => {
+        const soccer = list.filter((e) => e.sp === 'Soccer');
+        expect(favoritesFirst(soccer, 'Soccer', new Set(['4331', '4346'])).map((e) => e.id)).toEqual(['buli', 'mls', 'liga']);
     });
 });
