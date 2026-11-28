@@ -50,6 +50,11 @@ describe('sports schedule utils', () => {
         expect(sportsEventStatus(card, DEFAULT_SPORTS_META, start + 60_000)).toBe('live');
         expect(sportsEventStatus(card, DEFAULT_SPORTS_META, start + 121 * 60_000)).toBe('fin');
         expect(sportsEventStatus({ ...card, st: 'Match Finished' }, DEFAULT_SPORTS_META, start)).toBe('fin');
+        // after penalties, cancelled or abandoned: never «live» while the sport's time window is still open
+        for (const st of ['AP', 'After Penalties', 'FT_PEN', 'Final/OT', 'Ended', 'CANC', 'ABD']) {
+            expect(sportsEventStatus({ ...card, st }, DEFAULT_SPORTS_META, start + 30 * 60_000)).toBe('fin');
+        }
+        expect(sportsEventStatus({ ...card, st: '2H' }, DEFAULT_SPORTS_META, start + 30 * 60_000)).toBe('live');
         expect(sportsEventStatus({ ...card, pp: true }, DEFAULT_SPORTS_META, start)).toBe('pp');
     });
 

@@ -2,6 +2,8 @@ import {
     TmdbMediaType,
     extractYear,
     normalizeTitle,
+    tmdbSearchFirstPart,
+    tmdbSearchTitle,
 } from '@iptvnator/shared/interfaces';
 import { TmdbSearchResult } from './tmdb.types';
 
@@ -60,6 +62,15 @@ export function buildSearchTitleVariants(
     for (const raw of [originalTitle, title]) {
         if (raw) {
             push(stripLeadingLanguageToken(raw));
+        }
+    }
+    // the title cleaned like the panel, Roku and Android do ("NETFLIX - Stranger Things S01" -> "Stranger Things",
+    // "|LAT| ★ Avengers: Endgame 2019 1080p" -> "Avengers: Endgame"), then without its subtitle
+    for (const raw of [originalTitle, title]) {
+        if (raw) {
+            const q = tmdbSearchTitle(raw).q;
+            push(q);
+            push(tmdbSearchFirstPart(q));
         }
     }
 

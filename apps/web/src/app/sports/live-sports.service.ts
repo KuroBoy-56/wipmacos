@@ -106,24 +106,91 @@ export class LiveSportsService {
     }
 
     setLeagues(list: FavLeague[]): void {
+        this.writeLeagues(list);
+        this.prefTick.update((n) => n + 1);
+        this.savePrefs();
+    }
+
+    /** name = how the sport is shown on the TVs (the label in the app language when it was picked) */
+    setPref(sport: string, name = ''): void {
+        // las ligas favoritas de otra disciplina ya no tienen sentido
+        if (sport) this.writeLeagues(this.leagues().filter((l) => l.sp === sport));
+        this.writePref(sport, sport ? name : '');
+        this.prefTick.update((n) => n + 1);
+        this.savePrefs();
+    }
+
+    private writeLeagues(list: FavLeague[]): void {
         try {
             if (list.length) localStorage.setItem(this.leaguesKey(), JSON.stringify(list.map(({ id, n, b, sp }) => ({ id, n, b, sp }))));
             else localStorage.removeItem(this.leaguesKey());
         } catch {
             /* sin almacenamiento: queda para esta vez */
         }
-        this.prefTick.update((n) => n + 1);
     }
 
-    setPref(sport: string): void {
-        // las ligas favoritas de otra disciplina ya no tienen sentido
-        if (sport) this.setLeagues(this.leagues().filter((l) => l.sp === sport));
+    private writePref(sport: string, name: string): void {
         try {
             if (sport) localStorage.setItem(this.prefKey(), sport);
             else localStorage.removeItem(this.prefKey());
+            if (name) localStorage.setItem(this.prefKey() + '|n', name);
+            else localStorage.removeItem(this.prefKey() + '|n');
         } catch {
             /* sin almacenamiento: queda para esta vez */
         }
+    }
+
+    // ---------- Deporte preferido y Ligas favoritas en la nube («prefs» de api/alerts.php) ----------
+    // Lo que se elige aquí lo ven las TV y el celular de la misma línea y perfil, y al revés. La nube manda; si nunca se
+    // guardó (at = 0) se sube lo que esta computadora tenía guardado de antes.
+    private prefsPush: ReturnType<typeof setTimeout> | null = null;
+    private prefsAt = 0;
+    private prefsWho = '';
+
+    /** sube lo elegido aquí (varios cambios seguidos = un pedido) */
+    private savePrefs(): void {
+        if (!this.gated()) return;
+        if (this.prefsPush) clearTimeout(this.prefsPush);
+        this.prefsPush = setTimeout(() => {
+            this.prefsPush = null;
+            const sp = this.pref();
+            let spn = '';
+            try {
+                spn = sp ? (localStorage.getItem(this.prefKey() + '|n') ?? '') : '';
+            } catch {
+                /* sin almacenamiento */
+            }
+            const lg = this.leagues().map(({ id, n, sp: s }) => ({ id, n, sp: s }));
+            void Promise.resolve()
+                .then(() => this.sync.alertsRequest('set_prefs', { prefs: { sp, spn, lg } }))
+                .catch(() => null);
+        }, 700);
+    }
+
+    /** baja lo de la nube: cada 5 min con Inicio abierto, enseguida con otro perfil y al abrir Ajustes (force) */
+    async pullPrefs(force = false): Promise<void> {
+        if (!this.gated()) return;
+        const who = this.prefKey();
+        if (!force && who === this.prefsWho && Date.now() - this.prefsAt < 300_000) return;
+        this.prefsWho = who;
+        this.prefsAt = Date.now();
+        type Prefs = { sp?: string; spn?: string; lg?: { id?: string; n?: string; sp?: string }[]; at?: number };
+        const r = await this.sync.alertsRequest<{ success?: boolean; enabled?: boolean; prefs?: Prefs }>(null);
+        const p = r?.success && r.enabled ? r.prefs : null;
+        // un cambio de aquí todavía sin subir gana (si no, la respuesta vieja lo borraría)
+        if (!p || this.prefsPush || who !== this.prefKey()) return;
+        if (!(Number(p.at) > 0)) {
+            if (this.pref() || this.leagues().length) this.savePrefs();
+            return;
+        }
+        const sp = String(p.sp ?? '');
+        const mine = new Map(this.leagues().map((l) => [l.id, l]));
+        const lg: FavLeague[] = (Array.isArray(p.lg) ? p.lg : [])
+            .filter((x) => x && x.id)
+            .map((x) => ({ id: String(x.id), n: String(x.n ?? ''), b: mine.get(String(x.id))?.b, sp: String(x.sp ?? '') }));
+        if (sp === this.pref() && lg.map((l) => l.id).join(',') === this.leagues().map((l) => l.id).join(',')) return;
+        this.writeLeagues(lg);
+        this.writePref(sp, sp ? String(p.spn ?? '') : '');
         this.prefTick.update((n) => n + 1);
     }
 
@@ -150,6 +217,8 @@ export class LiveSportsService {
     private async tick(gen: number): Promise<void> {
         let ttl = 30;
         if (this.gated()) {
+            // el deporte y las ligas elegidos en la TV o el celular (cada 5 min)
+            void this.pullPrefs().catch(() => undefined);
             const res = await this.sync.fetchSportsLive().catch(() => null);
             if (gen !== this.gen) return;
             // sin respuesta del panel: lo último que se tenía

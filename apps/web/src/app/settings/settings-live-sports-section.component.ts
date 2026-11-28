@@ -22,7 +22,7 @@ import { fixtureTeams, LeagueChoice, leagueChoices } from './settings-live-sport
         @if (live.enabled()) {
             <section class="settings-live" data-test-id="settings-live-sports">
                 <h3><label for="live-pref">{{ 'MPX.LIVE.PREF' | translate }}</label></h3>
-                <select id="live-pref" [value]="live.pref()" (change)="live.setPref($any($event.target).value); lgOpen.set(false)">
+                <select id="live-pref" [value]="live.pref()" (change)="onPref($any($event.target).value)">
                     <option value="" [selected]="!live.pref()">{{ 'MPX.LIVE.ALL' | translate }}</option>
                     @for (s of sports(); track s) {
                         <option [value]="s" [selected]="live.pref() === s">{{ sportLabel(s) }}</option>
@@ -213,10 +213,17 @@ export class SettingsLiveSportsSectionComponent {
 
     constructor() {
         void this.live.ensure();
+        // lo último de la nube (el deporte y las ligas que se eligieron en la TV o el celular)
+        void this.live.pullPrefs(true).catch(() => undefined);
         void this.data
             .loadAgenda()
             .then((a) => a?.sports && this.apiSports.set(a.sports))
             .catch(() => undefined);
+    }
+
+    protected onPref(sp: string): void {
+        this.live.setPref(sp, sp ? this.sportLabel(sp) : '');
+        this.lgOpen.set(false);
     }
 
     protected sportLabel(sp: string): string {

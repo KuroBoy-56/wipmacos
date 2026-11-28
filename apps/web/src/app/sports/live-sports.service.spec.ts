@@ -5,12 +5,13 @@ import { LiveSportsService } from './live-sports.service';
 import { SportsDataService } from './sports-data.service';
 
 describe('LiveSportsService (fila «En vivo ahora»)', () => {
-    function setup(opts: { needed: boolean; kids?: boolean; sports?: boolean; enabled?: boolean }) {
+    function setup(opts: { needed: boolean; kids?: boolean; sports?: boolean; enabled?: boolean; cloud?: unknown }) {
         const profile = signal<{ id: string } | null>({ id: 'p1' });
         const fetchSportsLive = jest.fn().mockResolvedValue({ enabled: opts.enabled ?? true, ttl: 30, events: [], chan: 'all' });
+        const alertsRequest = jest.fn().mockResolvedValue(opts.cloud ?? null);
         TestBed.configureTestingModule({
             providers: [
-                { provide: PanelSyncService, useValue: { fetchSportsLive } },
+                { provide: PanelSyncService, useValue: { fetchSportsLive, alertsRequest } },
                 { provide: SportsDataService, useValue: { matchEvents: jest.fn().mockResolvedValue(null) } },
                 {
                     provide: ProfilesService,
@@ -19,7 +20,7 @@ describe('LiveSportsService (fila «En vivo ahora»)', () => {
                 { provide: PanelBrandingService, useValue: { features: signal({ sports: opts.sports ?? true }), platforms: signal(true) } },
             ],
         });
-        return { svc: TestBed.inject(LiveSportsService), fetchSportsLive, profile };
+        return { svc: TestBed.inject(LiveSportsService), fetchSportsLive, alertsRequest, profile };
     }
 
     beforeEach(() => localStorage.clear());
@@ -62,6 +63,37 @@ describe('LiveSportsService (fila «En vivo ahora»)', () => {
         expect(svc.pref()).toBe('Basketball');
         svc.setPref('');
         expect(svc.pref()).toBe('');
+    });
+
+    it('takes the favourite sport and leagues chosen on the TV or the phone (cloud «prefs»)', async () => {
+        const { svc } = setup({
+            needed: true,
+            cloud: { success: true, enabled: true, prefs: { sp: 'Soccer', spn: 'Fútbol', lg: [{ id: '4335', n: 'La Liga', sp: 'Soccer' }], at: 1700000000 } },
+        });
+        await svc.pullPrefs(true);
+        expect(svc.pref()).toBe('Soccer');
+        expect(svc.leagues().map((l) => l.id)).toEqual(['4335']);
+    });
+
+    it('uploads what this computer had when the cloud never saved it, and every change made here', async () => {
+        jest.useFakeTimers();
+        try {
+            const { svc, alertsRequest } = setup({ needed: true, cloud: { success: true, enabled: true, prefs: { sp: '', lg: [], at: 0 } } });
+            svc.setPref('Basketball', 'Baloncesto');
+            jest.advanceTimersByTime(800);
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(alertsRequest).toHaveBeenCalledWith('set_prefs', { prefs: { sp: 'Basketball', spn: 'Baloncesto', lg: [] } });
+            alertsRequest.mockClear();
+            await svc.pullPrefs(true);
+            jest.advanceTimersByTime(800);
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(alertsRequest).toHaveBeenCalledWith('set_prefs', { prefs: { sp: 'Basketball', spn: 'Baloncesto', lg: [] } });
+            expect(svc.pref()).toBe('Basketball');
+        } finally {
+            jest.useRealTimers();
+        }
     });
 
     it('platforms never flash in: hidden until the panel answers, back only without live matches or with the setting', async () => {
