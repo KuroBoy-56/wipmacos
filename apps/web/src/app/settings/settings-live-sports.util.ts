@@ -21,16 +21,19 @@ export interface LeagueChoice extends FavLeague {
 }
 
 /**
- * Ajustes › Ligas favoritas: the agenda's leagues (with how many matches they have today) and the next 21 days' ones;
- * with a favorite sport only that sport's. Leagues playing today first; the chosen ones are always there to untick.
+ * Ajustes › Eventos favoritos: the agenda's leagues (with how many matches they have today), the next 21 days' ones and
+ * the panel's international cups (`cups`: Champions, CONCACAF, World Cup…), only of the favorite sport (none without
+ * one: the screen asks to pick it first). Playing today first; the chosen ones are always there to untick.
  */
 export function leagueChoices(
     agenda: readonly PanelSportsEvent[],
     fxLeagues: PanelSportsFixtures['leagues'] | undefined,
     chosen: readonly FavLeague[],
     sport: string,
-    now = Date.now()
+    now = Date.now(),
+    cups: readonly { id: string; n: string; sp: string }[] = []
 ): LeagueChoice[] {
+    if (!sport) return [];
     const today = new Date(now).toDateString();
     const map = new Map<string, LeagueChoice>();
     for (const e of agenda) {
@@ -41,8 +44,9 @@ export function leagueChoices(
         map.set(e.li, x);
     }
     for (const [id, l] of Object.entries(fxLeagues ?? {})) if (!map.has(id) && l?.n) map.set(id, { id, n: l.n, b: l.b, sp: l.sp, today: 0 });
+    for (const c of cups) if (c?.id && c.n && !map.has(c.id)) map.set(c.id, { id: c.id, n: c.n, sp: c.sp, today: 0 });
     for (const l of chosen) if (!map.has(l.id)) map.set(l.id, { ...l, today: 0 });
     return [...map.values()]
-        .filter((x) => !sport || x.sp === sport)
+        .filter((x) => x.sp === sport)
         .sort((a, b) => Number(b.today > 0) - Number(a.today > 0) || a.sp.localeCompare(b.sp) || a.n.localeCompare(b.n));
 }

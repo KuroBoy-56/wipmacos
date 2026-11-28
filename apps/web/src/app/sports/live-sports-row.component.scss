@@ -138,13 +138,20 @@
     opacity: 0.9;
 }
 
-// «Ir a Deportes»: el estadio de Deportes con el color de la app
+// «Ir a Deportes»: el estadio de Deportes en miniatura, translúcido, con el texto encima
 .lv-more {
     width: clamp(200px, 14vw, 240px);
-    background:
-        linear-gradient(160deg, color-mix(in srgb, var(--nf-red, #e50914) 55%, transparent), rgba(0, 0, 0, 0.75)),
-        url('./sports-bg.webp') center / cover no-repeat,
-        #111;
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url('./sports-bg.webp') center / cover no-repeat;
+        opacity: 0.5;
+    }
 }
 
 .lv-more-body {

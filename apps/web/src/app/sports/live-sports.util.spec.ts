@@ -38,8 +38,11 @@ describe('live sports row', () => {
             { ...base, id: '4', sp: 'Soccer', lg: 'Sin id', ts: today },
         ];
         const fx = { '4350': { n: 'Liga MX', b: '', sp: 'Soccer', c: '', rg: '', w: 0 }, '4328': { n: 'dup', b: '', sp: 'Soccer', c: '', rg: '', w: 0 } };
-        const out = leagueChoices(agenda, fx, [{ id: '9', n: 'Vieja', sp: 'Soccer' }], '', now);
-        expect(out.map((x) => `${x.n}:${x.today}`)).toEqual(['Premier League:2', 'NBA:0', 'Liga MX:0', 'Vieja:0']);
+        // sin deporte favorito no hay eventos que elegir
+        expect(leagueChoices(agenda, fx, [], '', now)).toEqual([]);
+        const cups = [{ id: '4480', n: 'UEFA Champions League', sp: 'Soccer' }, { id: '4328', n: 'dup', sp: 'Soccer' }];
+        const out = leagueChoices(agenda, fx, [{ id: '9', n: 'Vieja', sp: 'Soccer' }], 'Soccer', now, cups);
+        expect(out.map((x) => `${x.n}:${x.today}`)).toEqual(['Premier League:2', 'Liga MX:0', 'UEFA Champions League:0', 'Vieja:0']);
         expect(leagueChoices(agenda, fx, [], 'Basketball', now).map((x) => x.n)).toEqual(['NBA']);
     });
 
